@@ -110,6 +110,36 @@
     </div>
   </div>
 
+  <!-- Exercise image source modal -->
+  <div class="modal-overlay hidden" id="image-modal">
+    <div class="modal">
+      <h2>Exercise Image</h2>
+
+      <div class="form-row full">
+        <div class="form-field">
+          <label for="field-image-url">Paste image or page URL</label>
+          <input
+            type="url"
+            id="field-image-url"
+            placeholder="https://example.com/image.jpg or a page URL"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <div class="form-help">
+            The app will try the direct image first, then common page previews like og:image.
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-danger" id="image-remove-btn" style="display:none">Remove image</button>
+        <button class="btn-secondary" id="image-file-btn">Choose File</button>
+        <button class="btn-secondary" id="image-cancel">Cancel</button>
+        <button class="btn-primary" id="image-import-btn">Import URL</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Hidden file input for image uploads -->
   <input type="file" id="image-upload-input" accept="image/*" />
 

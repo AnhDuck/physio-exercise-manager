@@ -442,6 +442,13 @@ body {
 
 .form-field select option { background: #242424; }
 
+.form-help {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-dim);
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -633,6 +640,21 @@ body {
   height: 18px;
   accent-color: var(--c-legs);
   cursor: pointer;
+}
+
+/* ── Image modal ─────────────────────────────────────────────────── */
+#image-modal .modal {
+  max-width: 520px;
+}
+
+#field-image-url {
+  width: 100%;
+}
+
+#image-import-btn[disabled],
+#image-file-btn[disabled] {
+  opacity: .65;
+  cursor: wait;
 }
 
 /* ── Image upload input (hidden) ─────────────────────────────────── */
