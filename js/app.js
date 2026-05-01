@@ -89,6 +89,9 @@ function weekDates(monday) {
 
 const DAY_NAMES  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const GROUP_ORDER = ['arm-day1', 'arm-day2', 'legs'];
+
+let draggedExerciseId = null;
 
 function todayStr() { return toDateStr(new Date()); }
 
@@ -106,12 +109,13 @@ function render() {
 
   app.appendChild(buildColHeaders(dates, todayS));
 
-  const groupOrder = ['arm-day1', 'arm-day2', 'legs'];
-  for (const group of groupOrder) {
+  let exerciseNumber = 1;
+  for (const group of GROUP_ORDER) {
     const exs = exercises
       .filter(e => e.group === group)
       .sort((a, b) => a.order - b.order);
-    app.appendChild(buildGroupSection(group, exs, dates, todayS));
+    app.appendChild(buildGroupSection(group, exs, dates, todayS, exerciseNumber));
+    exerciseNumber += exs.length;
   }
 
   app.appendChild(buildSummaryRow(dates, todayS));
@@ -161,17 +165,21 @@ function buildColHeaders(dates, todayS) {
 }
 
 // ── Group section ────────────────────────────────────────────────
-function buildGroupSection(group, exs, dates, todayS) {
+function buildGroupSection(group, exs, dates, todayS, startNumber) {
   const frag = document.createDocumentFragment();
   const cfg = GROUPS[group];
   const isCollapsed = (settings.collapsedGroups || []).includes(group);
 
   // Section header
   const header = el('div', 'group-header' + (isCollapsed ? ' collapsed' : ''));
+  header.dataset.group = group;
   header.style.borderTopColor = cfg.color;
   if (group === 'arm-day1') header.style.marginTop = '0';
   header.title = isCollapsed ? 'Click to expand' : 'Click to collapse';
   header.addEventListener('click', () => toggleGroupCollapse(group));
+  header.addEventListener('dragover', handleExerciseDragOver);
+  header.addEventListener('dragleave', clearDropPosition);
+  header.addEventListener('drop', handleExerciseDropAtEnd);
 
   const label = el('div', 'group-header-label');
   label.appendChild(elText('span', 'collapse-chevron', '▼'));
@@ -192,10 +200,14 @@ function buildGroupSection(group, exs, dates, todayS) {
   if (isCollapsed) return frag;
 
   // Exercise rows
-  exs.forEach(ex => frag.appendChild(buildExerciseRow(ex, group, dates, todayS)));
+  exs.forEach((ex, i) => frag.appendChild(buildExerciseRow(ex, group, dates, todayS, startNumber + i)));
 
   // Add exercise button
   const addRow = el('div', 'add-exercise-row');
+  addRow.dataset.group = group;
+  addRow.addEventListener('dragover', handleExerciseDragOver);
+  addRow.addEventListener('dragleave', clearDropPosition);
+  addRow.addEventListener('drop', handleExerciseDropAtEnd);
   const addBtn = el('button', 'add-exercise-btn');
   addBtn.textContent = '+ Add exercise';
   addBtn.dataset.group = group;
@@ -217,12 +229,114 @@ function toggleGroupCollapse(group) {
 }
 
 // ── Exercise row ──────────────────────────────────────────────────
-function buildExerciseRow(ex, group, dates, todayS) {
+function sortedExercisesInGroup(group) {
+  return exercises
+    .filter(e => e.group === group)
+    .sort((a, b) => a.order - b.order);
+}
+
+function normalizeGroupOrders(groups = GROUP_ORDER) {
+  groups.forEach(group => {
+    sortedExercisesInGroup(group).forEach((ex, i) => { ex.order = i + 1; });
+  });
+}
+
+function moveExercise(dragId, targetGroup, targetId = null, position = 'after') {
+  const dragged = exercises.find(ex => ex.id === dragId);
+  if (!dragged || !targetGroup) return;
+  if (targetId === dragId) return;
+
+  const oldGroup = dragged.group;
+  const targetItems = sortedExercisesInGroup(targetGroup).filter(ex => ex.id !== dragId);
+  let insertAt = targetItems.length;
+
+  if (targetId) {
+    const targetIndex = targetItems.findIndex(ex => ex.id === targetId);
+    if (targetIndex !== -1) insertAt = targetIndex + (position === 'after' ? 1 : 0);
+  }
+
+  dragged.group = targetGroup;
+  targetItems.splice(insertAt, 0, dragged);
+  targetItems.forEach((ex, i) => { ex.order = i + 1; });
+  if (oldGroup !== targetGroup) normalizeGroupOrders([oldGroup]);
+
+  saveExercises(exercises);
+  render();
+}
+
+function handleExerciseDragStart(e) {
+  draggedExerciseId = e.currentTarget.dataset.exId;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', draggedExerciseId);
+}
+
+function handleExerciseDragEnd(e) {
+  e.currentTarget.draggable = false;
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.drop-before, .drop-after, .drop-end').forEach(elm => {
+    elm.classList.remove('drop-before', 'drop-after', 'drop-end');
+  });
+  draggedExerciseId = null;
+}
+
+function handleExerciseDragOver(e) {
+  if (!draggedExerciseId) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+
+  const target = e.currentTarget;
+  clearDropPosition({ currentTarget: target });
+
+  if (target.classList.contains('exercise-row')) {
+    const rect = target.getBoundingClientRect();
+    const isAfter = e.clientY > rect.top + rect.height / 2;
+    target.classList.add(isAfter ? 'drop-after' : 'drop-before');
+  } else {
+    target.classList.add('drop-end');
+  }
+}
+
+function clearDropPosition(e) {
+  e.currentTarget.classList.remove('drop-before', 'drop-after', 'drop-end');
+}
+
+function handleExerciseDropOnRow(e) {
+  if (!draggedExerciseId) return;
+  e.preventDefault();
+  const target = e.currentTarget;
+  const position = target.classList.contains('drop-before') ? 'before' : 'after';
+  moveExercise(draggedExerciseId, target.dataset.group, target.dataset.exId, position);
+}
+
+function handleExerciseDropAtEnd(e) {
+  if (!draggedExerciseId) return;
+  e.preventDefault();
+  e.stopPropagation();
+  moveExercise(draggedExerciseId, e.currentTarget.dataset.group);
+}
+
+function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
   const row = el('div', 'exercise-row');
   row.dataset.exId = ex.id;
+  row.dataset.group = group;
+  row.addEventListener('dragstart', handleExerciseDragStart);
+  row.addEventListener('dragend', handleExerciseDragEnd);
+  row.addEventListener('dragover', handleExerciseDragOver);
+  row.addEventListener('dragleave', clearDropPosition);
+  row.addEventListener('drop', handleExerciseDropOnRow);
 
   // Label cell
   const label = el('div', 'ex-label');
+
+  const dragHandle = el('button', 'drag-handle');
+  dragHandle.type = 'button';
+  dragHandle.title = 'Drag to reorder';
+  dragHandle.setAttribute('aria-label', 'Drag to reorder exercise');
+  dragHandle.textContent = '☰';
+  dragHandle.addEventListener('mousedown', () => { row.draggable = true; });
+  dragHandle.addEventListener('mouseup', () => { row.draggable = false; });
+  label.appendChild(dragHandle);
 
   // Thumbnail
   const thumb = el('div', 'ex-thumb');
@@ -240,7 +354,10 @@ function buildExerciseRow(ex, group, dates, todayS) {
 
   // Info
   const info = el('div', 'ex-info');
-  info.appendChild(elText('div', 'ex-name', ex.name));
+  const nameRow = el('div', 'ex-name-row');
+  nameRow.appendChild(elText('span', 'ex-number', String(exerciseNumber)));
+  nameRow.appendChild(elText('span', 'ex-name', ex.name));
+  info.appendChild(nameRow);
 
   const meta = el('div', 'ex-meta');
   meta.appendChild(elText('span', '', `Sets: ${ex.sets}`));
