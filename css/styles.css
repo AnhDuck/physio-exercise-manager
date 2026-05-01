@@ -105,11 +105,14 @@ body {
 }
 
 /* ── Compact col-header (when scrolled) ─────────────────────────── */
-.col-header-row.compact .day-name,
 .col-header-row.compact .day-pill-row { display: none; }
 
 .col-header-row.compact .day-header { padding: 5px 4px; }
 
+.col-header-row.compact .day-name {
+  font-size: 11px;
+  letter-spacing: .3px;
+}
 .col-header-row.compact .day-date {
   font-size: 13px;
   font-weight: 700;
@@ -519,8 +522,6 @@ body {
   grid-template-columns: var(--label-col-w) repeat(7, var(--day-col-w));
   border-top: 2px solid var(--border);
   background: var(--bg-header);
-  position: sticky;
-  bottom: 0;
 }
 
 .summary-label {
@@ -547,6 +548,92 @@ body {
 
 .summary-pct.today { background: rgba(99,179,237,.04); }
 .summary-pct.full  { color: var(--accent-green); }
+
+/* ── Timer widget ────────────────────────────────────────────────── */
+.timer-widget {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.timer-display {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  min-width: 88px;
+  letter-spacing: .3px;
+}
+
+.timer-btns {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.timer-btn {
+  padding: 5px 11px;
+  border: none;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  cursor: pointer;
+  transition: opacity .15s;
+  text-transform: uppercase;
+}
+
+.timer-btn:hover { opacity: .82; }
+.timer-btn-start   { background: #3d6e3d; color: #fff; }
+.timer-btn-stop    { background: #7a3020; color: #fff; }
+.timer-btn-restart { background: #555; color: #fff; }
+.timer-btn-save    { background: #2b4a7a; color: #fff; }
+
+/* ── Settings button ─────────────────────────────────────────────── */
+.btn-settings {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  transition: background .15s, color .15s;
+}
+.btn-settings:hover { background: var(--bg-hover); color: var(--text); }
+
+/* ── Day-of-week checkboxes (settings modal) ─────────────────────── */
+.day-check-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.day-check-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.day-check-label span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+.day-check-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--c-legs);
+  cursor: pointer;
+}
 
 /* ── Image upload input (hidden) ─────────────────────────────────── */
 #image-upload-input { display: none; }
