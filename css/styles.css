@@ -39,9 +39,6 @@ body {
   height: var(--header-h);
   background: var(--bg-header);
   border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 100;
 }
 
 .app-title {
@@ -101,10 +98,24 @@ body {
   grid-template-columns: var(--label-col-w) repeat(7, var(--day-col-w));
   border-bottom: 1px solid var(--border);
   position: sticky;
-  top: var(--header-h);
+  top: 0;
   background: var(--bg-header);
   z-index: 90;
+  transition: padding .2s ease;
 }
+
+/* ── Compact col-header (when scrolled) ─────────────────────────── */
+.col-header-row.compact .day-name,
+.col-header-row.compact .day-pill-row { display: none; }
+
+.col-header-row.compact .day-header { padding: 5px 4px; }
+
+.col-header-row.compact .day-date {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.col-header-row.compact .spacer { padding: 5px 16px; }
 
 .col-header-row .spacer { padding: 10px 16px; }
 
