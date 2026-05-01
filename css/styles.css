@@ -83,7 +83,7 @@ body {
 
 /* ── Main layout ─────────────────────────────────────────────────── */
 .main-wrap {
-  overflow-x: auto;
+  overflow-x: clip;
   padding-bottom: 40px;
 }
 
