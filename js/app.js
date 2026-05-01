@@ -6,6 +6,11 @@ let currentWeekStart = null; // Monday of displayed week (Date)
 let editingExId = null;      // exercise id being edited in modal
 let uploadTargetId = null;   // exercise id awaiting image upload
 
+// ── Timer state ───────────────────────────────────────────────────
+let timerState    = 'idle';  // 'idle' | 'running' | 'paused'
+let timerSeconds  = 0;
+let timerInterval = null;
+
 // ── Init ─────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   exercises = loadExercises();
@@ -115,29 +120,36 @@ function render() {
 // ── Column headers ────────────────────────────────────────────────
 function buildColHeaders(dates, todayS) {
   const row = el('div', 'col-header-row');
-  row.appendChild(el('div', 'spacer'));
+  const spacer = el('div', 'spacer');
+  spacer.appendChild(buildTimerWidget());
+  row.appendChild(spacer);
 
   dates.forEach((date, i) => {
     const dateS = toDateStr(date);
     const isToday = dateS === todayS;
     const cell = el('div', 'day-header' + (isToday ? ' today' : ''));
 
-    // Pills only on scheduled days: Mon (1), Wed (3), Fri (5)
     const dow = date.getDay();
-    const isScheduledDay = dow === 1 || dow === 3 || dow === 5;
+    const isArmDay  = dow === 1 || dow === 3 || dow === 5;
+    const legsDays  = settings.legsDays !== undefined ? settings.legsDays : [1, 3, 5];
+    const isLegsDay = legsDays.includes(dow);
 
     cell.appendChild(elText('div', 'day-name', DAY_NAMES[i]));
     cell.appendChild(elText('div', 'day-date', String(date.getDate())));
 
-    if (isScheduledDay) {
-      const armDay = getArmDayForDate(dateS);
+    if (isArmDay || isLegsDay) {
       const pillRow = el('div', 'day-pill-row');
-      if (armDay === 'arm-day1') {
-        pillRow.appendChild(elText('span', 'day-pill pill-d1', 'Day 1'));
-      } else {
-        pillRow.appendChild(elText('span', 'day-pill pill-d2', 'Day 2'));
+      if (isArmDay) {
+        const armDay = getArmDayForDate(dateS);
+        if (armDay === 'arm-day1') {
+          pillRow.appendChild(elText('span', 'day-pill pill-d1', 'Day 1'));
+        } else {
+          pillRow.appendChild(elText('span', 'day-pill pill-d2', 'Day 2'));
+        }
       }
-      pillRow.appendChild(elText('span', 'day-pill pill-leg', 'Legs'));
+      if (isLegsDay) {
+        pillRow.appendChild(elText('span', 'day-pill pill-leg', 'Legs'));
+      }
       cell.appendChild(pillRow);
     }
 
@@ -406,6 +418,123 @@ function deleteExercise() {
   render();
 }
 
+// ── Timer ─────────────────────────────────────────────────────────
+function fmtTimer(s) {
+  const m = Math.floor(s / 60);
+  return `${String(m).padStart(2, '0')} m ${String(s % 60).padStart(2, '0')} s`;
+}
+
+function buildTimerWidget() {
+  const wrap = el('div', 'timer-widget');
+
+  const display = el('div', 'timer-display');
+  display.id = 'timer-display';
+  display.textContent = fmtTimer(timerSeconds);
+  wrap.appendChild(display);
+
+  wrap.appendChild(makeTimerBtns());
+  return wrap;
+}
+
+function makeTimerBtns() {
+  const btns = el('div', 'timer-btns');
+  if (timerState === 'idle') {
+    btns.appendChild(timerBtn('START', 'timer-btn-start', timerStart));
+  } else if (timerState === 'running') {
+    btns.appendChild(timerBtn('STOP', 'timer-btn-stop', timerStop));
+  } else {
+    btns.appendChild(timerBtn('RESUME',  'timer-btn-start',   timerResume));
+    btns.appendChild(timerBtn('RESTART', 'timer-btn-restart', timerRestart));
+    btns.appendChild(timerBtn('SAVE',    'timer-btn-save',    timerSave));
+  }
+  return btns;
+}
+
+function timerBtn(label, cls, handler) {
+  const b = elText('button', 'timer-btn ' + cls, label);
+  b.addEventListener('click', handler);
+  return b;
+}
+
+function refreshTimerBtns() {
+  const widget = document.querySelector('.timer-widget');
+  if (!widget) return;
+  const old = widget.querySelector('.timer-btns');
+  if (old) old.remove();
+  widget.appendChild(makeTimerBtns());
+}
+
+function timerStart() {
+  timerState = 'running';
+  timerInterval = setInterval(() => {
+    timerSeconds++;
+    const d = document.getElementById('timer-display');
+    if (d) d.textContent = fmtTimer(timerSeconds);
+  }, 1000);
+  refreshTimerBtns();
+}
+
+function timerStop() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerState = 'paused';
+  refreshTimerBtns();
+}
+
+function timerResume() {
+  timerState = 'running';
+  timerInterval = setInterval(() => {
+    timerSeconds++;
+    const d = document.getElementById('timer-display');
+    if (d) d.textContent = fmtTimer(timerSeconds);
+  }, 1000);
+  refreshTimerBtns();
+}
+
+function timerRestart() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerSeconds  = 0;
+  timerState    = 'idle';
+  const d = document.getElementById('timer-display');
+  if (d) d.textContent = fmtTimer(0);
+  refreshTimerBtns();
+}
+
+function timerSave() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerSeconds  = 0;
+  timerState    = 'idle';
+  const d = document.getElementById('timer-display');
+  if (d) d.textContent = fmtTimer(0);
+  refreshTimerBtns();
+}
+
+// ── Settings modal ────────────────────────────────────────────────
+function openSettingsModal() {
+  const legsDays = settings.legsDays !== undefined ? settings.legsDays : [1, 3, 5];
+  document.querySelectorAll('#settings-modal input[data-dow]').forEach(cb => {
+    cb.checked = legsDays.includes(Number(cb.dataset.dow));
+  });
+  document.getElementById('settings-modal').classList.remove('hidden');
+}
+
+function closeSettingsModal() {
+  document.getElementById('settings-modal').classList.add('hidden');
+}
+
+function saveSettingsModal() {
+  const legsDays = [];
+  document.querySelectorAll('#settings-modal input[data-dow]:checked').forEach(cb => {
+    legsDays.push(Number(cb.dataset.dow));
+  });
+  settings.legsDays = legsDays;
+  saveSettings(settings);
+  closeSettingsModal();
+  render();
+}
+
 // ── Image upload ──────────────────────────────────────────────────
 function openImageUpload(exId) {
   uploadTargetId = exId;
@@ -469,6 +598,13 @@ function bindStaticEvents() {
   document.getElementById('image-upload-input').addEventListener('change', (e) => {
     handleImageUpload(e.target.files[0]);
     e.target.value = ''; // reset so same file can be re-selected
+  });
+
+  document.getElementById('btn-settings').addEventListener('click', openSettingsModal);
+  document.getElementById('settings-cancel').addEventListener('click', closeSettingsModal);
+  document.getElementById('settings-save').addEventListener('click', saveSettingsModal);
+  document.getElementById('settings-modal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('settings-modal')) closeSettingsModal();
   });
 }
 

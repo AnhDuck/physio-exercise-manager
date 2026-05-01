@@ -15,6 +15,7 @@
       <span class="week-label" id="week-label"></span>
       <button id="btn-next-week">Week &#8594;</button>
       <button id="btn-today" class="today-btn">TODAY</button>
+      <button id="btn-settings" class="btn-settings" title="Settings">⚙</button>
     </nav>
   </header>
 
@@ -78,6 +79,33 @@
         <button class="btn-danger" id="delete-btn" style="display:none">Delete exercise</button>
         <button class="btn-secondary" id="modal-cancel">Cancel</button>
         <button class="btn-primary" id="modal-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings modal -->
+  <div class="modal-overlay hidden" id="settings-modal">
+    <div class="modal">
+      <h2>Settings</h2>
+
+      <div class="form-row full">
+        <div class="form-field">
+          <label>Legs days</label>
+          <div class="day-check-row">
+            <label class="day-check-label"><span>Mon</span><input type="checkbox" data-dow="1" /></label>
+            <label class="day-check-label"><span>Tue</span><input type="checkbox" data-dow="2" /></label>
+            <label class="day-check-label"><span>Wed</span><input type="checkbox" data-dow="3" /></label>
+            <label class="day-check-label"><span>Thu</span><input type="checkbox" data-dow="4" /></label>
+            <label class="day-check-label"><span>Fri</span><input type="checkbox" data-dow="5" /></label>
+            <label class="day-check-label"><span>Sat</span><input type="checkbox" data-dow="6" /></label>
+            <label class="day-check-label"><span>Sun</span><input type="checkbox" data-dow="0" /></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" id="settings-cancel">Cancel</button>
+        <button class="btn-primary" id="settings-save">Save</button>
       </div>
     </div>
   </div>
