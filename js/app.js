@@ -254,31 +254,36 @@ function buildExerciseRow(ex, group, dates, todayS) {
   meta.appendChild(elText('span', '', ex.frequency));
   info.appendChild(meta);
 
-  if (ex.instructions) {
-    const tog = el('button', 'instructions-toggle');
-    tog.innerHTML = '▸ Instructions';
-    const instrText = el('div', 'instructions-text');
-    instrText.textContent = ex.instructions;
-    instrText.style.display = 'none';
-    tog.addEventListener('click', () => {
-      const open = instrText.style.display !== 'none';
-      instrText.style.display = open ? 'none' : 'block';
-      tog.innerHTML = (open ? '▸' : '▾') + ' Instructions';
-    });
-    info.appendChild(tog);
-    info.appendChild(instrText);
-  }
+  let instrText = null;
 
   label.appendChild(info);
 
   // Edit button
   const actions = el('div', 'ex-actions');
+  if (ex.instructions) {
+    const tog = el('button', 'btn-icon instructions-toggle');
+    tog.title = 'Show instructions';
+    tog.setAttribute('aria-label', 'Show instructions');
+    tog.textContent = 'ⓘ';
+    instrText = el('div', 'instructions-text');
+    instrText.textContent = ex.instructions;
+    instrText.style.display = 'none';
+    tog.addEventListener('click', () => {
+      const open = instrText.style.display !== 'none';
+      instrText.style.display = open ? 'none' : 'block';
+      tog.classList.toggle('active', !open);
+      tog.title = open ? 'Show instructions' : 'Hide instructions';
+      tog.setAttribute('aria-label', open ? 'Show instructions' : 'Hide instructions');
+    });
+    actions.appendChild(tog);
+  }
   const editBtn = el('button', 'btn-icon');
   editBtn.title = 'Edit exercise';
   editBtn.textContent = '✎';
   editBtn.addEventListener('click', () => openEditModal(ex.id));
   actions.appendChild(editBtn);
   label.appendChild(actions);
+  if (instrText) label.appendChild(instrText);
 
   row.appendChild(label);
 

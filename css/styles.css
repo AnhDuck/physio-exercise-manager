@@ -12,7 +12,7 @@
   --text-muted:   #a0a4ad;
   --text-dim:     #707480;
   --accent-green: #48bb78;
-  --thumb-size:   72px;
+  --thumb-size:   68px;
   --day-col-w:    minmax(80px, 1fr);
   --label-col-w:  minmax(340px, 420px);
   --header-h:     56px;
@@ -240,21 +240,22 @@ body {
 /* Left label cell */
 .ex-label {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  min-height: 92px;
+  gap: 10px;
+  padding: 6px 10px;
+  min-height: 80px;
 }
 
 .ex-thumb {
   width: var(--thumb-size);
   height: var(--thumb-size);
-  border-radius: 8px;
+  border-radius: 7px;
   object-fit: cover;
   background: var(--bg-hover);
   flex-shrink: 0;
   cursor: pointer;
-  border: 2px solid transparent;
+  border: 1px solid var(--border);
   transition: border-color .15s;
   display: flex;
   align-items: center;
@@ -271,19 +272,20 @@ body {
 .ex-info { flex: 1; min-width: 0; }
 
 .ex-name {
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 600;
   color: var(--text);
-  margin-bottom: 6px;
-  line-height: 1.25;
+  margin-bottom: 4px;
+  line-height: 1.2;
 }
 
 .ex-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  font-size: 17px;
+  gap: 7px;
+  font-size: 16px;
   color: var(--text-muted);
+  line-height: 1.25;
 }
 
 .ex-meta span { white-space: nowrap; }
@@ -292,7 +294,7 @@ body {
 .ex-actions {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   flex-shrink: 0;
 }
 
@@ -301,9 +303,11 @@ body {
   border: none;
   color: var(--text-dim);
   cursor: pointer;
-  padding: 6px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
   border-radius: 4px;
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1;
   transition: color .15s, background .15s;
 }
@@ -502,21 +506,23 @@ body {
   background: none;
   border: none;
   color: var(--text-dim);
-  font-size: 16px;
   cursor: pointer;
-  padding: 4px 0;
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
 }
 
-.instructions-toggle:hover { color: var(--text-muted); }
+.instructions-toggle:hover,
+.instructions-toggle.active { color: var(--text-muted); }
 
 .instructions-text {
+  flex-basis: 100%;
   font-size: 17px;
   color: var(--text-muted);
   line-height: 1.5;
-  margin-top: 6px;
+  margin-top: 4px;
+  margin-left: calc(var(--thumb-size) + 10px);
+  width: calc(100% - var(--thumb-size) - 10px);
   padding: 10px;
   background: var(--bg-header);
   border-radius: 6px;
