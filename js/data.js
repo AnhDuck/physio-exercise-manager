@@ -84,18 +84,6 @@ const DEFAULT_EXERCISES = [
     image: null,
     order: 7,
   },
-  {
-    id: 'a1-8',
-    name: 'Rubber Band Pinky & Ring Finger',
-    group: 'arm-day1',
-    sets: 3,
-    reps: '15',
-    resistance: '1 band',
-    frequency: '3x/week',
-    instructions: 'Use a rubber band around your pinky and ring finger and perform the prescribed reps.',
-    image: null,
-    order: 8,
-  },
 
   // ── Arm Day 2 ──────────────────────────────────────────────────────────────
   {
@@ -145,6 +133,18 @@ const DEFAULT_EXERCISES = [
     instructions: 'Stand in front of a high pulley with a rope attached. With an overhand grip, press down the rope, keeping your elbows next to you. Only your forearms should move.',
     image: null,
     order: 4,
+  },
+  {
+    id: 'a2-5',
+    name: 'Rubber Band Pinky & Ring Finger',
+    group: 'arm-day2',
+    sets: 3,
+    reps: '15',
+    resistance: '1 band',
+    frequency: '3x/week',
+    instructions: 'Use a rubber band around your pinky and ring finger and perform the prescribed reps.',
+    image: null,
+    order: 5,
   },
 
   // ── Legs ───────────────────────────────────────────────────────────────────

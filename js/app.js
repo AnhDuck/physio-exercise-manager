@@ -11,32 +11,56 @@ document.addEventListener('DOMContentLoaded', () => {
   exercises = loadExercises();
   sessions  = loadSessions();
   settings  = loadSettings();
+  runMigrations();
   currentWeekStart = getMonday(new Date());
   render();
   bindStaticEvents();
 });
 
-// ── Arm day rotation ──────────────────────────────────────────────
-function getArmDayForDate(dateStr) {
-  // If this date's session already has an armDay locked in, use it.
-  if (sessions[dateStr]?.armDay) return sessions[dateStr].armDay;
-
-  // Otherwise, count how many past arm sessions are confirmed before this date.
-  const pastCount = Object.entries(sessions)
-    .filter(([d, s]) => d < dateStr && s.armDay)
-    .length;
-  return (settings.armSessionCount + pastCount) % 2 === 0 ? 'arm-day1' : 'arm-day2';
+// One-shot data migrations for existing localStorage installs
+function runMigrations() {
+  // Move "Rubber Band Pinky & Ring Finger" from Arm Day 1 → Arm Day 2
+  const pinky = exercises.find(e => e.id === 'a1-8');
+  if (pinky && pinky.group === 'arm-day1') {
+    pinky.group = 'arm-day2';
+    pinky.order = 5;
+    saveExercises(exercises);
+  }
 }
 
-// Called when user clicks a day-cell checkbox for an arm exercise.
-// Locks in the arm day for that date if not already set.
-function ensureArmDayLocked(dateStr) {
-  if (sessions[dateStr]?.armDay) return;
-  const armDay = getArmDayForDate(dateStr);
-  const s = sessions[dateStr] || { completedExercises: [] };
-  s.armDay = armDay;
-  sessions[dateStr] = s;
-  saveSession(dateStr, s);
+// ── Arm day rotation (pure calendar-based) ────────────────────────
+// Anchor: Friday May 1, 2026 = Day 1.
+// Each subsequent scheduled day (Mon/Wed/Fri) flips between Day 1 and Day 2.
+const ARM_ANCHOR_DATE = '2026-05-01';
+const ARM_ANCHOR_DAY  = 'arm-day1';
+
+function getArmDayForDate(dateStr) {
+  const date   = dateFromStr(dateStr);
+  const anchor = dateFromStr(ARM_ANCHOR_DATE);
+
+  // Count M/W/F days between anchor and date (anchor exclusive, date inclusive
+  // when going forward; mirror logic when going backward).
+  let mwfCount = 0;
+  if (date > anchor) {
+    const cursor = new Date(anchor);
+    cursor.setDate(cursor.getDate() + 1);
+    while (cursor <= date) {
+      const dow = cursor.getDay();
+      if (dow === 1 || dow === 3 || dow === 5) mwfCount++;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+  } else if (date < anchor) {
+    const cursor = new Date(anchor);
+    cursor.setDate(cursor.getDate() - 1);
+    while (cursor >= date) {
+      const dow = cursor.getDay();
+      if (dow === 1 || dow === 3 || dow === 5) mwfCount++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+  }
+  const flipped = mwfCount % 2 === 1;
+  if (!flipped) return ARM_ANCHOR_DAY;
+  return ARM_ANCHOR_DAY === 'arm-day1' ? 'arm-day2' : 'arm-day1';
 }
 
 // ── Week helpers ──────────────────────────────────────────────────
@@ -108,11 +132,11 @@ function buildColHeaders(dates, todayS) {
       const armDay = getArmDayForDate(dateS);
       const pillRow = el('div', 'day-pill-row');
       if (armDay === 'arm-day1') {
-        pillRow.appendChild(elText('span', 'day-pill pill-d1', 'D1'));
+        pillRow.appendChild(elText('span', 'day-pill pill-d1', 'Day 1'));
       } else {
-        pillRow.appendChild(elText('span', 'day-pill pill-d2', 'D2'));
+        pillRow.appendChild(elText('span', 'day-pill pill-d2', 'Day 2'));
       }
-      pillRow.appendChild(elText('span', 'day-pill pill-leg', 'LEG'));
+      pillRow.appendChild(elText('span', 'day-pill pill-leg', 'Legs'));
       cell.appendChild(pillRow);
     }
 
@@ -126,12 +150,16 @@ function buildColHeaders(dates, todayS) {
 function buildGroupSection(group, exs, dates, todayS) {
   const frag = document.createDocumentFragment();
   const cfg = GROUPS[group];
+  const isCollapsed = (settings.collapsedGroups || []).includes(group);
 
   // Section header
-  const header = el('div', 'group-header');
-  header.style.borderColor = cfg.color;
+  const header = el('div', 'group-header' + (isCollapsed ? ' collapsed' : ''));
+  header.style.borderTopColor = cfg.color;
+  header.title = isCollapsed ? 'Click to expand' : 'Click to collapse';
+  header.addEventListener('click', () => toggleGroupCollapse(group));
 
   const label = el('div', 'group-header-label');
+  label.appendChild(elText('span', 'collapse-chevron', '▼'));
   const dot = el('div', 'group-dot');
   dot.style.background = cfg.color;
   label.appendChild(dot);
@@ -146,6 +174,8 @@ function buildGroupSection(group, exs, dates, todayS) {
 
   frag.appendChild(header);
 
+  if (isCollapsed) return frag;
+
   // Exercise rows
   exs.forEach(ex => frag.appendChild(buildExerciseRow(ex, group, dates, todayS)));
 
@@ -159,6 +189,16 @@ function buildGroupSection(group, exs, dates, todayS) {
   frag.appendChild(addRow);
 
   return frag;
+}
+
+function toggleGroupCollapse(group) {
+  const collapsed = settings.collapsedGroups || [];
+  const idx = collapsed.indexOf(group);
+  if (idx === -1) collapsed.push(group);
+  else            collapsed.splice(idx, 1);
+  settings.collapsedGroups = collapsed;
+  saveSettings(settings);
+  render();
 }
 
 // ── Exercise row ──────────────────────────────────────────────────
@@ -243,7 +283,7 @@ function buildExerciseRow(ex, group, dates, todayS) {
     const btn = el('button', 'check-btn' + (done ? ' done' : ''));
     btn.textContent = done ? '✓' : '';
     btn.title = done ? 'Mark incomplete' : 'Mark complete';
-    btn.addEventListener('click', () => toggleComplete(ex.id, dateS, group));
+    btn.addEventListener('click', () => toggleComplete(ex.id, dateS));
 
     cell.appendChild(btn);
     row.appendChild(cell);
@@ -277,38 +317,13 @@ function buildSummaryRow(dates, todayS) {
 }
 
 // ── Toggle completion ─────────────────────────────────────────────
-function toggleComplete(exId, dateStr, group) {
-  const isArmEx = group === 'arm-day1' || group === 'arm-day2';
-  if (isArmEx) ensureArmDayLocked(dateStr);
-
+function toggleComplete(exId, dateStr) {
   const s = sessions[dateStr] || { completedExercises: [] };
   const idx = s.completedExercises.indexOf(exId);
-  if (idx === -1) {
-    s.completedExercises.push(exId);
-  } else {
-    s.completedExercises.splice(idx, 1);
-  }
+  if (idx === -1) s.completedExercises.push(exId);
+  else            s.completedExercises.splice(idx, 1);
   sessions[dateStr] = s;
   saveSession(dateStr, s);
-
-  // If all arm exercises for this date are now done, bump the arm session counter
-  if (isArmEx) {
-    const armDay = s.armDay || getArmDayForDate(dateStr);
-    const armExs = exercises.filter(e => e.group === armDay);
-    const allArmDone = armExs.every(e => s.completedExercises.includes(e.id));
-    if (allArmDone && !s.armSessionCounted) {
-      settings.armSessionCount++;
-      s.armSessionCounted = true;
-      saveSettings(settings);
-      saveSession(dateStr, s);
-    } else if (!allArmDone && s.armSessionCounted) {
-      settings.armSessionCount = Math.max(0, settings.armSessionCount - 1);
-      s.armSessionCounted = false;
-      saveSettings(settings);
-      saveSession(dateStr, s);
-    }
-  }
-
   render();
 }
 
