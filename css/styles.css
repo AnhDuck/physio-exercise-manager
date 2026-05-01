@@ -315,7 +315,6 @@ body {
 }
 
 .day-cell.today { background: rgba(99,179,237,.04); }
-.day-cell.dimmed { opacity: .3; pointer-events: none; }
 
 .check-btn {
   width: 38px; height: 38px;
