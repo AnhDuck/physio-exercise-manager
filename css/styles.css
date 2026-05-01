@@ -12,8 +12,8 @@
   --text-dim:     #4a5568;
   --accent-green: #48bb78;
   --thumb-size:   64px;
-  --day-col-w:    80px;
-  --label-col-w:  340px;
+  --day-col-w:    minmax(70px, 1fr);
+  --label-col-w:  minmax(280px, 360px);
 
   --c-day1: #4a90d9;
   --c-day2: #5ab89e;
@@ -88,7 +88,7 @@ body {
 }
 
 .grid-table {
-  min-width: calc(var(--label-col-w) + var(--day-col-w) * 7 + 32px);
+  min-width: 800px;
   width: 100%;
 }
 
