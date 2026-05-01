@@ -97,19 +97,25 @@ function buildColHeaders(dates, todayS) {
     const isToday = dateS === todayS;
     const cell = el('div', 'day-header' + (isToday ? ' today' : ''));
 
-    const armDay = getArmDayForDate(dateS);
-    const pillRow = el('div', 'day-pill-row');
-
-    if (armDay === 'arm-day1') {
-      pillRow.appendChild(elText('span', 'day-pill pill-d1', 'D1'));
-    } else {
-      pillRow.appendChild(elText('span', 'day-pill pill-d2', 'D2'));
-    }
-    pillRow.appendChild(elText('span', 'day-pill pill-leg', 'LEG'));
+    // Pills only on scheduled days: Mon (1), Wed (3), Fri (5)
+    const dow = date.getDay();
+    const isScheduledDay = dow === 1 || dow === 3 || dow === 5;
 
     cell.appendChild(elText('div', 'day-name', DAY_NAMES[i]));
     cell.appendChild(elText('div', 'day-date', String(date.getDate())));
-    cell.appendChild(pillRow);
+
+    if (isScheduledDay) {
+      const armDay = getArmDayForDate(dateS);
+      const pillRow = el('div', 'day-pill-row');
+      if (armDay === 'arm-day1') {
+        pillRow.appendChild(elText('span', 'day-pill pill-d1', 'D1'));
+      } else {
+        pillRow.appendChild(elText('span', 'day-pill pill-d2', 'D2'));
+      }
+      pillRow.appendChild(elText('span', 'day-pill pill-leg', 'LEG'));
+      cell.appendChild(pillRow);
+    }
+
     row.appendChild(cell);
   });
 

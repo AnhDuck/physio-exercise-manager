@@ -43,9 +43,12 @@ function saveSettings(settings) {
   localStorage.setItem(KEYS.SETTINGS, JSON.stringify(settings));
 }
 
-// ISO date string helpers
+// ISO date string helpers — uses LOCAL time (not UTC) so dates match what the user sees
 function toDateStr(date) {
-  return date.toISOString().slice(0, 10);
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 function dateFromStr(str) {
