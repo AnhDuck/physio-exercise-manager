@@ -271,12 +271,8 @@ function buildExerciseRow(ex, group, dates, todayS) {
   dates.forEach((date) => {
     const dateS = toDateStr(date);
     const isToday = dateS === todayS;
-    const armDayForDate = getArmDayForDate(dateS);
-    const isArmEx = group === 'arm-day1' || group === 'arm-day2';
-    // Dim arm exercises that don't belong to this day's arm rotation
-    const dimmed = isArmEx && group !== armDayForDate;
 
-    const cell = el('div', 'day-cell' + (isToday ? ' today' : '') + (dimmed ? ' dimmed' : ''));
+    const cell = el('div', 'day-cell' + (isToday ? ' today' : ''));
     const session = sessions[dateS] || {};
     const done = (session.completedExercises || []).includes(ex.id);
 
@@ -300,10 +296,7 @@ function buildSummaryRow(dates, todayS) {
   dates.forEach((date) => {
     const dateS = toDateStr(date);
     const isToday = dateS === todayS;
-    const armDay = getArmDayForDate(dateS);
-    const relevantExs = exercises.filter(e =>
-      e.group === 'legs' || e.group === armDay
-    );
+    const relevantExs = exercises;
     const done = relevantExs.filter(e =>
       (sessions[dateS]?.completedExercises || []).includes(e.id)
     ).length;
