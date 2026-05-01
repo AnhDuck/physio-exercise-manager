@@ -109,6 +109,7 @@ function render() {
   }
 
   app.appendChild(buildSummaryRow(dates, todayS));
+  updateCompactHeader();
 }
 
 // ── Column headers ────────────────────────────────────────────────
@@ -155,6 +156,7 @@ function buildGroupSection(group, exs, dates, todayS) {
   // Section header
   const header = el('div', 'group-header' + (isCollapsed ? ' collapsed' : ''));
   header.style.borderTopColor = cfg.color;
+  if (group === 'arm-day1') header.style.marginTop = '0';
   header.title = isCollapsed ? 'Click to expand' : 'Click to collapse';
   header.addEventListener('click', () => toggleGroupCollapse(group));
 
@@ -450,11 +452,18 @@ function goToToday() {
   render();
 }
 
+// ── Compact col-header on scroll ──────────────────────────────────
+function updateCompactHeader() {
+  const colHeader = document.querySelector('.col-header-row');
+  if (colHeader) colHeader.classList.toggle('compact', window.scrollY > 0);
+}
+
 // ── Static event bindings ─────────────────────────────────────────
 function bindStaticEvents() {
   document.getElementById('btn-prev-week').addEventListener('click', prevWeek);
   document.getElementById('btn-next-week').addEventListener('click', nextWeek);
   document.getElementById('btn-today').addEventListener('click', goToToday);
+  window.addEventListener('scroll', updateCompactHeader, { passive: true });
 
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
   document.getElementById('modal-save').addEventListener('click', saveExerciseModal);
