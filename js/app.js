@@ -6,6 +6,7 @@ let events    = [];
 let currentWeekStart = null; // Monday of displayed week (Date)
 let editingExId = null;      // exercise id being edited in modal
 let uploadTargetId = null;   // exercise id awaiting image upload
+let isDenseMode = false;     // temporary compact scan view
 let imageImportPending = false;
 let editingEventId = null;
 let lastTodayStr = null;
@@ -114,6 +115,7 @@ function render() {
 
   const app = document.getElementById('app');
   app.innerHTML = '';
+  document.body.classList.toggle('dense-mode', isDenseMode);
 
   app.appendChild(buildColHeaders(dates, todayS));
 
@@ -135,7 +137,10 @@ function render() {
 function buildColHeaders(dates, todayS) {
   const row = el('div', 'col-header-row');
   const spacer = el('div', 'spacer');
-  spacer.appendChild(buildTimerWidget());
+  const tools = el('div', 'header-tools');
+  tools.appendChild(buildDenseToggle());
+  tools.appendChild(buildTimerWidget());
+  spacer.appendChild(tools);
   row.appendChild(spacer);
 
   dates.forEach((date, i) => {
@@ -177,14 +182,16 @@ function buildColHeaders(dates, todayS) {
 function buildGroupSection(group, exs, dates, todayS, startNumber) {
   const frag = document.createDocumentFragment();
   const cfg = GROUPS[group];
-  const isCollapsed = (settings.collapsedGroups || []).includes(group);
+  const isCollapsed = !isDenseMode && (settings.collapsedGroups || []).includes(group);
 
   // Section header
   const header = el('div', 'group-header' + (isCollapsed ? ' collapsed' : ''));
   header.dataset.group = group;
   header.style.borderTopColor = cfg.color;
   if (group === 'arm-day1') header.style.marginTop = '0';
-  header.title = isCollapsed ? 'Click to expand' : 'Click to collapse';
+  header.title = isDenseMode
+    ? 'Dense view keeps all groups open'
+    : (isCollapsed ? 'Click to expand' : 'Click to collapse');
   header.addEventListener('click', () => toggleGroupCollapse(group));
   header.addEventListener('dragover', handleExerciseDragOver);
   header.addEventListener('dragleave', clearDropPosition);
@@ -228,6 +235,7 @@ function buildGroupSection(group, exs, dates, todayS, startNumber) {
 }
 
 function toggleGroupCollapse(group) {
+  if (isDenseMode) return;
   const collapsed = settings.collapsedGroups || [];
   const idx = collapsed.indexOf(group);
   if (idx === -1) collapsed.push(group);
@@ -370,15 +378,15 @@ function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
   info.appendChild(nameRow);
 
   const meta = el('div', 'ex-meta');
-  meta.appendChild(elText('span', '', `Sets: ${ex.sets}`));
-  meta.appendChild(elText('span', 'sep', '/'));
-  meta.appendChild(elText('span', '', `Reps: ${ex.reps}`));
+  meta.appendChild(elText('span', 'ex-meta-item ex-meta-sets', `Sets: ${ex.sets}`));
+  meta.appendChild(elText('span', 'sep ex-meta-sep', '/'));
+  meta.appendChild(elText('span', 'ex-meta-item ex-meta-reps', `Reps: ${ex.reps}`));
   if (ex.resistance) {
-    meta.appendChild(elText('span', 'sep', '/'));
-    meta.appendChild(elText('span', '', `Resistance: ${ex.resistance}`));
+    meta.appendChild(elText('span', 'sep ex-meta-sep', '/'));
+    meta.appendChild(elText('span', 'ex-meta-item ex-meta-resistance', `Resistance: ${ex.resistance}`));
   }
-  meta.appendChild(elText('span', 'sep', '/'));
-  meta.appendChild(elText('span', '', ex.frequency));
+  meta.appendChild(elText('span', 'sep ex-meta-sep', '/'));
+  meta.appendChild(elText('span', 'ex-meta-item ex-meta-frequency', ex.frequency));
   info.appendChild(meta);
 
   let instrText = null;
@@ -993,6 +1001,16 @@ function buildTimerWidget() {
   return wrap;
 }
 
+function buildDenseToggle() {
+  const label = isDenseMode ? 'Normal View' : 'Dense View';
+  const btn = elText('button', 'dense-toggle-btn' + (isDenseMode ? ' active' : ''), label);
+  btn.type = 'button';
+  btn.title = isDenseMode ? 'Return to normal row height' : 'Compress rows to scan all exercises';
+  btn.setAttribute('aria-pressed', isDenseMode ? 'true' : 'false');
+  btn.addEventListener('click', toggleDenseMode);
+  return btn;
+}
+
 function makeTimerBtns() {
   const btns = el('div', 'timer-btns');
   if (timerState === 'idle') {
@@ -1011,6 +1029,11 @@ function timerBtn(label, cls, handler) {
   const b = elText('button', 'timer-btn ' + cls, label);
   b.addEventListener('click', handler);
   return b;
+}
+
+function toggleDenseMode() {
+  isDenseMode = !isDenseMode;
+  render();
 }
 
 function refreshTimerBtns() {
@@ -1297,7 +1320,7 @@ function goToToday() {
 // ── Compact col-header on scroll ──────────────────────────────────
 function updateCompactHeader() {
   const colHeader = document.querySelector('.col-header-row');
-  if (colHeader) colHeader.classList.toggle('compact', window.scrollY > 0);
+  if (colHeader) colHeader.classList.toggle('compact', isDenseMode || window.scrollY > 0);
 }
 
 // ── Static event bindings ─────────────────────────────────────────

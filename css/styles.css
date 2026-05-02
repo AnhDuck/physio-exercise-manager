@@ -421,6 +421,13 @@ body.notes-open .grid-table {
 
 .col-header-row .spacer { padding: 10px 16px; }
 
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .day-header {
   display: flex;
   flex-direction: column;
@@ -744,6 +751,119 @@ body.notes-open .grid-table {
 
 .add-exercise-btn:hover { color: var(--text); }
 
+body.dense-mode .group-header {
+  margin-top: 6px;
+  border-top-width: 3px;
+}
+
+body.dense-mode .group-header-label {
+  padding: 7px 12px;
+  font-size: 12px;
+  gap: 7px;
+  letter-spacing: .5px;
+}
+
+body.dense-mode .collapse-chevron {
+  width: 11px;
+  font-size: 10px;
+}
+
+body.dense-mode .group-dot {
+  width: 9px;
+  height: 9px;
+}
+
+body.dense-mode .exercise-row:hover {
+  background: rgba(255,255,255,.015);
+}
+
+body.dense-mode .ex-label {
+  gap: 6px;
+  padding: 4px 8px;
+  min-height: 48px;
+  flex-wrap: nowrap;
+}
+
+body.dense-mode .drag-handle {
+  width: 18px;
+  height: 24px;
+  font-size: 13px;
+}
+
+body.dense-mode .ex-thumb {
+  width: 34px;
+  height: 34px;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+body.dense-mode .ex-thumb img {
+  border-radius: 4px;
+}
+
+body.dense-mode .ex-info {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+body.dense-mode .ex-name-row {
+  margin-bottom: 0;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+body.dense-mode .ex-number {
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+}
+
+body.dense-mode .ex-name {
+  font-size: 13px;
+  line-height: 1.1;
+}
+
+body.dense-mode .ex-meta {
+  flex-wrap: nowrap;
+  gap: 0;
+  font-size: 11px;
+  line-height: 1.1;
+  flex-shrink: 0;
+}
+
+body.dense-mode .ex-meta-sets,
+body.dense-mode .ex-meta-reps,
+body.dense-mode .ex-meta-resistance,
+body.dense-mode .ex-meta-sep,
+body.dense-mode .ex-actions,
+body.dense-mode .instructions-text,
+body.dense-mode .add-exercise-row,
+body.dense-mode .summary-row {
+  display: none !important;
+}
+
+body.dense-mode .day-cell {
+  min-height: 48px;
+}
+
+body.dense-mode .check-btn {
+  width: 28px;
+  height: 28px;
+  border-width: 2px;
+  font-size: 15px;
+}
+
+body.dense-mode .dose-marker {
+  right: 4px;
+  bottom: 4px;
+  min-width: 14px;
+  height: 14px;
+  font-size: 9px;
+}
+
 /* ── Modal overlay ───────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed;
@@ -1037,6 +1157,30 @@ body.notes-open .grid-table {
 .timer-btn-stop    { background: #7a3020; color: #fff; }
 .timer-btn-restart { background: #555; color: #fff; }
 .timer-btn-save    { background: #2b4a7a; color: #fff; }
+
+.dense-toggle-btn {
+  background: #334155;
+  border: 1px solid #4c617d;
+  color: #e8f1ff;
+  padding: 6px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  transition: opacity .15s, background .15s;
+}
+
+.dense-toggle-btn:hover {
+  opacity: .88;
+}
+
+.dense-toggle-btn.active {
+  background: #1f4f46;
+  border-color: #2f8f7a;
+  color: #e8fff8;
+}
 
 /* ── Settings button ─────────────────────────────────────────────── */
 .btn-settings {
