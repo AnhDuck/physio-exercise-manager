@@ -43,6 +43,11 @@ pem_sessions   → JSON object { "YYYY-MM-DD": Session }
 pem_settings   → JSON object (Settings)
 ```
 
+Timeline history key:
+```
+pem_events     -> JSON array of timestamped history events
+```
+
 ### Exercise object
 ```js
 {
@@ -73,11 +78,29 @@ pem_settings   → JSON object (Settings)
 {
   armSessionCount: number,  // total arm sessions fully completed
   createdAt:       string,  // ISO date of first launch
+  notesOpen:       boolean | undefined, // left timeline panel state
+}
+```
+
+### Event object
+```js
+{
+  id:           string,
+  type:         "note" | "dose-change" | "exercise-added",
+  date:         string, // YYYY-MM-DD
+  time:         string, // HH:mm
+  exerciseId:   string | undefined,
+  exerciseName: string | undefined,
+  text:         string | undefined, // note only
+  annotation:   string | undefined, // optional note on history events
+  changes:      object | undefined, // dose-change only
+  createdAt:    string,
+  updatedAt:    string | undefined,
 }
 ```
 
 ## Adding or editing exercises
-- **In the UI**: click the ✎ pencil icon on any exercise row, or click "+ Add exercise" at the bottom of a group.
+- **In the UI**: click the Edit button on any exercise row, or click "+ Add exercise" at the bottom of a group.
 - **In code**: edit the `DEFAULT_EXERCISES` array in `data.js`. These defaults only apply on first launch (when `pem_exercises` doesn't exist in localStorage). To force a reset, open DevTools → Application → Local Storage → delete all `pem_*` keys.
 
 ## Resetting data
