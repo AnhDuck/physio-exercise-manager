@@ -1377,6 +1377,15 @@ body.dense-mode .dose-marker {
 }
 
 .set-tracker-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 18px;
+  row-gap: 7px;
+  align-items: end;
+  min-width: 0;
+}
+
+.set-tracker-info {
   min-width: 0;
 }
 
@@ -1394,11 +1403,11 @@ body.dense-mode .dose-marker {
   font-weight: 800;
   line-height: 1.15;
   margin-top: 2px;
+  overflow-wrap: anywhere;
 }
 
 .set-tracker-meta,
 .set-tracker-recency,
-.set-tracker-timer,
 .set-tracker-help {
   color: var(--text-muted);
   font-size: 13px;
@@ -1407,13 +1416,55 @@ body.dense-mode .dose-marker {
 }
 
 .set-tracker-timer {
-  color: #e8eaed;
+  display: grid;
+  justify-items: end;
+  align-content: end;
+  min-width: 94px;
+  color: var(--text);
+  text-align: right;
+}
+
+.set-tracker-timer-label {
+  color: var(--tracker-color);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .6px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.set-tracker-timer-value {
+  color: #f8fafc;
+  font-size: 30px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  line-height: .98;
+  margin-top: 3px;
+  white-space: nowrap;
+}
+
+.set-tracker-timer-detail {
+  color: var(--text-muted);
+  font-size: 11px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+.set-tracker-footer {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
 }
 
 .set-tracker-recency {
   color: var(--text-dim);
+  flex: 0 0 auto;
   font-weight: 700;
 }
 
@@ -1421,6 +1472,7 @@ body.dense-mode .dose-marker {
   color: #cbd5e1;
   font-size: 12px;
   font-weight: 700;
+  min-width: 0;
 }
 
 .set-tracker-progress {
@@ -1574,7 +1626,27 @@ body.dense-mode .dose-marker {
     grid-template-columns: 1fr;
   }
 
+  .set-tracker-timer-value {
+    font-size: 28px;
+  }
+
   .set-action-primary {
     min-width: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .set-tracker-main {
+    grid-template-columns: 1fr;
+  }
+
+  .set-tracker-timer {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .set-tracker-footer {
+    display: grid;
+    gap: 3px;
   }
 }

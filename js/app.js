@@ -873,12 +873,23 @@ function renderSetTracker() {
   panel.style.setProperty('--tracker-color', GROUPS[ex.group]?.color || 'var(--accent-green)');
 
   const main = el('div', 'set-tracker-main');
-  main.appendChild(elText('div', 'set-tracker-kicker', dateStr === todayStr() ? 'Active today' : dateStr));
-  main.appendChild(elText('div', 'set-tracker-name', ex.name));
-  main.appendChild(elText('div', 'set-tracker-meta', `${progress.completedSets}/${progress.targetSets} sets | ${ex.reps} reps${ex.resistance ? ` | ${ex.resistance}` : ''}`));
-  main.appendChild(elText('div', 'set-tracker-timer', trackerTimerText(progress)));
-  main.appendChild(elText('div', 'set-tracker-recency', trackerStatusText(progress)));
-  main.appendChild(elText('div', 'set-tracker-help', 'Arrow keys adjust sets | Double-click checkmark to complete all sets'));
+  const info = el('div', 'set-tracker-info');
+  info.appendChild(elText('div', 'set-tracker-kicker', dateStr === todayStr() ? 'Active today' : dateStr));
+  info.appendChild(elText('div', 'set-tracker-name', ex.name));
+  info.appendChild(elText('div', 'set-tracker-meta', `${progress.completedSets}/${progress.targetSets} sets | ${ex.reps} reps${ex.resistance ? ` | ${ex.resistance}` : ''}`));
+  main.appendChild(info);
+
+  const timer = el('div', 'set-tracker-timer');
+  timer.appendChild(elText('div', 'set-tracker-timer-label', 'Timer'));
+  timer.appendChild(elText('div', 'set-tracker-timer-value', trackerTimerValue(progress)));
+  const timerDetail = trackerTimerDetail(progress);
+  if (timerDetail) timer.appendChild(elText('div', 'set-tracker-timer-detail', timerDetail));
+  main.appendChild(timer);
+
+  const footer = el('div', 'set-tracker-footer');
+  footer.appendChild(elText('div', 'set-tracker-recency', trackerStatusText(progress)));
+  footer.appendChild(elText('div', 'set-tracker-help', 'Arrow keys adjust sets | Double-click checkmark to complete all sets'));
+  main.appendChild(footer);
   panel.appendChild(main);
 
   const progressWrap = el('div', 'set-tracker-progress');
@@ -919,8 +930,12 @@ function formatLastLogged(iso) {
   return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
-function trackerTimerText(progress) {
-  const parts = [`Timer ${fmtShortDuration(activeElapsedSeconds(progress))}`];
+function trackerTimerValue(progress) {
+  return fmtShortDuration(activeElapsedSeconds(progress));
+}
+
+function trackerTimerDetail(progress) {
+  const parts = [];
   const lastDuration = progress.setDurations[progress.completedSets - 1];
   if (lastDuration !== undefined) parts.push(`last set ${fmtShortDuration(lastDuration)}`);
   if (progress.timerCapped) parts.push('stopped at 60m');
