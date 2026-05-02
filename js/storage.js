@@ -34,11 +34,22 @@ function saveSession(dateStr, sessionData) {
 function loadSettings() {
   const raw = localStorage.getItem(KEYS.SETTINGS);
   if (!raw) {
-    const defaults = { armSessionCount: 0, createdAt: toDateStr(new Date()) };
+    const defaults = {
+      armSessionCount: 0,
+      createdAt: toDateStr(new Date()),
+      setCueSound: true,
+      setCueVibrate: true,
+      setCueSpeech: false,
+    };
     saveSettings(defaults);
     return defaults;
   }
-  return JSON.parse(raw);
+  return {
+    setCueSound: true,
+    setCueVibrate: true,
+    setCueSpeech: false,
+    ...JSON.parse(raw),
+  };
 }
 
 function saveSettings(settings) {

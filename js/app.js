@@ -10,6 +10,9 @@ let isDenseMode = false;     // compact scan view, persisted in settings
 let imageImportPending = false;
 let editingEventId = null;
 let lastTodayStr = null;
+let activeTracker = null;    // { exerciseId, dateStr }
+let lastSetLogAt = 0;
+let cueAudioContext = null;
 
 // ── Timer state ───────────────────────────────────────────────────
 let timerState    = 'idle';  // 'idle' | 'running' | 'paused'
@@ -26,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   runMigrations();
   currentWeekStart = getMonday(new Date());
   lastTodayStr = todayStr();
+  restoreActiveTracker();
   render();
   bindStaticEvents();
   renderNotesPanel();
@@ -100,6 +104,7 @@ function weekDates(monday) {
 const DAY_NAMES  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const GROUP_ORDER = ['arm-day1', 'arm-day2', 'legs'];
+const SET_TIMER_CAP_SECONDS = 60 * 60;
 
 let draggedExerciseId = null;
 
@@ -117,6 +122,7 @@ function render() {
   const app = document.getElementById('app');
   app.innerHTML = '';
   document.body.classList.toggle('dense-mode', isDenseMode);
+  document.body.classList.toggle('set-tracker-open', Boolean(activeTracker));
 
   app.appendChild(buildColHeaders(dates, todayS));
 
@@ -131,6 +137,7 @@ function render() {
 
   app.appendChild(buildSummaryRow(dates, todayS));
   updateCompactHeader();
+  renderSetTracker();
   renderNotesPanel();
 }
 
@@ -140,7 +147,6 @@ function buildColHeaders(dates, todayS) {
   const spacer = el('div', 'spacer');
   const tools = el('div', 'header-tools');
   tools.appendChild(buildDenseToggle());
-  tools.appendChild(buildTimerWidget());
   spacer.appendChild(tools);
   row.appendChild(spacer);
 
@@ -428,17 +434,26 @@ function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
     const dateS = toDateStr(date);
     const isToday = dateS === todayS;
 
-    const cell = el('div', 'day-cell' + (isToday ? ' today' : ''));
-    const session = sessions[dateS] || {};
-    const done = (session.completedExercises || []).includes(ex.id);
+    const progress = getSetProgress(dateS, ex.id);
+    const done = isExerciseDone(dateS, ex.id);
+    const isActive = activeTracker?.dateStr === dateS && activeTracker?.exerciseId === ex.id;
+    const cell = el('div', 'day-cell' + (isToday ? ' today' : '') + (isActive ? ' active-tracked' : ''));
+    cell.dataset.exId = ex.id;
+    cell.dataset.dateStr = dateS;
     const doseEvents = events.filter(ev =>
       ev.type === 'dose-change' && ev.date === dateS && ev.exerciseId === ex.id
     );
 
-    const btn = el('button', 'check-btn' + (done ? ' done' : ''));
-    btn.innerHTML = done ? '&#10003;' : '';
-    btn.title = done ? 'Mark incomplete' : 'Mark complete';
-    btn.addEventListener('click', () => toggleComplete(ex.id, dateS));
+    const btn = el('button', 'check-btn set-cell-btn' + (done ? ' done' : '') + (progress && !done ? ' in-progress' : ''));
+    btn.title = isActive ? 'Complete all sets' : (done ? 'Open tracker' : 'Track sets');
+    btn.addEventListener('click', () => handleSetCellClick(ex.id, dateS));
+    if (done) {
+      btn.innerHTML = '&#10003;';
+    } else if (progress) {
+      btn.appendChild(elText('span', 'set-progress-text', `${progress.completedSets}/${progress.targetSets}`));
+    } else {
+      btn.innerHTML = '';
+    }
 
     cell.appendChild(btn);
     if (doseEvents.length) {
@@ -496,9 +511,7 @@ function buildSummaryRow(dates, todayS) {
     const dateS = toDateStr(date);
     const isToday = dateS === todayS;
     const relevantExs = exercises;
-    const done = relevantExs.filter(e =>
-      (sessions[dateS]?.completedExercises || []).includes(e.id)
-    ).length;
+    const done = relevantExs.filter(e => isExerciseDone(dateS, e.id)).length;
     const pct = relevantExs.length === 0 ? 0 : Math.round(done / relevantExs.length * 100);
     const cell = el('div', 'summary-pct' + (isToday ? ' today' : '') + (pct === 100 ? ' full' : ''));
     cell.textContent = pct + '%';
@@ -517,6 +530,460 @@ function toggleComplete(exId, dateStr) {
   sessions[dateStr] = s;
   saveSession(dateStr, s);
   render();
+}
+
+function restoreActiveTracker() {
+  const todayS = todayStr();
+  const s = sessions[todayS];
+  const exId = s?.activeExerciseId;
+  if (!exId || !exercises.some(ex => ex.id === exId)) return;
+  if (isExerciseDone(todayS, exId)) {
+    delete s.activeExerciseId;
+    saveSession(todayS, s);
+    return;
+  }
+  activeTracker = { exerciseId: exId, dateStr: todayS };
+}
+
+function getSessionForEdit(dateStr) {
+  const s = sessions[dateStr] || {};
+  if (!Array.isArray(s.completedExercises)) s.completedExercises = [];
+  if (!s.setProgress || typeof s.setProgress !== 'object') s.setProgress = {};
+  sessions[dateStr] = s;
+  return s;
+}
+
+function targetSetsForExercise(ex) {
+  const sets = Number.parseInt(ex?.sets, 10);
+  return Number.isFinite(sets) && sets > 0 ? sets : 1;
+}
+
+function getSetProgress(dateStr, exId) {
+  const progress = sessions[dateStr]?.setProgress?.[exId];
+  if (!progress) return null;
+  const ex = exercises.find(item => item.id === exId);
+  return normalizeSetProgress(progress, ex);
+}
+
+function isProgressComplete(progress) {
+  return Boolean(progress?.completedAt || progress?.finishedEarly || progress?.completedSets >= progress?.targetSets);
+}
+
+function isExerciseDone(dateStr, exId) {
+  const progress = getSetProgress(dateStr, exId);
+  return isProgressComplete(progress) || (sessions[dateStr]?.completedExercises || []).includes(exId);
+}
+
+function setCompletion(dateStr, exId, complete) {
+  const s = getSessionForEdit(dateStr);
+  const idx = s.completedExercises.indexOf(exId);
+  if (complete && idx === -1) s.completedExercises.push(exId);
+  if (!complete && idx !== -1) s.completedExercises.splice(idx, 1);
+}
+
+function handleSetCellClick(exId, dateStr) {
+  if (isExerciseDone(dateStr, exId) && !(activeTracker?.exerciseId === exId && activeTracker?.dateStr === dateStr)) {
+    clearExerciseProgress(exId, dateStr);
+    return;
+  }
+  if (activeTracker?.exerciseId === exId && activeTracker?.dateStr === dateStr) {
+    completeActiveExercise();
+    return;
+  }
+  openSetTracker(exId, dateStr);
+}
+
+function normalizeSetProgress(progress, ex) {
+  const targetSets = targetSetsForExercise(ex);
+  return {
+    completedSets: Math.min(targetSets, Math.max(0, Number(progress?.completedSets) || 0)),
+    targetSets,
+    startedAt: progress?.startedAt,
+    updatedAt: progress?.updatedAt,
+    completedAt: progress?.completedAt || null,
+    finishedEarly: Boolean(progress?.finishedEarly),
+    setDurations: Array.isArray(progress?.setDurations)
+      ? progress.setDurations.map(value => Math.max(0, Number(value) || 0))
+      : [],
+    timerStartedAt: progress?.timerStartedAt || null,
+    elapsedSeconds: Math.max(0, Number(progress?.elapsedSeconds) || 0),
+    timerStoppedAt: progress?.timerStoppedAt || null,
+    timerCapped: Boolean(progress?.timerCapped),
+  };
+}
+
+function activeElapsedSeconds(progress, now = new Date()) {
+  const base = Math.max(0, Number(progress.elapsedSeconds) || 0);
+  if (!progress.timerStartedAt || progress.timerStoppedAt || progress.timerCapped || isProgressComplete(progress)) {
+    return Math.min(base, SET_TIMER_CAP_SECONDS);
+  }
+  const running = Math.max(0, Math.floor((now.getTime() - new Date(progress.timerStartedAt).getTime()) / 1000));
+  return Math.min(base + running, SET_TIMER_CAP_SECONDS);
+}
+
+function currentTimerSegmentSeconds(progress, now = new Date()) {
+  if (!progress.timerStartedAt || progress.timerStoppedAt || progress.timerCapped) return 0;
+  return Math.max(0, Math.floor((now.getTime() - new Date(progress.timerStartedAt).getTime()) / 1000));
+}
+
+function startSetTimer(progress, now = new Date()) {
+  if (isProgressComplete(progress) || progress.timerCapped) return progress;
+  progress.timerStartedAt = now.toISOString();
+  progress.timerStoppedAt = null;
+  return progress;
+}
+
+function stopSetTimer(progress, now = new Date()) {
+  if (progress.timerStartedAt && !progress.timerStoppedAt && !progress.timerCapped) {
+    progress.elapsedSeconds = Math.min(
+      SET_TIMER_CAP_SECONDS,
+      progress.elapsedSeconds + currentTimerSegmentSeconds(progress, now)
+    );
+  }
+  progress.timerStartedAt = null;
+  progress.timerStoppedAt = now.toISOString();
+  return progress;
+}
+
+function enforceTimerCap(progress, now = new Date()) {
+  if (activeElapsedSeconds(progress, now) < SET_TIMER_CAP_SECONDS || progress.timerCapped) return false;
+  progress.elapsedSeconds = SET_TIMER_CAP_SECONDS;
+  progress.timerStartedAt = null;
+  progress.timerStoppedAt = now.toISOString();
+  progress.timerCapped = true;
+  return true;
+}
+
+function openSetTracker(exId, dateStr) {
+  const ex = exercises.find(item => item.id === exId);
+  if (!ex) return;
+  const s = getSessionForEdit(dateStr);
+  if (!s.setProgress[exId]) {
+    const now = new Date().toISOString();
+    const wasComplete = s.completedExercises.includes(exId);
+    const targetSets = targetSetsForExercise(ex);
+    s.setProgress[exId] = {
+      completedSets: wasComplete ? targetSets : 0,
+      targetSets,
+      startedAt: now,
+      updatedAt: now,
+      completedAt: wasComplete ? now : null,
+      finishedEarly: false,
+      setDurations: [],
+      timerStartedAt: wasComplete ? null : now,
+      elapsedSeconds: 0,
+      timerStoppedAt: wasComplete ? now : null,
+      timerCapped: false,
+    };
+  } else {
+    s.setProgress[exId] = normalizeSetProgress(s.setProgress[exId], ex);
+    if (!isProgressComplete(s.setProgress[exId]) && !s.setProgress[exId].timerStartedAt && !s.setProgress[exId].timerCapped) {
+      startSetTimer(s.setProgress[exId]);
+    }
+  }
+  s.activeExerciseId = exId;
+  activeTracker = { exerciseId: exId, dateStr };
+  saveSession(dateStr, s);
+  render();
+  window.setTimeout(() => scrollActiveCellIntoView(exId, dateStr), 0);
+}
+
+function logSet() {
+  const current = getActiveTrackerParts();
+  if (!current) return;
+  const nowMs = Date.now();
+  if (nowMs - lastSetLogAt < 450) return;
+  lastSetLogAt = nowMs;
+
+  const { ex, dateStr, session, progress } = current;
+  const now = new Date();
+  enforceTimerCap(progress, now);
+  if (progress.timerCapped || isProgressComplete(progress)) {
+    session.setProgress[ex.id] = progress;
+    saveSession(dateStr, session);
+    render();
+    return;
+  }
+  const setDuration = currentTimerSegmentSeconds(progress, now);
+  progress.setDurations[progress.completedSets] = setDuration;
+  progress.elapsedSeconds = Math.min(SET_TIMER_CAP_SECONDS, progress.elapsedSeconds + setDuration);
+  progress.completedSets = Math.min(progress.targetSets, progress.completedSets + 1);
+  progress.updatedAt = now.toISOString();
+  progress.finishedEarly = false;
+  if (progress.completedSets >= progress.targetSets) {
+    progress.completedAt = progress.updatedAt;
+    progress.timerStartedAt = null;
+    progress.timerStoppedAt = progress.updatedAt;
+    setCompletion(dateStr, ex.id, true);
+  } else {
+    progress.completedAt = null;
+    if (!progress.timerCapped) startSetTimer(progress, now);
+    setCompletion(dateStr, ex.id, false);
+  }
+  session.setProgress[ex.id] = progress;
+  saveSession(dateStr, session);
+  playSetCue(progress.completedSets);
+  render();
+}
+
+function completeActiveExercise() {
+  const current = getActiveTrackerParts();
+  if (!current) return;
+  const { ex, dateStr, session, progress } = current;
+  const now = new Date();
+  enforceTimerCap(progress, now);
+  stopSetTimer(progress, now);
+  progress.completedSets = progress.targetSets;
+  progress.updatedAt = now.toISOString();
+  progress.completedAt = progress.updatedAt;
+  progress.finishedEarly = false;
+  session.setProgress[ex.id] = progress;
+  setCompletion(dateStr, ex.id, true);
+  saveSession(dateStr, session);
+  playFinishCue();
+  render();
+}
+
+function doneActiveExercise() {
+  const current = getActiveTrackerParts();
+  if (!current) return;
+  const { ex, dateStr, session, progress } = current;
+  const now = new Date();
+  enforceTimerCap(progress, now);
+  stopSetTimer(progress, now);
+  progress.updatedAt = now.toISOString();
+  progress.finishedEarly = false;
+  if (progress.completedSets >= progress.targetSets) {
+    progress.completedAt = progress.updatedAt;
+    setCompletion(dateStr, ex.id, true);
+  } else {
+    progress.completedAt = null;
+    setCompletion(dateStr, ex.id, false);
+  }
+  session.setProgress[ex.id] = progress;
+  delete session.activeExerciseId;
+  saveSession(dateStr, session);
+  activeTracker = null;
+  render();
+}
+
+function decrementActiveSet() {
+  const current = getActiveTrackerParts();
+  if (!current) return;
+  const { ex, dateStr, session, progress } = current;
+  if (progress.completedAt || progress.finishedEarly) {
+    progress.completedAt = null;
+    progress.finishedEarly = false;
+    progress.completedSets = Math.max(0, progress.completedSets - 1);
+    progress.setDurations.splice(progress.completedSets, 1);
+    if (!progress.timerStartedAt && !progress.timerCapped) startSetTimer(progress);
+  } else if (progress.completedSets >= progress.targetSets) {
+    progress.completedSets = Math.max(0, progress.completedSets - 1);
+    progress.setDurations.splice(progress.completedSets, 1);
+    if (!progress.timerStartedAt && !progress.timerCapped) startSetTimer(progress);
+  } else {
+    progress.completedSets = Math.max(0, progress.completedSets - 1);
+    progress.setDurations.splice(progress.completedSets, 1);
+    if (!progress.timerStartedAt && !progress.timerCapped) startSetTimer(progress);
+  }
+  progress.updatedAt = new Date().toISOString();
+  session.setProgress[ex.id] = progress;
+  setCompletion(dateStr, ex.id, false);
+  saveSession(dateStr, session);
+  render();
+}
+
+function clearActiveProgress() {
+  const current = getActiveTrackerParts();
+  if (!current) return;
+  clearExerciseProgress(current.ex.id, current.dateStr);
+}
+
+function clearExerciseProgress(exId, dateStr) {
+  const session = getSessionForEdit(dateStr);
+  delete session.setProgress[exId];
+  if (session.activeExerciseId === exId) delete session.activeExerciseId;
+  setCompletion(dateStr, exId, false);
+  saveSession(dateStr, session);
+  if (activeTracker?.exerciseId === exId && activeTracker?.dateStr === dateStr) activeTracker = null;
+  render();
+}
+
+function closeSetTracker() {
+  if (activeTracker?.dateStr) {
+    const s = getSessionForEdit(activeTracker.dateStr);
+    delete s.activeExerciseId;
+    saveSession(activeTracker.dateStr, s);
+  }
+  activeTracker = null;
+  render();
+}
+
+function scrollActiveCellIntoView(exId, dateStr) {
+  const escapeIdent = window.CSS?.escape || ((value) => String(value).replace(/"/g, '\\"'));
+  const selector = `.day-cell[data-ex-id="${escapeIdent(exId)}"][data-date-str="${escapeIdent(dateStr)}"]`;
+  const cell = document.querySelector(selector);
+  const tracker = document.querySelector('.set-tracker');
+  if (!cell || !tracker) return;
+
+  const cellRect = cell.getBoundingClientRect();
+  const trackerRect = tracker.getBoundingClientRect();
+  const overlap = cellRect.bottom - trackerRect.top;
+  if (overlap > -16) {
+    window.scrollBy({ top: overlap + 28, behavior: 'smooth' });
+  }
+}
+
+function getActiveTrackerParts() {
+  if (!activeTracker) return null;
+  const ex = exercises.find(item => item.id === activeTracker.exerciseId);
+  if (!ex) return null;
+  const session = getSessionForEdit(activeTracker.dateStr);
+  let progress = session.setProgress[ex.id];
+  if (!progress) {
+    const now = new Date().toISOString();
+    progress = {
+      completedSets: 0,
+      targetSets: targetSetsForExercise(ex),
+      startedAt: now,
+      updatedAt: now,
+      completedAt: null,
+      finishedEarly: false,
+    };
+  }
+  progress = normalizeSetProgress(progress, ex);
+  if (enforceTimerCap(progress)) {
+    progress.updatedAt = new Date().toISOString();
+    saveSession(activeTracker.dateStr, session);
+  }
+  session.setProgress[ex.id] = progress;
+  return { ex, dateStr: activeTracker.dateStr, session, progress };
+}
+
+function renderSetTracker() {
+  const root = document.getElementById('set-tracker-root');
+  if (!root) return;
+  root.innerHTML = '';
+  const current = getActiveTrackerParts();
+  if (!current) return;
+
+  const { ex, dateStr, progress } = current;
+  const done = isProgressComplete(progress);
+  const panel = el('section', 'set-tracker' + (done ? ' complete' : ''));
+  panel.style.setProperty('--tracker-color', GROUPS[ex.group]?.color || 'var(--accent-green)');
+
+  const main = el('div', 'set-tracker-main');
+  main.appendChild(elText('div', 'set-tracker-kicker', dateStr === todayStr() ? 'Active today' : dateStr));
+  main.appendChild(elText('div', 'set-tracker-name', ex.name));
+  main.appendChild(elText('div', 'set-tracker-meta', `${progress.completedSets}/${progress.targetSets} sets | ${ex.reps} reps${ex.resistance ? ` | ${ex.resistance}` : ''}`));
+  main.appendChild(elText('div', 'set-tracker-timer', trackerTimerText(progress)));
+  main.appendChild(elText('div', 'set-tracker-recency', trackerStatusText(progress)));
+  main.appendChild(elText('div', 'set-tracker-help', 'Arrow keys adjust sets | Double-click checkmark to complete all sets'));
+  panel.appendChild(main);
+
+  const progressWrap = el('div', 'set-tracker-progress');
+  for (let i = 1; i <= progress.targetSets; i++) {
+    progressWrap.appendChild(el('span', 'set-dot' + (i <= progress.completedSets ? ' filled' : '')));
+  }
+  panel.appendChild(progressWrap);
+
+  const close = elText('button', 'set-tracker-close', 'X');
+  close.title = 'Close tracker';
+  close.setAttribute('aria-label', 'Close tracker');
+  close.addEventListener('click', closeSetTracker);
+  panel.appendChild(close);
+
+  const actions = el('div', 'set-tracker-actions');
+  const completeSet = elText('button', 'set-action set-action-primary', 'Complete Set');
+  completeSet.disabled = done || progress.timerCapped;
+  completeSet.title = 'Right arrow';
+  completeSet.addEventListener('click', logSet);
+  const doneBtn = elText('button', 'set-action set-action-finish', 'Done');
+  doneBtn.addEventListener('click', doneActiveExercise);
+  const clear = elText('button', 'set-action set-action-danger', 'Clear');
+  clear.addEventListener('click', clearActiveProgress);
+  actions.appendChild(completeSet);
+  actions.appendChild(doneBtn);
+  actions.appendChild(clear);
+  panel.appendChild(actions);
+  root.appendChild(panel);
+}
+
+function formatLastLogged(iso) {
+  if (!iso) return 'Not logged yet';
+  const seconds = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+  if (seconds < 10) return 'Just logged';
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+function trackerTimerText(progress) {
+  const parts = [`Timer ${fmtShortDuration(activeElapsedSeconds(progress))}`];
+  const lastDuration = progress.setDurations[progress.completedSets - 1];
+  if (lastDuration !== undefined) parts.push(`last set ${fmtShortDuration(lastDuration)}`);
+  if (progress.timerCapped) parts.push('stopped at 60m');
+  return parts.join(' | ');
+}
+
+function trackerStatusText(progress) {
+  if (progress.timerCapped && !isProgressComplete(progress)) return 'Timer stopped automatically';
+  return formatLastLogged(progress.updatedAt);
+}
+
+function fmtShortDuration(totalSeconds) {
+  const seconds = Math.max(0, Math.floor(totalSeconds || 0));
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  if (minutes >= 60) return '60:00';
+  return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
+}
+
+function playSetCue(setNumber) {
+  if (settings.setCueSound !== false) playToneSequence([
+    [820, 0.12],
+    [1120, 0.13],
+    [1460, 0.16],
+  ]);
+  if (settings.setCueVibrate !== false && navigator.vibrate) navigator.vibrate(80);
+  if (settings.setCueSpeech && window.speechSynthesis) {
+    const utterance = new SpeechSynthesisUtterance(`set ${setNumber} completed`);
+    utterance.rate = 1.1;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
+function playFinishCue() {
+  if (settings.setCueSound !== false) playToneSequence([
+    [620, 0.14],
+    [930, 0.16],
+    [1240, 0.2],
+  ]);
+  if (settings.setCueVibrate !== false && navigator.vibrate) navigator.vibrate([60, 40, 60]);
+}
+
+function playToneSequence(notes) {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return;
+  cueAudioContext = cueAudioContext || new AudioCtx();
+  let offset = 0;
+  notes.forEach(([frequency, duration]) => {
+    const startAt = cueAudioContext.currentTime + offset;
+    const osc = cueAudioContext.createOscillator();
+    const gain = cueAudioContext.createGain();
+    osc.frequency.value = frequency;
+    osc.type = 'triangle';
+    gain.gain.setValueAtTime(0.0001, startAt);
+    gain.gain.exponentialRampToValueAtTime(0.22, startAt + 0.025);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+    osc.connect(gain);
+    gain.connect(cueAudioContext.destination);
+    osc.start(startAt);
+    osc.stop(startAt + duration + 0.03);
+    offset += duration + 0.045;
+  });
 }
 
 // ── Edit modal ────────────────────────────────────────────────────
@@ -621,6 +1088,7 @@ function currentTimeStr() {
 function startRealtimeUpdates() {
   syncRealtimeFields();
   window.setInterval(syncRealtimeFields, 30000);
+  window.setInterval(syncSetTrackerTimer, 1000);
 }
 
 function syncRealtimeFields() {
@@ -633,6 +1101,20 @@ function syncRealtimeFields() {
   }
   lastTodayStr = nowToday;
   syncQuickNoteDateTime();
+  renderSetTracker();
+}
+
+function syncSetTrackerTimer() {
+  if (!activeTracker) return;
+  const current = getActiveTrackerParts();
+  if (!current) return;
+  const { dateStr, session, ex, progress } = current;
+  if (enforceTimerCap(progress)) {
+    progress.updatedAt = new Date().toISOString();
+    session.setProgress[ex.id] = progress;
+    saveSession(dateStr, session);
+  }
+  renderSetTracker();
 }
 
 function syncQuickNoteDateTime() {
@@ -648,6 +1130,19 @@ function syncQuickNoteDateTime() {
 
   dateField.value = todayStr();
   timeField.value = currentTimeStr();
+}
+
+function handleSetTrackerKeydown(e) {
+  if (!activeTracker) return;
+  const tag = document.activeElement?.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (e.key === 'ArrowRight') {
+    e.preventDefault();
+    logSet();
+  } else if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    decrementActiveSet();
+  }
 }
 
 function makeId(prefix) {
@@ -1100,6 +1595,9 @@ function openSettingsModal() {
   document.querySelectorAll('#settings-modal input[data-dow]').forEach(cb => {
     cb.checked = legsDays.includes(Number(cb.dataset.dow));
   });
+  document.getElementById('setting-cue-sound').checked = settings.setCueSound !== false;
+  document.getElementById('setting-cue-vibrate').checked = settings.setCueVibrate !== false;
+  document.getElementById('setting-cue-speech').checked = Boolean(settings.setCueSpeech);
   document.getElementById('settings-modal').classList.remove('hidden');
 }
 
@@ -1113,6 +1611,9 @@ function saveSettingsModal() {
     legsDays.push(Number(cb.dataset.dow));
   });
   settings.legsDays = legsDays;
+  settings.setCueSound = document.getElementById('setting-cue-sound').checked;
+  settings.setCueVibrate = document.getElementById('setting-cue-vibrate').checked;
+  settings.setCueSpeech = document.getElementById('setting-cue-speech').checked;
   saveSettings(settings);
   closeSettingsModal();
   render();
@@ -1340,6 +1841,7 @@ function bindStaticEvents() {
       addQuickNote();
     }
   });
+  document.addEventListener('keydown', handleSetTrackerKeydown);
   window.addEventListener('scroll', updateCompactHeader, { passive: true });
 
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
