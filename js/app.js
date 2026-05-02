@@ -6,7 +6,7 @@ let events    = [];
 let currentWeekStart = null; // Monday of displayed week (Date)
 let editingExId = null;      // exercise id being edited in modal
 let uploadTargetId = null;   // exercise id awaiting image upload
-let isDenseMode = false;     // temporary compact scan view
+let isDenseMode = false;     // compact scan view, persisted in settings
 let imageImportPending = false;
 let editingEventId = null;
 let lastTodayStr = null;
@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
   exercises = loadExercises();
   sessions  = loadSessions();
   settings  = loadSettings();
+  isDenseMode = Boolean(settings.denseMode);
   events    = loadEvents();
   runMigrations();
   currentWeekStart = getMonday(new Date());
@@ -378,14 +379,14 @@ function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
   info.appendChild(nameRow);
 
   const meta = el('div', 'ex-meta');
-  meta.appendChild(elText('span', 'ex-meta-item ex-meta-sets', `Sets: ${ex.sets}`));
+  meta.appendChild(elText('span', 'ex-meta-item ex-meta-sets', isDenseMode ? `S ${ex.sets}` : `Sets: ${ex.sets}`));
   meta.appendChild(elText('span', 'sep ex-meta-sep', '/'));
-  meta.appendChild(elText('span', 'ex-meta-item ex-meta-reps', `Reps: ${ex.reps}`));
+  meta.appendChild(elText('span', 'ex-meta-item ex-meta-reps', isDenseMode ? `R ${ex.reps}` : `Reps: ${ex.reps}`));
   if (ex.resistance) {
     meta.appendChild(elText('span', 'sep ex-meta-sep', '/'));
-    meta.appendChild(elText('span', 'ex-meta-item ex-meta-resistance', `Resistance: ${ex.resistance}`));
+    meta.appendChild(elText('span', 'ex-meta-item ex-meta-resistance', isDenseMode ? `Res ${ex.resistance}` : `Resistance: ${ex.resistance}`));
   }
-  meta.appendChild(elText('span', 'sep ex-meta-sep', '/'));
+  meta.appendChild(elText('span', 'sep ex-meta-sep ex-meta-frequency-sep', '/'));
   meta.appendChild(elText('span', 'ex-meta-item ex-meta-frequency', ex.frequency));
   info.appendChild(meta);
 
@@ -1033,6 +1034,8 @@ function timerBtn(label, cls, handler) {
 
 function toggleDenseMode() {
   isDenseMode = !isDenseMode;
+  settings.denseMode = isDenseMode;
+  saveSettings(settings);
   render();
 }
 
