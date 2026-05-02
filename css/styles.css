@@ -44,10 +44,21 @@ body {
 }
 
 .app-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
   font-size: 16px;
   font-weight: 600;
   color: var(--text);
   letter-spacing: .3px;
+  white-space: nowrap;
+}
+
+.app-title-icon {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border-radius: 7px;
 }
 
 .week-nav {
