@@ -149,6 +149,17 @@
         </div>
       </div>
 
+      <div class="form-row full">
+        <div class="form-field">
+          <label>Set tracker cues</label>
+          <div class="cue-check-row">
+            <label class="cue-check-label"><input type="checkbox" id="setting-cue-sound" /><span>Sound</span></label>
+            <label class="cue-check-label"><input type="checkbox" id="setting-cue-vibrate" /><span>Vibrate</span></label>
+            <label class="cue-check-label"><input type="checkbox" id="setting-cue-speech" /><span>Speech</span></label>
+          </div>
+        </div>
+      </div>
+
       <div class="modal-actions">
         <button class="btn-secondary" id="settings-cancel">Cancel</button>
         <button class="btn-primary" id="settings-save">Save</button>
@@ -228,6 +239,7 @@
   </div>
 
   <input type="file" id="image-upload-input" accept="image/*" />
+  <div id="set-tracker-root"></div>
 
   <!-- Scripts - order matters: data -> storage -> app -->
   <script src="js/data.js"></script>
