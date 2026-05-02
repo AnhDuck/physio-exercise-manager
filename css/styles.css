@@ -751,6 +751,11 @@ body.notes-open .grid-table {
 
 .add-exercise-btn:hover { color: var(--text); }
 
+body.dense-mode {
+  --day-col-w: minmax(54px, 74px);
+  --label-col-w: minmax(520px, 1fr);
+}
+
 body.dense-mode .group-header {
   margin-top: 6px;
   border-top-width: 3px;
@@ -805,7 +810,7 @@ body.dense-mode .ex-info {
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 body.dense-mode .ex-name-row {
@@ -813,6 +818,7 @@ body.dense-mode .ex-name-row {
   gap: 6px;
   min-width: 0;
   flex: 1;
+  max-width: 58%;
 }
 
 body.dense-mode .ex-number {
@@ -828,17 +834,49 @@ body.dense-mode .ex-name {
 
 body.dense-mode .ex-meta {
   flex-wrap: nowrap;
-  gap: 4px;
-  font-size: 12px;
+  gap: 5px;
+  font-size: 11px;
   line-height: 1.15;
   flex-shrink: 0;
-  max-width: 36%;
-  overflow: hidden;
+  max-width: none;
+  overflow: visible;
   justify-content: flex-end;
+}
+
+body.dense-mode .ex-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  max-width: 100%;
+  padding: 3px 6px;
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 4px;
+  background: rgba(255,255,255,.045);
+  color: #d7dce5;
+  font-weight: 700;
+}
+
+body.dense-mode .ex-meta-sets {
+  border-color: rgba(99,179,237,.28);
+  background: rgba(99,179,237,.08);
+  color: #cfe7ff;
+}
+
+body.dense-mode .ex-meta-reps {
+  border-color: rgba(90,184,158,.30);
+  background: rgba(90,184,158,.08);
+  color: #d2f4ea;
+}
+
+body.dense-mode .ex-meta-resistance {
+  border-color: rgba(232,151,74,.32);
+  background: rgba(232,151,74,.09);
+  color: #ffe0bf;
 }
 
 body.dense-mode .ex-meta-frequency,
 body.dense-mode .ex-meta-frequency-sep,
+body.dense-mode .ex-meta-sep,
 body.dense-mode .ex-actions,
 body.dense-mode .instructions-text,
 body.dense-mode .add-exercise-row,

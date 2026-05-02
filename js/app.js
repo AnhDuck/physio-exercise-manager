@@ -379,12 +379,12 @@ function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
   info.appendChild(nameRow);
 
   const meta = el('div', 'ex-meta');
-  meta.appendChild(elText('span', 'ex-meta-item ex-meta-sets', isDenseMode ? `S ${ex.sets}` : `Sets: ${ex.sets}`));
+  meta.appendChild(elText('span', 'ex-meta-item ex-meta-chip ex-meta-sets', isDenseMode ? `S ${ex.sets}` : `Sets: ${ex.sets}`));
   meta.appendChild(elText('span', 'sep ex-meta-sep', '/'));
-  meta.appendChild(elText('span', 'ex-meta-item ex-meta-reps', isDenseMode ? `R ${ex.reps}` : `Reps: ${ex.reps}`));
+  meta.appendChild(elText('span', 'ex-meta-item ex-meta-chip ex-meta-reps', isDenseMode ? `R ${ex.reps}` : `Reps: ${ex.reps}`));
   if (ex.resistance) {
     meta.appendChild(elText('span', 'sep ex-meta-sep', '/'));
-    meta.appendChild(elText('span', 'ex-meta-item ex-meta-resistance', isDenseMode ? `Res ${ex.resistance}` : `Resistance: ${ex.resistance}`));
+    meta.appendChild(elText('span', 'ex-meta-item ex-meta-chip ex-meta-resistance', isDenseMode ? `Res ${ex.resistance}` : `Resistance: ${ex.resistance}`));
   }
   meta.appendChild(elText('span', 'sep ex-meta-sep ex-meta-frequency-sep', '/'));
   meta.appendChild(elText('span', 'ex-meta-item ex-meta-frequency', ex.frequency));
