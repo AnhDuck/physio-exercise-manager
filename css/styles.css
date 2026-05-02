@@ -819,6 +819,7 @@ body.dense-mode .ex-info {
 }
 
 body.dense-mode .ex-name-row {
+  align-items: center;
   margin-bottom: 0;
   gap: 6px;
   min-width: 0;
@@ -835,6 +836,20 @@ body.dense-mode .ex-number {
 body.dense-mode .ex-name {
   font-size: 15px;
   line-height: 1.15;
+}
+
+body.dense-mode .ex-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+  margin-left: 2px;
+  flex-shrink: 0;
+}
+
+body.dense-mode .btn-icon {
+  width: 22px;
+  height: 22px;
+  font-size: 13px;
 }
 
 body.dense-mode .ex-meta {
@@ -882,11 +897,17 @@ body.dense-mode .ex-meta-resistance {
 body.dense-mode .ex-meta-frequency,
 body.dense-mode .ex-meta-frequency-sep,
 body.dense-mode .ex-meta-sep,
-body.dense-mode .ex-actions,
-body.dense-mode .instructions-text,
 body.dense-mode .add-exercise-row,
 body.dense-mode .summary-row {
   display: none !important;
+}
+
+body.dense-mode .instructions-text {
+  margin-left: calc(18px + 34px + 14px);
+  width: calc(100% - 18px - 34px - 14px);
+  padding: 7px 8px;
+  font-size: 13px;
+  line-height: 1.35;
 }
 
 body.dense-mode .day-cell {
