@@ -282,6 +282,70 @@ body.notes-open .grid-table {
   white-space: pre-wrap;
 }
 
+.event-dose-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.event-dose-fields.hidden {
+  display: none;
+}
+
+.event-dose-heading {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+}
+
+.event-dose-row {
+  display: grid;
+  grid-template-columns: 96px 1fr 1fr;
+  gap: 10px;
+  align-items: end;
+}
+
+.event-dose-label {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  padding-bottom: 9px;
+}
+
+.event-dose-control {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.event-dose-control span {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+}
+
+.event-dose-control input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  padding: 8px 10px;
+  transition: border-color .15s;
+  width: 100%;
+}
+
+.event-dose-control input:focus {
+  border-color: var(--c-day1);
+}
+
 .timeline-dose-change {
   border: 1px solid rgba(216,180,254,.85);
   background: rgba(88,51,130,.88);
