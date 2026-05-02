@@ -752,6 +752,11 @@ body.notes-open .grid-table {
 .add-exercise-btn:hover { color: var(--text); }
 
 body.dense-mode {
+  --day-col-w: minmax(88px, 1fr);
+  --label-col-w: minmax(560px, 50vw);
+}
+
+body.notes-open.dense-mode {
   --day-col-w: minmax(54px, 74px);
   --label-col-w: minmax(520px, 1fr);
 }
