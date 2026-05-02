@@ -878,19 +878,14 @@ function renderSetTracker() {
   info.appendChild(elText('div', 'set-tracker-name', ex.name));
   info.appendChild(elText('div', 'set-tracker-meta', `${progress.completedSets}/${progress.targetSets} sets | ${ex.reps} reps${ex.resistance ? ` | ${ex.resistance}` : ''}`));
   main.appendChild(info);
+  panel.appendChild(main);
 
   const timer = el('div', 'set-tracker-timer');
   timer.appendChild(elText('div', 'set-tracker-timer-label', 'Timer'));
   timer.appendChild(elText('div', 'set-tracker-timer-value', trackerTimerValue(progress)));
   const timerDetail = trackerTimerDetail(progress);
   if (timerDetail) timer.appendChild(elText('div', 'set-tracker-timer-detail', timerDetail));
-  main.appendChild(timer);
-
-  const footer = el('div', 'set-tracker-footer');
-  footer.appendChild(elText('div', 'set-tracker-recency', trackerStatusText(progress)));
-  footer.appendChild(elText('div', 'set-tracker-help', 'Arrow keys adjust sets | Double-click checkmark to complete all sets'));
-  main.appendChild(footer);
-  panel.appendChild(main);
+  panel.appendChild(timer);
 
   const progressWrap = el('div', 'set-tracker-progress');
   for (let i = 1; i <= progress.targetSets; i++) {
@@ -917,6 +912,11 @@ function renderSetTracker() {
   actions.appendChild(doneBtn);
   actions.appendChild(clear);
   panel.appendChild(actions);
+
+  const footer = el('div', 'set-tracker-footer');
+  footer.appendChild(elText('div', 'set-tracker-recency', trackerStatusText(progress)));
+  footer.appendChild(elText('div', 'set-tracker-help', 'Arrow keys adjust sets | Double-click checkmark to complete all sets'));
+  panel.appendChild(footer);
   root.appendChild(panel);
 }
 
