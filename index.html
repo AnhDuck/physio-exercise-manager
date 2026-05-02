@@ -15,11 +15,53 @@
       <span class="week-label" id="week-label"></span>
       <button id="btn-next-week">Week &#8594;</button>
       <button id="btn-today" class="today-btn">TODAY</button>
-      <button id="btn-settings" class="btn-settings" title="Settings">⚙</button>
+      <button id="btn-notes" class="btn-notes" title="Toggle notes panel">Notes</button>
+      <button id="btn-settings" class="btn-settings" title="Settings">Settings</button>
     </nav>
   </header>
 
   <main class="main-wrap">
+    <aside class="notes-panel" id="notes-panel">
+      <div class="notes-panel-header">
+        <div>
+          <h2>Notes</h2>
+          <div class="notes-panel-subtitle">Timeline and regimen changes</div>
+        </div>
+        <button type="button" class="btn-icon panel-close-btn" id="notes-panel-close" title="Close notes">x</button>
+      </div>
+
+      <div class="note-composer">
+        <div class="form-row">
+          <div class="form-field">
+            <label for="quick-note-date">Date</label>
+            <input type="date" id="quick-note-date" />
+          </div>
+          <div class="form-field">
+            <label for="quick-note-time">Time</label>
+            <input type="time" id="quick-note-time" />
+          </div>
+        </div>
+
+        <div class="form-row full">
+          <div class="form-field">
+            <label for="quick-note-exercise">Exercise tag</label>
+            <select id="quick-note-exercise"></select>
+          </div>
+        </div>
+
+        <div class="form-row full">
+          <div class="form-field">
+            <label for="quick-note-text">Note</label>
+            <textarea id="quick-note-text" placeholder="Write what happened. Date and time are saved automatically."></textarea>
+          </div>
+        </div>
+
+        <button type="button" class="btn-primary note-save-btn" id="quick-note-save">Add note</button>
+      </div>
+
+      <div class="timeline-list" id="timeline-list"></div>
+    </aside>
+
     <div class="grid-table" id="app"></div>
   </main>
 
@@ -42,7 +84,7 @@
         </div>
         <div class="form-field">
           <label for="field-reps">Reps</label>
-          <input type="text" id="field-reps" placeholder="e.g. 10 or 10–15" />
+          <input type="text" id="field-reps" placeholder="e.g. 10 or 10-15" />
         </div>
       </div>
 
@@ -71,7 +113,7 @@
       <div class="form-row full">
         <div class="form-field">
           <label for="field-instructions">Instructions (optional)</label>
-          <textarea id="field-instructions" placeholder="Step-by-step instructions…"></textarea>
+          <textarea id="field-instructions" placeholder="Step-by-step instructions..."></textarea>
         </div>
       </div>
 
@@ -110,6 +152,46 @@
     </div>
   </div>
 
+  <!-- Timeline event edit modal -->
+  <div class="modal-overlay hidden" id="event-modal">
+    <div class="modal event-modal">
+      <h2 id="event-modal-title">Edit timeline item</h2>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="event-field-date">Date</label>
+          <input type="date" id="event-field-date" />
+        </div>
+        <div class="form-field">
+          <label for="event-field-time">Time</label>
+          <input type="time" id="event-field-time" />
+        </div>
+      </div>
+
+      <div class="form-row full">
+        <div class="form-field">
+          <label for="event-field-exercise">Exercise tag</label>
+          <select id="event-field-exercise"></select>
+        </div>
+      </div>
+
+      <div class="form-row full">
+        <div class="form-field">
+          <label for="event-field-text">Note</label>
+          <textarea id="event-field-text"></textarea>
+        </div>
+      </div>
+
+      <div class="event-detail" id="event-detail"></div>
+
+      <div class="modal-actions">
+        <button class="btn-danger" id="event-delete-btn">Delete</button>
+        <button class="btn-secondary" id="event-cancel">Cancel</button>
+        <button class="btn-primary" id="event-save">Save</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Exercise image source modal -->
   <div class="modal-overlay hidden" id="image-modal">
     <div class="modal">
@@ -140,10 +222,9 @@
     </div>
   </div>
 
-  <!-- Hidden file input for image uploads -->
   <input type="file" id="image-upload-input" accept="image/*" />
 
-  <!-- Scripts — order matters: data → storage → app -->
+  <!-- Scripts - order matters: data -> storage -> app -->
   <script src="js/data.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/app.js"></script>

@@ -2,10 +2,13 @@
 let exercises = [];
 let sessions  = {};
 let settings  = {};
+let events    = [];
 let currentWeekStart = null; // Monday of displayed week (Date)
 let editingExId = null;      // exercise id being edited in modal
 let uploadTargetId = null;   // exercise id awaiting image upload
 let imageImportPending = false;
+let editingEventId = null;
+let lastTodayStr = null;
 
 // ── Timer state ───────────────────────────────────────────────────
 let timerState    = 'idle';  // 'idle' | 'running' | 'paused'
@@ -17,10 +20,14 @@ document.addEventListener('DOMContentLoaded', () => {
   exercises = loadExercises();
   sessions  = loadSessions();
   settings  = loadSettings();
+  events    = loadEvents();
   runMigrations();
   currentWeekStart = getMonday(new Date());
+  lastTodayStr = todayStr();
   render();
   bindStaticEvents();
+  renderNotesPanel();
+  startRealtimeUpdates();
 });
 
 // One-shot data migrations for existing localStorage installs
@@ -32,6 +39,7 @@ function runMigrations() {
     pinky.order = 5;
     saveExercises(exercises);
   }
+
 }
 
 // ── Arm day rotation (pure calendar-based) ────────────────────────
@@ -120,6 +128,7 @@ function render() {
 
   app.appendChild(buildSummaryRow(dates, todayS));
   updateCompactHeader();
+  renderNotesPanel();
 }
 
 // ── Column headers ────────────────────────────────────────────────
@@ -182,7 +191,7 @@ function buildGroupSection(group, exs, dates, todayS, startNumber) {
   header.addEventListener('drop', handleExerciseDropAtEnd);
 
   const label = el('div', 'group-header-label');
-  label.appendChild(elText('span', 'collapse-chevron', '▼'));
+  label.appendChild(elText('span', 'collapse-chevron', '▾'));
   const dot = el('div', 'group-dot');
   dot.style.background = cfg.color;
   label.appendChild(dot);
@@ -333,7 +342,7 @@ function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
   dragHandle.type = 'button';
   dragHandle.title = 'Drag to reorder';
   dragHandle.setAttribute('aria-label', 'Drag to reorder exercise');
-  dragHandle.textContent = '☰';
+  dragHandle.innerHTML = '&#9776;';
   dragHandle.addEventListener('mousedown', () => { row.draggable = true; });
   dragHandle.addEventListener('mouseup', () => { row.draggable = false; });
   label.appendChild(dragHandle);
@@ -347,7 +356,7 @@ function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
     img.alt = ex.name;
     thumb.appendChild(img);
   } else {
-    thumb.textContent = '📷';
+    thumb.innerHTML = '&#128247;';
   }
   thumb.addEventListener('click', () => openImageModal(ex.id));
   label.appendChild(thumb);
@@ -361,13 +370,13 @@ function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
 
   const meta = el('div', 'ex-meta');
   meta.appendChild(elText('span', '', `Sets: ${ex.sets}`));
-  meta.appendChild(elText('span', 'sep', '·'));
+  meta.appendChild(elText('span', 'sep', '/'));
   meta.appendChild(elText('span', '', `Reps: ${ex.reps}`));
   if (ex.resistance) {
-    meta.appendChild(elText('span', 'sep', '·'));
+    meta.appendChild(elText('span', 'sep', '/'));
     meta.appendChild(elText('span', '', `Resistance: ${ex.resistance}`));
   }
-  meta.appendChild(elText('span', 'sep', '·'));
+  meta.appendChild(elText('span', 'sep', '/'));
   meta.appendChild(elText('span', '', ex.frequency));
   info.appendChild(meta);
 
@@ -381,7 +390,7 @@ function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
     const tog = el('button', 'btn-icon instructions-toggle');
     tog.title = 'Show instructions';
     tog.setAttribute('aria-label', 'Show instructions');
-    tog.textContent = 'ⓘ';
+    tog.innerHTML = '&#9432;';
     instrText = el('div', 'instructions-text');
     instrText.textContent = ex.instructions;
     instrText.style.display = 'none';
@@ -396,7 +405,7 @@ function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
   }
   const editBtn = el('button', 'btn-icon');
   editBtn.title = 'Edit exercise';
-  editBtn.textContent = '✎';
+  editBtn.innerHTML = '&#9998;';
   editBtn.addEventListener('click', () => openEditModal(ex.id));
   actions.appendChild(editBtn);
   label.appendChild(actions);
@@ -412,13 +421,25 @@ function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
     const cell = el('div', 'day-cell' + (isToday ? ' today' : ''));
     const session = sessions[dateS] || {};
     const done = (session.completedExercises || []).includes(ex.id);
+    const doseEvents = events.filter(ev =>
+      ev.type === 'dose-change' && ev.date === dateS && ev.exerciseId === ex.id
+    );
 
     const btn = el('button', 'check-btn' + (done ? ' done' : ''));
-    btn.textContent = done ? '✓' : '';
+    btn.innerHTML = done ? '&#10003;' : '';
     btn.title = done ? 'Mark incomplete' : 'Mark complete';
     btn.addEventListener('click', () => toggleComplete(ex.id, dateS));
 
     cell.appendChild(btn);
+    if (doseEvents.length) {
+      const marker = elText('button', 'dose-marker', String(doseEvents.length));
+      marker.title = 'Dose change logged';
+      marker.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openNotesModal(dateS);
+      });
+      cell.appendChild(marker);
+    }
     row.appendChild(cell);
   });
 
@@ -426,6 +447,37 @@ function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
 }
 
 // ── Summary row ───────────────────────────────────────────────────
+function eventsForDate(dateStr) {
+  return events
+    .filter(ev => ev.date === dateStr)
+    .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+}
+
+function timelineEvents() {
+  return events
+    .filter(ev => ev.type === 'note' || ev.type === 'dose-change' || ev.type === 'exercise-added')
+    .sort((a, b) => {
+      const aKey = `${a.date || ''}T${a.time || '00:00'}`;
+      const bKey = `${b.date || ''}T${b.time || '00:00'}`;
+      return bKey.localeCompare(aKey);
+    });
+}
+
+function groupedTimelineEvents() {
+  const groups = [];
+  const byDate = new Map();
+  timelineEvents().forEach(ev => {
+    const date = ev.date || 'undated';
+    if (!byDate.has(date)) {
+      const group = { date, events: [] };
+      byDate.set(date, group);
+      groups.push(group);
+    }
+    byDate.get(date).events.push(ev);
+  });
+  return groups;
+}
+
 function buildSummaryRow(dates, todayS) {
   const row = el('div', 'summary-row');
   row.appendChild(elText('div', 'summary-label', 'Completion'));
@@ -515,16 +567,25 @@ function saveExerciseModal() {
 
   if (editingExId) {
     const idx = exercises.findIndex(e => e.id === editingExId);
-    if (idx !== -1) exercises[idx] = { ...exercises[idx], ...fields };
+    if (idx !== -1) {
+      const previous = { ...exercises[idx] };
+      const changes = doseChanges(previous, fields);
+      exercises[idx] = { ...exercises[idx], ...fields };
+      if (Object.keys(changes).length) {
+        logDoseChange(exercises[idx], changes);
+      }
+    }
   } else {
     const maxOrder = exercises.filter(e => e.group === fields.group)
       .reduce((m, e) => Math.max(m, e.order), 0);
-    exercises.push({
+    const exercise = {
       id: 'ex-' + Date.now(),
       image: null,
       order: maxOrder + 1,
       ...fields,
-    });
+    };
+    exercises.push(exercise);
+    logExerciseAdded(exercise);
   }
 
   saveExercises(exercises);
@@ -542,6 +603,307 @@ function deleteExercise() {
 }
 
 // ── Timer ─────────────────────────────────────────────────────────
+function currentTimeStr() {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+}
+
+function startRealtimeUpdates() {
+  syncRealtimeFields();
+  window.setInterval(syncRealtimeFields, 30000);
+}
+
+function syncRealtimeFields() {
+  const nowToday = todayStr();
+  if (lastTodayStr && nowToday !== lastTodayStr) {
+    lastTodayStr = nowToday;
+    currentWeekStart = getMonday(new Date());
+    render();
+    return;
+  }
+  lastTodayStr = nowToday;
+  syncQuickNoteDateTime();
+}
+
+function syncQuickNoteDateTime() {
+  const textField = document.getElementById('quick-note-text');
+  const dateField = document.getElementById('quick-note-date');
+  const timeField = document.getElementById('quick-note-time');
+  if (!textField || !dateField || !timeField) return;
+
+  const active = document.activeElement;
+  const userIsEditingTimestamp = active === dateField || active === timeField;
+  const noteInProgress = textField.value.trim().length > 0;
+  if (userIsEditingTimestamp || noteInProgress) return;
+
+  dateField.value = todayStr();
+  timeField.value = currentTimeStr();
+}
+
+function makeId(prefix) {
+  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+}
+
+function doseChanges(previous, nextFields) {
+  const changes = {};
+  ['sets', 'reps', 'resistance', 'frequency'].forEach(field => {
+    const from = previous[field] ?? '';
+    const to = nextFields[field] ?? '';
+    if (String(from) !== String(to)) changes[field] = { from, to };
+  });
+  return changes;
+}
+
+function logDoseChange(exercise, changes) {
+  events.push({
+    id: makeId('event'),
+    type: 'dose-change',
+    date: todayStr(),
+    time: currentTimeStr(),
+    exerciseId: exercise.id,
+    exerciseName: exercise.name,
+    changes,
+    createdAt: new Date().toISOString(),
+  });
+  saveEvents(events);
+}
+
+function logExerciseAdded(exercise) {
+  events.push({
+    id: makeId('event'),
+    type: 'exercise-added',
+    date: todayStr(),
+    time: currentTimeStr(),
+    exerciseId: exercise.id,
+    exerciseName: exercise.name,
+    createdAt: new Date().toISOString(),
+  });
+  saveEvents(events);
+}
+
+function fillEventSelect(id, items, emptyLabel) {
+  const select = document.getElementById(id);
+  select.innerHTML = '';
+  const empty = document.createElement('option');
+  empty.value = '';
+  empty.textContent = emptyLabel;
+  select.appendChild(empty);
+  items.forEach(item => {
+    const option = document.createElement('option');
+    option.value = item.id;
+    option.textContent = item.name;
+    select.appendChild(option);
+  });
+}
+
+function setNotesPanelOpen(open, shouldFocus = false) {
+  settings.notesOpen = open;
+  saveSettings(settings);
+  renderNotesPanel();
+  if (shouldFocus && open) {
+    window.setTimeout(() => document.getElementById('quick-note-text')?.focus(), 0);
+  }
+}
+
+function toggleNotesPanel() {
+  setNotesPanelOpen(!settings.notesOpen, true);
+}
+
+function openNotesModal(dateStr = todayStr()) {
+  setNotesPanelOpen(true, true);
+  document.getElementById('quick-note-date').value = dateStr;
+}
+
+function renderNotesPanel() {
+  const panel = document.getElementById('notes-panel');
+  const btn = document.getElementById('btn-notes');
+  if (!panel || !btn) return;
+
+  document.body.classList.toggle('notes-open', Boolean(settings.notesOpen));
+  btn.classList.toggle('active', Boolean(settings.notesOpen));
+  btn.textContent = settings.notesOpen ? 'Hide Notes' : 'Notes';
+
+  fillEventSelect('quick-note-exercise', exercises, 'No exercise tag');
+  const dateField = document.getElementById('quick-note-date');
+  const timeField = document.getElementById('quick-note-time');
+  if (!dateField.value) dateField.value = todayStr();
+  if (!timeField.value) timeField.value = currentTimeStr();
+  syncQuickNoteDateTime();
+
+  const list = document.getElementById('timeline-list');
+  list.innerHTML = '';
+  const groups = groupedTimelineEvents();
+  if (!groups.length) {
+    list.appendChild(elText('div', 'timeline-empty', 'No notes or regimen changes yet.'));
+    return;
+  }
+  groups.forEach(group => list.appendChild(buildTimelineDay(group)));
+}
+
+function addQuickNote() {
+  const textField = document.getElementById('quick-note-text');
+  const text = textField.value.trim();
+  if (!text) { alert('Note text is required.'); return; }
+
+  const exerciseId = document.getElementById('quick-note-exercise').value;
+  const exercise = exercises.find(ex => ex.id === exerciseId);
+  events.push({
+    id: makeId('event'),
+    type: 'note',
+    date: document.getElementById('quick-note-date').value || todayStr(),
+    time: document.getElementById('quick-note-time').value || currentTimeStr(),
+    exerciseId: exerciseId || undefined,
+    exerciseName: exercise?.name,
+    text,
+    createdAt: new Date().toISOString(),
+  });
+  saveEvents(events);
+  textField.value = '';
+  document.getElementById('quick-note-date').value = todayStr();
+  document.getElementById('quick-note-time').value = currentTimeStr();
+  renderNotesPanel();
+  textField.focus();
+}
+
+function buildTimelineDay(group) {
+  const section = el('section', 'timeline-day');
+  const header = elText('div', 'timeline-day-header', formatEventDateShort(group.date));
+  header.title = formatEventDate(group.date);
+  section.appendChild(header);
+
+  const rows = el('div', 'timeline-day-rows');
+  group.events.forEach(ev => rows.appendChild(buildTimelineItem(ev)));
+  section.appendChild(rows);
+  return section;
+}
+
+function buildTimelineItem(ev) {
+  const item = el('article', 'timeline-row timeline-' + ev.type);
+  const content = el('div', 'timeline-row-content');
+  content.appendChild(elText('span', 'timeline-time', formatEventTime(ev.time)));
+
+  if (ev.type === 'note') {
+    content.appendChild(elText('span', 'timeline-separator', '-'));
+    content.appendChild(elText('span', 'timeline-note-text', ev.text || ''));
+  } else {
+    content.appendChild(elText('span', 'timeline-separator', '-'));
+    content.appendChild(elText('span', 'timeline-event-title', eventTitle(ev)));
+    const detail = eventText(ev);
+    if (detail) content.appendChild(elText('span', 'timeline-event-detail', detail));
+    if (ev.annotation) content.appendChild(elText('span', 'timeline-event-annotation', ev.annotation));
+  }
+
+  item.appendChild(content);
+  const editBtn = elText('button', 'timeline-edit', 'Edit');
+  editBtn.type = 'button';
+  editBtn.addEventListener('click', () => openEventModal(ev.id));
+  item.appendChild(editBtn);
+  return item;
+}
+
+function formatEventDateShort(dateStr) {
+  if (!dateStr || dateStr === 'undated') return 'No date';
+  const d = dateFromStr(dateStr);
+  return `${MONTH_ABBR[d.getMonth()]} ${d.getDate()}`;
+}
+
+function formatEventDate(dateStr) {
+  if (!dateStr || dateStr === 'undated') return 'No date';
+  const d = dateFromStr(dateStr);
+  return `${MONTH_ABBR[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
+function formatEventTime(timeStr) {
+  if (!timeStr) return '';
+  const [hourRaw, minuteRaw] = timeStr.split(':').map(Number);
+  if (Number.isNaN(hourRaw) || Number.isNaN(minuteRaw)) return timeStr;
+  const suffix = hourRaw >= 12 ? 'PM' : 'AM';
+  const hour = hourRaw % 12 || 12;
+  return `${hour}:${String(minuteRaw).padStart(2, '0')} ${suffix}`;
+}
+
+function openEventModal(eventId) {
+  const ev = events.find(item => item.id === eventId);
+  if (!ev) return;
+  editingEventId = eventId;
+  document.getElementById('event-modal-title').textContent = ev.type === 'note' ? 'Edit note' : 'Edit history item';
+  document.getElementById('event-field-date').value = ev.date || todayStr();
+  document.getElementById('event-field-time').value = ev.time || currentTimeStr();
+  fillEventSelect('event-field-exercise', exercises, 'No exercise tag');
+  document.getElementById('event-field-exercise').value = ev.exerciseId || '';
+  document.getElementById('event-field-exercise').disabled = ev.type !== 'note';
+  document.getElementById('event-field-text').value = ev.type === 'note' ? (ev.text || '') : (ev.annotation || '');
+  document.getElementById('event-field-text').placeholder = ev.type === 'note'
+    ? 'Timeline note'
+    : 'Optional annotation for this history item';
+  document.getElementById('event-detail').textContent = ev.type === 'note' ? '' : eventText(ev);
+  document.getElementById('event-delete-btn').style.display = 'inline-block';
+  document.getElementById('event-modal').classList.remove('hidden');
+}
+
+function closeEventModal() {
+  document.getElementById('event-modal').classList.add('hidden');
+  editingEventId = null;
+}
+
+function saveEventModal() {
+  const ev = events.find(item => item.id === editingEventId);
+  if (!ev) return;
+  const exerciseId = document.getElementById('event-field-exercise').value;
+  const exercise = exercises.find(ex => ex.id === exerciseId);
+  ev.date = document.getElementById('event-field-date').value || todayStr();
+  ev.time = document.getElementById('event-field-time').value || currentTimeStr();
+  if (ev.type === 'note') {
+    ev.exerciseId = exerciseId || undefined;
+    ev.exerciseName = exercise?.name;
+    ev.text = document.getElementById('event-field-text').value.trim();
+  } else {
+    ev.annotation = document.getElementById('event-field-text').value.trim();
+  }
+  ev.updatedAt = new Date().toISOString();
+  saveEvents(events);
+  closeEventModal();
+  renderNotesPanel();
+}
+
+function deleteEventModal() {
+  const ev = events.find(item => item.id === editingEventId);
+  if (!ev) return;
+  if (!confirm('Delete this timeline item? This cannot be undone.')) return;
+  events = events.filter(item => item.id !== editingEventId);
+  saveEvents(events);
+  closeEventModal();
+  renderNotesPanel();
+}
+
+function buildEventItem(ev) {
+  const item = el('div', 'event-item');
+  item.appendChild(elText('div', 'event-time', ev.time || '--:--'));
+  const body = el('div', 'event-body');
+  body.appendChild(elText('div', 'event-title', eventTitle(ev)));
+  const text = eventText(ev);
+  if (text) body.appendChild(elText('div', 'event-text', text));
+  item.appendChild(body);
+  return item;
+}
+
+function eventTitle(ev) {
+  if (ev.type === 'dose-change') return `Dose change: ${ev.exerciseName || 'Exercise'}`;
+  if (ev.type === 'exercise-added') return `Added exercise: ${ev.exerciseName || 'Exercise'}`;
+  const tags = [ev.symptomName, ev.exerciseName].filter(Boolean).join(' + ');
+  return tags || 'Note';
+}
+
+function eventText(ev) {
+  if (ev.type === 'dose-change') {
+    return Object.entries(ev.changes || {})
+      .map(([field, change]) => `${field}: ${change.from || 'blank'} -> ${change.to || 'blank'}`)
+      .join(' / ');
+  }
+  if (ev.type === 'exercise-added') return 'New exercise added to the program.';
+  return ev.text || '';
+}
+
 function fmtTimer(s) {
   const m = Math.floor(s / 60);
   return `${String(m).padStart(2, '0')} m ${String(s % 60).padStart(2, '0')} s`;
@@ -871,6 +1233,15 @@ function bindStaticEvents() {
   document.getElementById('btn-prev-week').addEventListener('click', prevWeek);
   document.getElementById('btn-next-week').addEventListener('click', nextWeek);
   document.getElementById('btn-today').addEventListener('click', goToToday);
+  document.getElementById('btn-notes').addEventListener('click', toggleNotesPanel);
+  document.getElementById('notes-panel-close').addEventListener('click', () => setNotesPanelOpen(false));
+  document.getElementById('quick-note-save').addEventListener('click', addQuickNote);
+  document.getElementById('quick-note-text').addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      addQuickNote();
+    }
+  });
   window.addEventListener('scroll', updateCompactHeader, { passive: true });
 
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
@@ -905,6 +1276,13 @@ function bindStaticEvents() {
   document.getElementById('settings-save').addEventListener('click', saveSettingsModal);
   document.getElementById('settings-modal').addEventListener('click', (e) => {
     if (e.target === document.getElementById('settings-modal')) closeSettingsModal();
+  });
+
+  document.getElementById('event-cancel').addEventListener('click', closeEventModal);
+  document.getElementById('event-save').addEventListener('click', saveEventModal);
+  document.getElementById('event-delete-btn').addEventListener('click', deleteEventModal);
+  document.getElementById('event-modal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('event-modal')) closeEventModal();
   });
 }
 

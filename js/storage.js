@@ -2,6 +2,8 @@ const KEYS = {
   EXERCISES: 'pem_exercises',
   SESSIONS:  'pem_sessions',
   SETTINGS:  'pem_settings',
+  SYMPTOMS:  'pem_symptoms',
+  EVENTS:    'pem_events',
 };
 
 function loadExercises() {
@@ -41,6 +43,24 @@ function loadSettings() {
 
 function saveSettings(settings) {
   localStorage.setItem(KEYS.SETTINGS, JSON.stringify(settings));
+}
+
+function loadSymptoms() {
+  const raw = localStorage.getItem(KEYS.SYMPTOMS);
+  return raw ? JSON.parse(raw) : [];
+}
+
+function saveSymptoms(symptoms) {
+  localStorage.setItem(KEYS.SYMPTOMS, JSON.stringify(symptoms));
+}
+
+function loadEvents() {
+  const raw = localStorage.getItem(KEYS.EVENTS);
+  return raw ? JSON.parse(raw) : [];
+}
+
+function saveEvents(events) {
+  localStorage.setItem(KEYS.EVENTS, JSON.stringify(events));
 }
 
 // ISO date string helpers — uses LOCAL time (not UTC) so dates match what the user sees
