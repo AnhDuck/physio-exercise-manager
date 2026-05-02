@@ -327,6 +327,7 @@ function handleExerciseDropAtEnd(e) {
 
 function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
   const row = el('div', 'exercise-row');
+  row.style.setProperty('--exercise-group-color', GROUPS[group].color);
   row.dataset.exId = ex.id;
   row.dataset.group = group;
   row.addEventListener('dragstart', handleExerciseDragStart);

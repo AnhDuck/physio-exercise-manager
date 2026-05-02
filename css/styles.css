@@ -681,11 +681,11 @@ body.notes-open .grid-table {
   color: transparent;
 }
 
-.check-btn:hover { border-color: var(--accent-green); }
+.check-btn:hover { border-color: var(--exercise-group-color, var(--accent-green)); }
 
 .check-btn.done {
-  background: var(--accent-green);
-  border-color: var(--accent-green);
+  background: var(--exercise-group-color, var(--accent-green));
+  border-color: var(--exercise-group-color, var(--accent-green));
   color: #fff;
 }
 
