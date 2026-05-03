@@ -213,32 +213,11 @@ body.notes-open .grid-table {
 }
 
 .timeline-day-header {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
   color: var(--text);
   font-size: 17px;
   font-weight: 800;
   line-height: 1.2;
   margin-bottom: 8px;
-}
-
-.timeline-day-title {
-  min-width: 0;
-}
-
-.timeline-day-order {
-  color: var(--text-dim);
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .4px;
-  text-transform: uppercase;
-}
-
-.timeline-day-order::before {
-  content: "\2191";
-  margin-right: 4px;
-  color: var(--c-day1);
 }
 
 .timeline-day-rows {

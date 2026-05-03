@@ -1295,9 +1295,7 @@ function addQuickNote() {
 
 function buildTimelineDay(group) {
   const section = el('section', 'timeline-day');
-  const header = el('div', 'timeline-day-header');
-  header.appendChild(elText('span', 'timeline-day-title', formatEventDateShort(group.date)));
-  header.appendChild(elText('span', 'timeline-day-order', 'newer'));
+  const header = elText('div', 'timeline-day-header', formatEventDateShort(group.date));
   header.title = formatEventDate(group.date);
   section.appendChild(header);
 
