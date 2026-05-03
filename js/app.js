@@ -398,16 +398,17 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber) {
     number.setAttribute('tabindex', '0');
   }
   nameRow.appendChild(number);
-  nameRow.appendChild(elText('span', 'ex-name', ex.name));
+  const nameText = elText('span', 'ex-name', ex.name);
+  nameRow.appendChild(nameText);
   if (isDenseMode) {
-    nameRow.title = 'Edit exercise';
-    nameRow.setAttribute('role', 'button');
-    nameRow.setAttribute('tabindex', '0');
+    nameText.title = 'Edit exercise';
+    nameText.setAttribute('role', 'button');
+    nameText.setAttribute('tabindex', '0');
   }
-  nameRow.addEventListener('click', () => {
+  nameText.addEventListener('click', () => {
     if (isDenseMode) openEditModal(ex.id);
   });
-  nameRow.addEventListener('keydown', (e) => {
+  nameText.addEventListener('keydown', (e) => {
     if (!isDenseMode || (e.key !== 'Enter' && e.key !== ' ')) return;
     e.preventDefault();
     openEditModal(ex.id);
@@ -441,7 +442,7 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber) {
     instrText = el('div', 'instructions-text');
     instrText.textContent = ex.instructions;
     instrText.style.display = 'none';
-    denseInstrRow = buildDenseInstructionRow(ex.instructions);
+    denseInstrRow = buildDenseInstructionRow(ex);
     const toggleInstructions = () => {
       const open = instrText.style.display !== 'none';
       if (isDenseMode) {
@@ -531,9 +532,19 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber) {
   return frag;
 }
 
-function buildDenseInstructionRow(text) {
+function buildDenseInstructionRow(ex) {
   const row = el('div', 'dense-instructions-row');
-  row.appendChild(elText('div', 'dense-instructions-cell', text));
+  const cell = el('div', 'dense-instructions-cell');
+  if (ex.image) {
+    const media = el('div', 'dense-instructions-media');
+    const img = document.createElement('img');
+    img.src = ex.image;
+    img.alt = ex.name;
+    media.appendChild(img);
+    cell.appendChild(media);
+  }
+  cell.appendChild(elText('p', 'dense-instructions-copy', ex.instructions));
+  row.appendChild(cell);
   return row;
 }
 

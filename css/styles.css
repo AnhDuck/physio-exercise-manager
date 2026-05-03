@@ -913,12 +913,12 @@ body.notes-open .grid-table {
 
 body.dense-mode {
   --day-col-w: minmax(68px, 1fr);
-  --label-col-w: minmax(660px, 54vw);
+  --label-col-w: minmax(600px, 50vw);
 }
 
 body.notes-open.dense-mode {
   --day-col-w: minmax(54px, 68px);
-  --label-col-w: minmax(600px, 1fr);
+  --label-col-w: minmax(560px, 1fr);
 }
 
 body.dense-mode .group-header {
@@ -997,10 +997,10 @@ body.dense-mode .ex-thumb img {
 
 body.dense-mode .ex-info {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 54px 70px 132px;
+  grid-template-columns: minmax(0, 1fr) 44px 62px 116px;
   min-width: 0;
   align-items: center;
-  column-gap: 6px;
+  column-gap: 5px;
   flex: 1;
 }
 
@@ -1009,14 +1009,6 @@ body.dense-mode .ex-name-row {
   margin-bottom: 0;
   gap: 6px;
   min-width: 0;
-  cursor: pointer;
-  border-radius: 4px;
-  padding: 2px 3px 2px 0;
-}
-
-body.dense-mode .ex-name-row:hover,
-body.dense-mode .ex-name-row:focus-visible {
-  background: rgba(255,255,255,.035);
 }
 
 body.dense-mode .ex-number {
@@ -1041,10 +1033,18 @@ body.dense-mode .ex-name {
   line-height: 1.15;
   overflow: hidden;
   text-overflow: ellipsis;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 2px 3px;
 }
 
 body.dense-mode .ex-actions {
   display: none;
+}
+
+body.dense-mode .ex-name:hover,
+body.dense-mode .ex-name:focus-visible {
+  background: rgba(255,255,255,.035);
 }
 
 body.dense-mode .btn-icon {
@@ -1097,7 +1097,7 @@ body.dense-mode .ex-meta-chip-label {
   align-self: stretch;
   display: inline-flex;
   align-items: center;
-  padding: 3px 4px 3px 5px;
+  padding: 3px 3px 3px 4px;
   border-right: 1px solid rgba(255,255,255,.09);
   background: rgba(0,0,0,.07);
   color: rgba(255,255,255,.58);
@@ -1113,7 +1113,7 @@ body.dense-mode .ex-meta-chip-value {
   align-items: center;
   justify-content: center;
   min-width: 16px;
-  padding: 3px 6px;
+  padding: 3px 5px;
   color: #f3f7fc;
   font-weight: 700;
 }
@@ -1176,11 +1176,38 @@ body.dense-mode .dense-instructions-row.open {
 
 body.dense-mode .dense-instructions-cell {
   grid-column: 1 / -1;
-  padding: 8px 18px 10px calc(8px + 18px + 6px + 34px + 6px + 21px);
+  display: grid;
+  grid-template-columns: 92px minmax(0, 380px);
+  gap: 14px;
+  align-items: start;
+  width: min(500px, calc(100% - 90px));
+  margin-left: calc(8px + 18px + 6px + 34px + 6px + 21px);
+  padding: 10px 0 12px;
   color: var(--text-muted);
   font-size: 13px;
-  line-height: 1.38;
+  line-height: 1.43;
   border-left: 1px solid transparent;
+}
+
+body.dense-mode .dense-instructions-media {
+  width: 92px;
+  height: 92px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-hover);
+  overflow: hidden;
+}
+
+body.dense-mode .dense-instructions-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+body.dense-mode .dense-instructions-copy {
+  margin: 0;
+  max-width: 380px;
 }
 
 body.dense-mode .day-cell {
