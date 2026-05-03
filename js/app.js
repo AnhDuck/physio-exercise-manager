@@ -233,7 +233,7 @@ function buildGroupSection(group, exs, dates, todayS, startNumber) {
   if (isCollapsed) return frag;
 
   // Exercise rows
-  exs.forEach((ex, i) => frag.appendChild(buildExerciseRow(ex, group, dates, todayS, startNumber + i)));
+  exs.forEach((ex, i) => frag.appendChild(buildExerciseRows(ex, group, dates, todayS, startNumber + i)));
 
   // Add exercise button
   const addRow = el('div', 'add-exercise-row');
@@ -350,7 +350,8 @@ function handleExerciseDropAtEnd(e) {
   moveExercise(draggedExerciseId, e.currentTarget.dataset.group);
 }
 
-function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
+function buildExerciseRows(ex, group, dates, todayS, exerciseNumber) {
+  const frag = document.createDocumentFragment();
   const row = el('div', 'exercise-row');
   row.style.setProperty('--exercise-group-color', GROUPS[group].color);
   row.dataset.exId = ex.id;
@@ -390,8 +391,27 @@ function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
   // Info
   const info = el('div', 'ex-info');
   const nameRow = el('div', 'ex-name-row');
-  nameRow.appendChild(elText('span', 'ex-number', String(exerciseNumber)));
+  const number = elText('span', 'ex-number' + (ex.instructions && isDenseMode ? ' has-instructions' : ''), String(exerciseNumber));
+  if (ex.instructions && isDenseMode) {
+    number.title = 'Show instructions';
+    number.setAttribute('role', 'button');
+    number.setAttribute('tabindex', '0');
+  }
+  nameRow.appendChild(number);
   nameRow.appendChild(elText('span', 'ex-name', ex.name));
+  if (isDenseMode) {
+    nameRow.title = 'Edit exercise';
+    nameRow.setAttribute('role', 'button');
+    nameRow.setAttribute('tabindex', '0');
+  }
+  nameRow.addEventListener('click', () => {
+    if (isDenseMode) openEditModal(ex.id);
+  });
+  nameRow.addEventListener('keydown', (e) => {
+    if (!isDenseMode || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault();
+    openEditModal(ex.id);
+  });
   info.appendChild(nameRow);
 
   const meta = el('div', 'ex-meta');
@@ -407,6 +427,7 @@ function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
   info.appendChild(meta);
 
   let instrText = null;
+  let denseInstrRow = null;
 
   label.appendChild(info);
 
@@ -420,12 +441,33 @@ function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
     instrText = el('div', 'instructions-text');
     instrText.textContent = ex.instructions;
     instrText.style.display = 'none';
-    tog.addEventListener('click', () => {
+    denseInstrRow = buildDenseInstructionRow(ex.instructions);
+    const toggleInstructions = () => {
       const open = instrText.style.display !== 'none';
+      if (isDenseMode) {
+        denseInstrRow.classList.toggle('open', !denseInstrRow.classList.contains('open'));
+        number.classList.toggle('active', denseInstrRow.classList.contains('open'));
+        number.title = denseInstrRow.classList.contains('open') ? 'Hide instructions' : 'Show instructions';
+        return;
+      }
       instrText.style.display = open ? 'none' : 'block';
       tog.classList.toggle('active', !open);
       tog.title = open ? 'Show instructions' : 'Hide instructions';
       tog.setAttribute('aria-label', open ? 'Show instructions' : 'Hide instructions');
+    };
+    tog.addEventListener('click', () => {
+      toggleInstructions();
+    });
+    number.addEventListener('click', (e) => {
+      if (!isDenseMode) return;
+      e.stopPropagation();
+      toggleInstructions();
+    });
+    number.addEventListener('keydown', (e) => {
+      if (!isDenseMode || (e.key !== 'Enter' && e.key !== ' ')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      toggleInstructions();
     });
     actions.appendChild(tog);
   }
@@ -484,6 +526,14 @@ function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
     row.appendChild(cell);
   });
 
+  frag.appendChild(row);
+  if (denseInstrRow) frag.appendChild(denseInstrRow);
+  return frag;
+}
+
+function buildDenseInstructionRow(text) {
+  const row = el('div', 'dense-instructions-row');
+  row.appendChild(elText('div', 'dense-instructions-cell', text));
   return row;
 }
 

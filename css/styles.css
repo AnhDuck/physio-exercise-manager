@@ -912,13 +912,13 @@ body.notes-open .grid-table {
 .add-exercise-btn:hover { color: var(--text); }
 
 body.dense-mode {
-  --day-col-w: minmax(88px, 1fr);
-  --label-col-w: minmax(560px, 50vw);
+  --day-col-w: minmax(68px, 1fr);
+  --label-col-w: minmax(660px, 54vw);
 }
 
 body.notes-open.dense-mode {
-  --day-col-w: minmax(54px, 74px);
-  --label-col-w: minmax(520px, 1fr);
+  --day-col-w: minmax(54px, 68px);
+  --label-col-w: minmax(600px, 1fr);
 }
 
 body.dense-mode .group-header {
@@ -996,10 +996,12 @@ body.dense-mode .ex-thumb img {
 }
 
 body.dense-mode .ex-info {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 54px 70px 132px;
   min-width: 0;
   align-items: center;
-  gap: 12px;
+  column-gap: 6px;
+  flex: 1;
 }
 
 body.dense-mode .ex-name-row {
@@ -1007,8 +1009,14 @@ body.dense-mode .ex-name-row {
   margin-bottom: 0;
   gap: 6px;
   min-width: 0;
-  flex: 1;
-  max-width: 58%;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px 3px 2px 0;
+}
+
+body.dense-mode .ex-name-row:hover,
+body.dense-mode .ex-name-row:focus-visible {
+  background: rgba(255,255,255,.035);
 }
 
 body.dense-mode .ex-number {
@@ -1017,17 +1025,26 @@ body.dense-mode .ex-number {
   font-size: 10px;
 }
 
+body.dense-mode .ex-number.has-instructions {
+  cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.14);
+}
+
+body.dense-mode .ex-number.has-instructions:hover,
+body.dense-mode .ex-number.has-instructions.active {
+  background: #385b8f;
+  color: #ffffff;
+}
+
 body.dense-mode .ex-name {
   font-size: 15px;
   line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 body.dense-mode .ex-actions {
-  display: flex;
-  flex-direction: row;
-  gap: 2px;
-  margin-left: 2px;
-  flex-shrink: 0;
+  display: none;
 }
 
 body.dense-mode .btn-icon {
@@ -1037,52 +1054,68 @@ body.dense-mode .btn-icon {
 }
 
 body.dense-mode .ex-meta {
-  flex-wrap: nowrap;
-  gap: 5px;
+  display: contents;
   font-size: 11px;
   line-height: 1.15;
-  flex-shrink: 0;
-  max-width: none;
-  overflow: visible;
-  justify-content: flex-end;
 }
 
 body.dense-mode .ex-meta-chip {
   display: inline-flex;
   align-items: center;
+  justify-self: stretch;
   min-height: 22px;
   max-width: 100%;
   padding: 0;
-  border: 1px solid rgba(255,255,255,.10);
+  border: 1px solid rgba(255,255,255,.085);
   border-radius: 4px;
-  background: rgba(255,255,255,.045);
+  background: rgba(255,255,255,.038);
   color: #d7dce5;
   font-weight: 700;
   overflow: hidden;
   white-space: nowrap;
 }
 
+body.dense-mode .ex-meta-sets {
+  grid-column: 2;
+}
+
+body.dense-mode .ex-meta-reps {
+  grid-column: 3;
+}
+
+body.dense-mode .ex-meta-resistance {
+  grid-column: 4;
+}
+
+body.dense-mode .ex-meta-resistance .ex-meta-chip-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 body.dense-mode .ex-meta-chip-label {
   align-self: stretch;
   display: inline-flex;
   align-items: center;
-  padding: 3px 5px;
-  border-right: 1px solid rgba(255,255,255,.14);
-  background: rgba(0,0,0,.16);
-  color: rgba(255,255,255,.68);
+  padding: 3px 4px 3px 5px;
+  border-right: 1px solid rgba(255,255,255,.09);
+  background: rgba(0,0,0,.07);
+  color: rgba(255,255,255,.58);
   font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .04em;
+  font-weight: 700;
+  letter-spacing: .02em;
   text-transform: uppercase;
 }
 
 body.dense-mode .ex-meta-chip-value {
+  flex: 1;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   min-width: 16px;
-  padding: 3px 7px;
-  color: #f8fbff;
-  font-weight: 800;
+  padding: 3px 6px;
+  color: #f3f7fc;
+  font-weight: 700;
 }
 
 body.dense-mode .ex-meta-sets {
@@ -1092,8 +1125,8 @@ body.dense-mode .ex-meta-sets {
 }
 
 body.dense-mode .ex-meta-sets .ex-meta-chip-label {
-  background: rgba(99,179,237,.13);
-  color: rgba(207,231,255,.78);
+  background: rgba(99,179,237,.07);
+  color: rgba(207,231,255,.66);
 }
 
 body.dense-mode .ex-meta-reps {
@@ -1103,8 +1136,8 @@ body.dense-mode .ex-meta-reps {
 }
 
 body.dense-mode .ex-meta-reps .ex-meta-chip-label {
-  background: rgba(90,184,158,.13);
-  color: rgba(210,244,234,.78);
+  background: rgba(90,184,158,.07);
+  color: rgba(210,244,234,.66);
 }
 
 body.dense-mode .ex-meta-resistance {
@@ -1114,8 +1147,8 @@ body.dense-mode .ex-meta-resistance {
 }
 
 body.dense-mode .ex-meta-resistance .ex-meta-chip-label {
-  background: rgba(232,151,74,.14);
-  color: rgba(255,224,191,.80);
+  background: rgba(232,151,74,.075);
+  color: rgba(255,224,191,.68);
 }
 
 body.dense-mode .ex-meta-frequency,
@@ -1127,11 +1160,27 @@ body.dense-mode .summary-row {
 }
 
 body.dense-mode .instructions-text {
-  margin-left: calc(18px + 34px + 14px);
-  width: calc(100% - 18px - 34px - 14px);
-  padding: 7px 8px;
+  display: none !important;
+}
+
+.dense-instructions-row {
+  display: none;
+}
+
+body.dense-mode .dense-instructions-row.open {
+  display: grid;
+  grid-template-columns: var(--label-col-w) repeat(7, var(--day-col-w));
+  border-top: 1px solid rgba(255,255,255,.045);
+  background: rgba(255,255,255,.018);
+}
+
+body.dense-mode .dense-instructions-cell {
+  grid-column: 1 / -1;
+  padding: 8px 18px 10px calc(8px + 18px + 6px + 34px + 6px + 21px);
+  color: var(--text-muted);
   font-size: 13px;
-  line-height: 1.35;
+  line-height: 1.38;
+  border-left: 1px solid transparent;
 }
 
 body.dense-mode .day-cell {
