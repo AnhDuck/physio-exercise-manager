@@ -159,6 +159,7 @@ function buildColHeaders(dates, todayS) {
     const isArmDay  = dow === 1 || dow === 3 || dow === 5;
     const legsDays  = settings.legsDays !== undefined ? settings.legsDays : [1, 3, 5];
     const isLegsDay = legsDays.includes(dow);
+    const dayTags = [];
 
     cell.appendChild(elText('div', 'day-name', DAY_NAMES[i]));
     cell.appendChild(elText('div', 'day-date', String(date.getDate())));
@@ -167,6 +168,7 @@ function buildColHeaders(dates, todayS) {
       const pillRow = el('div', 'day-pill-row');
       if (isArmDay) {
         const armDay = getArmDayForDate(dateS);
+        dayTags.push(armDay);
         if (armDay === 'arm-day1') {
           pillRow.appendChild(elText('span', 'day-pill pill-d1', 'Day 1'));
         } else {
@@ -174,9 +176,14 @@ function buildColHeaders(dates, todayS) {
         }
       }
       if (isLegsDay) {
+        dayTags.push('legs');
         pillRow.appendChild(elText('span', 'day-pill pill-leg', 'Legs'));
       }
       cell.appendChild(pillRow);
+    }
+
+    if (dayTags.length) {
+      dayTags.forEach(tag => cell.classList.add(`tag-${tag}`));
     }
 
     row.appendChild(cell);
