@@ -213,6 +213,9 @@ body.notes-open .grid-table {
 }
 
 .timeline-day-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
   color: var(--text);
   font-size: 17px;
   font-weight: 800;
@@ -220,19 +223,60 @@ body.notes-open .grid-table {
   margin-bottom: 8px;
 }
 
+.timeline-day-title {
+  min-width: 0;
+}
+
+.timeline-day-order {
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+}
+
+.timeline-day-order::before {
+  content: "\2191";
+  margin-right: 4px;
+  color: var(--c-day1);
+}
+
 .timeline-day-rows {
   display: flex;
   flex-direction: column;
   gap: 3px;
+  position: relative;
+  padding-left: 14px;
+}
+
+.timeline-day-rows::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 7px;
+  bottom: 7px;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    rgba(123,162,247,.55),
+    rgba(255,255,255,.12)
+  );
 }
 
 .timeline-boundary {
-  margin: 9px 0 4px 6px;
+  align-self: flex-start;
+  margin: 6px 0 2px -1px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--bg-card);
   color: var(--text-dim);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: .4px;
+  line-height: 1.45;
   text-transform: uppercase;
+  position: relative;
+  z-index: 1;
 }
 
 .timeline-boundary::before,
@@ -251,10 +295,24 @@ body.notes-open .grid-table {
   align-items: start;
   border-radius: 5px;
   padding: 4px 6px;
+  position: relative;
 }
 
 .timeline-row:hover {
   background: rgba(255,255,255,.035);
+}
+
+.timeline-row::before {
+  content: "";
+  position: absolute;
+  left: -13px;
+  top: 13px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #26262a;
+  border: 1px solid rgba(123,162,247,.75);
+  box-shadow: 0 0 0 2px #26262a;
 }
 
 .timeline-row-content {
@@ -283,7 +341,7 @@ body.notes-open .grid-table {
 
 .timeline-event-title {
   color: var(--text);
-  font-weight: 800;
+  font-weight: 750;
   margin-right: 6px;
 }
 
@@ -393,7 +451,7 @@ body.notes-open .grid-table {
 
 .timeline-dose-change .timeline-event-title {
   color: #ffffff;
-  text-shadow: 0 1px 0 rgba(0,0,0,.25);
+  font-weight: 750;
 }
 
 .timeline-dose-change .timeline-row-content {
