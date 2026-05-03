@@ -109,6 +109,7 @@ body {
 .main-wrap {
   display: flex;
   align-items: stretch;
+  min-height: calc(100vh - var(--header-h));
   overflow-x: clip;
   padding-bottom: 40px;
 }
@@ -128,9 +129,9 @@ body.set-tracker-open .main-wrap {
   display: none;
   width: 360px;
   min-width: 360px;
-  height: calc(100vh - var(--header-h));
+  height: 100vh;
   position: sticky;
-  top: var(--header-h);
+  top: 0;
   overflow-y: auto;
   border-right: 1px solid var(--border);
   background: #26262a;
