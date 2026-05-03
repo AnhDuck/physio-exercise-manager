@@ -105,6 +105,7 @@ const DAY_NAMES  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const GROUP_ORDER = ['arm-day1', 'arm-day2', 'legs'];
 const SET_TIMER_CAP_SECONDS = 60 * 60;
+const PERSONAL_DAY_START_HOUR = 7;
 
 let draggedExerciseId = null;
 
@@ -1299,9 +1300,29 @@ function buildTimelineDay(group) {
   section.appendChild(header);
 
   const rows = el('div', 'timeline-day-rows');
-  group.events.forEach(ev => rows.appendChild(buildTimelineItem(ev)));
+  let lastSegment = null;
+  group.events.forEach(ev => {
+    const segment = timelineDaySegment(ev.time);
+    if (lastSegment === 'awake' && segment === 'late') {
+      rows.appendChild(buildTimelineBoundary());
+    }
+    rows.appendChild(buildTimelineItem(ev));
+    lastSegment = segment;
+  });
   section.appendChild(rows);
   return section;
+}
+
+function timelineDaySegment(timeStr) {
+  const [hourRaw] = (timeStr || '').split(':').map(Number);
+  if (Number.isNaN(hourRaw)) return 'awake';
+  return hourRaw < PERSONAL_DAY_START_HOUR ? 'late' : 'awake';
+}
+
+function buildTimelineBoundary() {
+  const boundary = el('div', 'timeline-boundary');
+  boundary.appendChild(elText('span', 'timeline-boundary-label', 'Before 7 AM'));
+  return boundary;
 }
 
 function buildTimelineItem(ev) {
