@@ -1,7 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
   <title id="title">Physio Exercise Management icon</title>
-  <desc id="desc">A simple physio app icon with a bold P mark and progress check.</desc>
+  <desc id="desc">A simple physio app icon with a bold P mark and a corner progress check.</desc>
   <rect width="64" height="64" rx="14" fill="#2f6fbd"/>
-  <path d="M22 48V16h17c8 0 13 5 13 12s-5 12-13 12H32" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M25 45l8 8 17-22" fill="none" stroke="#78d7ba" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M20 49V15h18c9 0 14 5 14 13s-5 13-14 13H31" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="48" cy="48" r="11" fill="#78d7ba"/>
+  <path d="M43 48l4 4 8-10" fill="none" stroke="#1f4f8a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
