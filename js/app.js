@@ -398,7 +398,11 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber) {
     number.setAttribute('tabindex', '0');
   }
   nameRow.appendChild(number);
-  const nameText = elText('span', 'ex-name', ex.name);
+  const nameText = el('span', 'ex-name');
+  nameText.appendChild(elText('span', 'ex-name-text', ex.name));
+  if (isDenseMode) {
+    nameText.appendChild(elText('span', 'dense-edit-glyph', String.fromCharCode(9998)));
+  }
   nameRow.appendChild(nameText);
   if (isDenseMode) {
     nameText.title = 'Edit exercise';

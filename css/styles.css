@@ -1029,13 +1029,30 @@ body.dense-mode .ex-number.has-instructions.active {
 }
 
 body.dense-mode .ex-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
   font-size: 15px;
   line-height: 1.15;
-  overflow: hidden;
-  text-overflow: ellipsis;
   border-radius: 4px;
   cursor: pointer;
   padding: 2px 3px;
+}
+
+body.dense-mode .ex-name-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body.dense-mode .dense-edit-glyph {
+  color: var(--text-dim);
+  flex-shrink: 0;
+  font-size: 12px;
+  opacity: 0;
+  transform: translateX(-2px);
+  transition: opacity .12s, transform .12s, color .12s;
 }
 
 body.dense-mode .ex-actions {
@@ -1045,6 +1062,13 @@ body.dense-mode .ex-actions {
 body.dense-mode .ex-name:hover,
 body.dense-mode .ex-name:focus-visible {
   background: rgba(255,255,255,.035);
+}
+
+body.dense-mode .ex-name:hover .dense-edit-glyph,
+body.dense-mode .ex-name:focus-visible .dense-edit-glyph {
+  color: var(--text-muted);
+  opacity: 1;
+  transform: translateX(0);
 }
 
 body.dense-mode .btn-icon {
@@ -1208,6 +1232,7 @@ body.dense-mode .dense-instructions-media img {
 body.dense-mode .dense-instructions-copy {
   margin: 0;
   max-width: 380px;
+  white-space: pre-wrap;
 }
 
 body.dense-mode .day-cell {
@@ -1440,6 +1465,7 @@ body.dense-mode .dose-marker {
   font-size: 17px;
   color: var(--text-muted);
   line-height: 1.5;
+  white-space: pre-wrap;
   margin-top: 4px;
   margin-left: calc(var(--drag-handle-w) + var(--thumb-size) + 16px);
   width: calc(100% - var(--drag-handle-w) - var(--thumb-size) - 16px);
