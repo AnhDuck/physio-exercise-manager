@@ -11,6 +11,7 @@ let imageImportPending = false;
 let editingEventId = null;
 let lastTodayStr = null;
 let activeTracker = null;    // { exerciseId, dateStr }
+let completedActionMenu = null; // { exerciseId, dateStr }
 let lastSetLogAt = 0;
 let cueAudioContext = null;
 
@@ -112,7 +113,8 @@ let draggedExerciseId = null;
 function todayStr() { return toDateStr(new Date()); }
 
 // ── Main render ───────────────────────────────────────────────────
-function render() {
+function render(options = {}) {
+  if (!options.preserveCompletedActionMenu) completedActionMenu = null;
   const dates = weekDates(currentWeekStart);
   const todayS = todayStr();
 
@@ -453,8 +455,11 @@ function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
     );
 
     const btn = el('button', 'check-btn set-cell-btn' + (done ? ' done' : '') + (progress && !done ? ' in-progress' : ''));
-    btn.title = isActive ? 'Complete all sets' : (done ? 'Open tracker' : 'Track sets');
-    btn.addEventListener('click', () => handleSetCellClick(ex.id, dateS));
+    btn.title = isActive ? 'Complete all sets' : (done ? 'View or clear log' : 'Track sets');
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleSetCellClick(ex.id, dateS);
+    });
     if (done) {
       btn.innerHTML = '&#10003;';
     } else if (progress) {
@@ -464,6 +469,9 @@ function buildExerciseRow(ex, group, dates, todayS, exerciseNumber) {
     }
 
     cell.appendChild(btn);
+    if (isCompletedActionMenuOpen(ex.id, dateS)) {
+      cell.appendChild(buildCompletedActionMenu(ex.id, dateS));
+    }
     if (doseEvents.length) {
       const marker = elText('button', 'dose-marker', String(doseEvents.length));
       marker.title = 'Dose change logged';
@@ -589,11 +597,53 @@ function setCompletion(dateStr, exId, complete) {
   if (!complete && idx !== -1) s.completedExercises.splice(idx, 1);
 }
 
+function isCompletedActionMenuOpen(exId, dateStr) {
+  return completedActionMenu?.exerciseId === exId && completedActionMenu?.dateStr === dateStr;
+}
+
+function openCompletedActionMenu(exId, dateStr) {
+  completedActionMenu = { exerciseId: exId, dateStr };
+  render({ preserveCompletedActionMenu: true });
+}
+
+function closeCompletedActionMenu() {
+  if (!completedActionMenu) return;
+  completedActionMenu = null;
+  render();
+}
+
+function buildCompletedActionMenu(exId, dateStr) {
+  const menu = el('div', 'completed-action-menu');
+  menu.setAttribute('role', 'menu');
+  menu.addEventListener('click', (e) => e.stopPropagation());
+
+  const view = elText('button', 'completed-action completed-action-view', 'View Log');
+  view.type = 'button';
+  view.setAttribute('role', 'menuitem');
+  view.addEventListener('click', () => {
+    completedActionMenu = null;
+    openSetTracker(exId, dateStr);
+  });
+
+  const clear = elText('button', 'completed-action completed-action-clear', 'Clear Log');
+  clear.type = 'button';
+  clear.setAttribute('role', 'menuitem');
+  clear.addEventListener('click', () => {
+    completedActionMenu = null;
+    clearExerciseProgress(exId, dateStr);
+  });
+
+  menu.appendChild(view);
+  menu.appendChild(clear);
+  return menu;
+}
+
 function handleSetCellClick(exId, dateStr) {
   if (isExerciseDone(dateStr, exId) && !(activeTracker?.exerciseId === exId && activeTracker?.dateStr === dateStr)) {
-    clearExerciseProgress(exId, dateStr);
+    openCompletedActionMenu(exId, dateStr);
     return;
   }
+  completedActionMenu = null;
   if (activeTracker?.exerciseId === exId && activeTracker?.dateStr === dateStr) {
     completeActiveExercise();
     return;
@@ -1156,6 +1206,11 @@ function syncQuickNoteDateTime() {
 }
 
 function handleSetTrackerKeydown(e) {
+  if (completedActionMenu && e.key === 'Escape') {
+    e.preventDefault();
+    closeCompletedActionMenu();
+    return;
+  }
   if (!activeTracker) return;
   const tag = document.activeElement?.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
@@ -1927,6 +1982,7 @@ function bindStaticEvents() {
     }
   });
   document.addEventListener('keydown', handleSetTrackerKeydown);
+  document.addEventListener('click', () => closeCompletedActionMenu());
   window.addEventListener('scroll', updateCompactHeader, { passive: true });
 
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
