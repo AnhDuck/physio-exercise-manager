@@ -2,7 +2,6 @@ const KEYS = {
   EXERCISES: 'pem_exercises',
   SESSIONS:  'pem_sessions',
   SETTINGS:  'pem_settings',
-  SYMPTOMS:  'pem_symptoms',
   EVENTS:    'pem_events',
 };
 
@@ -35,7 +34,6 @@ function loadSettings() {
   const raw = localStorage.getItem(KEYS.SETTINGS);
   if (!raw) {
     const defaults = {
-      armSessionCount: 0,
       createdAt: toDateStr(new Date()),
       setCueSound: true,
       setCueVibrate: true,
@@ -56,15 +54,6 @@ function loadSettings() {
 
 function saveSettings(settings) {
   localStorage.setItem(KEYS.SETTINGS, JSON.stringify(settings));
-}
-
-function loadSymptoms() {
-  const raw = localStorage.getItem(KEYS.SYMPTOMS);
-  return raw ? JSON.parse(raw) : [];
-}
-
-function saveSymptoms(symptoms) {
-  localStorage.setItem(KEYS.SYMPTOMS, JSON.stringify(symptoms));
 }
 
 function loadEvents() {

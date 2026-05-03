@@ -15,11 +15,6 @@ let completedActionMenu = null; // { exerciseId, dateStr }
 let lastSetLogAt = 0;
 let cueAudioContext = null;
 
-// ── Timer state ───────────────────────────────────────────────────
-let timerState    = 'idle';  // 'idle' | 'running' | 'paused'
-let timerSeconds  = 0;
-let timerInterval = null;
-
 // ── Init ─────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   exercises = loadExercises();
@@ -138,7 +133,6 @@ function render(options = {}) {
     exerciseNumber += exs.length;
   }
 
-  app.appendChild(buildSummaryRow(dates, todayS));
   updateCompactHeader();
   renderSetTracker();
   renderNotesPanel();
@@ -220,6 +214,14 @@ function buildGroupSection(group, exs, dates, todayS, startNumber) {
   dot.style.background = cfg.color;
   label.appendChild(dot);
   label.appendChild(document.createTextNode(cfg.label));
+  const denseAddBtn = elText('button', 'group-add-btn', '+ Add');
+  denseAddBtn.type = 'button';
+  denseAddBtn.title = `Add exercise to ${cfg.label}`;
+  denseAddBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openAddModal(group);
+  });
+  label.appendChild(denseAddBtn);
   header.appendChild(label);
 
   dates.forEach((date) => {
@@ -235,18 +237,19 @@ function buildGroupSection(group, exs, dates, todayS, startNumber) {
   // Exercise rows
   exs.forEach((ex, i) => frag.appendChild(buildExerciseRows(ex, group, dates, todayS, startNumber + i)));
 
-  // Add exercise button
-  const addRow = el('div', 'add-exercise-row');
-  addRow.dataset.group = group;
-  addRow.addEventListener('dragover', handleExerciseDragOver);
-  addRow.addEventListener('dragleave', clearDropPosition);
-  addRow.addEventListener('drop', handleExerciseDropAtEnd);
-  const addBtn = el('button', 'add-exercise-btn');
-  addBtn.textContent = '+ Add exercise';
-  addBtn.dataset.group = group;
-  addBtn.addEventListener('click', () => openAddModal(group));
-  addRow.appendChild(addBtn);
-  frag.appendChild(addRow);
+  if (!isDenseMode) {
+    const addRow = el('div', 'add-exercise-row');
+    addRow.dataset.group = group;
+    addRow.addEventListener('dragover', handleExerciseDragOver);
+    addRow.addEventListener('dragleave', clearDropPosition);
+    addRow.addEventListener('drop', handleExerciseDropAtEnd);
+    const addBtn = el('button', 'add-exercise-btn');
+    addBtn.textContent = '+ Add exercise';
+    addBtn.dataset.group = group;
+    addBtn.addEventListener('click', () => openAddModal(group));
+    addRow.appendChild(addBtn);
+    frag.appendChild(addRow);
+  }
 
   return frag;
 }
@@ -584,35 +587,6 @@ function groupedTimelineEvents() {
   return groups;
 }
 
-function buildSummaryRow(dates, todayS) {
-  const row = el('div', 'summary-row');
-  row.appendChild(elText('div', 'summary-label', 'Completion'));
-
-  dates.forEach((date) => {
-    const dateS = toDateStr(date);
-    const isToday = dateS === todayS;
-    const relevantExs = exercises;
-    const done = relevantExs.filter(e => isExerciseDone(dateS, e.id)).length;
-    const pct = relevantExs.length === 0 ? 0 : Math.round(done / relevantExs.length * 100);
-    const cell = el('div', 'summary-pct' + (isToday ? ' today' : '') + (pct === 100 ? ' full' : ''));
-    cell.textContent = pct + '%';
-    row.appendChild(cell);
-  });
-
-  return row;
-}
-
-// ── Toggle completion ─────────────────────────────────────────────
-function toggleComplete(exId, dateStr) {
-  const s = sessions[dateStr] || { completedExercises: [] };
-  const idx = s.completedExercises.indexOf(exId);
-  if (idx === -1) s.completedExercises.push(exId);
-  else            s.completedExercises.splice(idx, 1);
-  sessions[dateStr] = s;
-  saveSession(dateStr, s);
-  render();
-}
-
 function restoreActiveTracker() {
   const todayS = todayStr();
   const s = sessions[todayS];
@@ -695,7 +669,7 @@ function buildCompletedActionMenu(exId, dateStr) {
   clear.setAttribute('role', 'menuitem');
   clear.addEventListener('click', () => {
     completedActionMenu = null;
-    clearExerciseProgress(exId, dateStr);
+    confirmAndClearExerciseProgress(exId, dateStr);
   });
 
   menu.appendChild(view);
@@ -867,7 +841,7 @@ function completeActiveExercise() {
   render();
 }
 
-function doneActiveExercise() {
+function pauseAndCloseTracker() {
   const current = getActiveTrackerParts();
   if (!current) return;
   const { ex, dateStr, session, progress } = current;
@@ -919,7 +893,14 @@ function decrementActiveSet() {
 function clearActiveProgress() {
   const current = getActiveTrackerParts();
   if (!current) return;
-  clearExerciseProgress(current.ex.id, current.dateStr);
+  confirmAndClearExerciseProgress(current.ex.id, current.dateStr);
+}
+
+function confirmAndClearExerciseProgress(exId, dateStr) {
+  const ex = exercises.find(item => item.id === exId);
+  const label = ex?.name || 'this exercise';
+  if (!confirm(`Clear the set log for ${label} on ${dateStr}? This cannot be undone.`)) return;
+  clearExerciseProgress(exId, dateStr);
 }
 
 function clearExerciseProgress(exId, dateStr) {
@@ -929,16 +910,6 @@ function clearExerciseProgress(exId, dateStr) {
   setCompletion(dateStr, exId, false);
   saveSession(dateStr, session);
   if (activeTracker?.exerciseId === exId && activeTracker?.dateStr === dateStr) activeTracker = null;
-  render();
-}
-
-function closeSetTracker() {
-  if (activeTracker?.dateStr) {
-    const s = getSessionForEdit(activeTracker.dateStr);
-    delete s.activeExerciseId;
-    saveSession(activeTracker.dateStr, s);
-  }
-  activeTracker = null;
   render();
 }
 
@@ -1016,19 +987,13 @@ function renderSetTracker() {
   }
   panel.appendChild(progressWrap);
 
-  const close = elText('button', 'set-tracker-close', 'X');
-  close.title = 'Close tracker';
-  close.setAttribute('aria-label', 'Close tracker');
-  close.addEventListener('click', closeSetTracker);
-  panel.appendChild(close);
-
   const actions = el('div', 'set-tracker-actions');
   const completeSet = elText('button', 'set-action set-action-primary', 'Complete Set');
   completeSet.disabled = done || progress.timerCapped;
   completeSet.title = 'Right arrow';
   completeSet.addEventListener('click', logSet);
-  const doneBtn = elText('button', 'set-action set-action-finish', 'Done');
-  doneBtn.addEventListener('click', doneActiveExercise);
+  const doneBtn = elText('button', 'set-action set-action-finish', 'Pause & Close');
+  doneBtn.addEventListener('click', pauseAndCloseTracker);
   const clear = elText('button', 'set-action set-action-danger', 'Clear');
   clear.addEventListener('click', clearActiveProgress);
   actions.appendChild(completeSet);
@@ -1038,7 +1003,7 @@ function renderSetTracker() {
 
   const footer = el('div', 'set-tracker-footer');
   footer.appendChild(elText('div', 'set-tracker-recency', trackerStatusText(progress)));
-  footer.appendChild(elText('div', 'set-tracker-help', 'Arrow keys adjust sets | Double-click checkmark to complete all sets'));
+  footer.appendChild(elText('div', 'set-tracker-help', 'Arrow keys adjust sets | Pause & Close saves partial progress'));
   panel.appendChild(footer);
   root.appendChild(panel);
 }
@@ -1279,7 +1244,10 @@ function handleSetTrackerKeydown(e) {
   if (!activeTracker) return;
   const tag = document.activeElement?.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-  if (e.key === 'ArrowRight') {
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    pauseAndCloseTracker();
+  } else if (e.key === 'ArrowRight') {
     e.preventDefault();
     logSet();
   } else if (e.key === 'ArrowLeft') {
@@ -1680,23 +1648,6 @@ function eventText(ev) {
   return ev.text || '';
 }
 
-function fmtTimer(s) {
-  const m = Math.floor(s / 60);
-  return `${String(m).padStart(2, '0')} m ${String(s % 60).padStart(2, '0')} s`;
-}
-
-function buildTimerWidget() {
-  const wrap = el('div', 'timer-widget');
-
-  const display = el('div', 'timer-display');
-  display.id = 'timer-display';
-  display.textContent = fmtTimer(timerSeconds);
-  wrap.appendChild(display);
-
-  wrap.appendChild(makeTimerBtns());
-  return wrap;
-}
-
 function buildDenseToggle() {
   const label = isDenseMode ? 'Normal View' : 'Dense View';
   const btn = elText('button', 'dense-toggle-btn' + (isDenseMode ? ' active' : ''), label);
@@ -1707,86 +1658,11 @@ function buildDenseToggle() {
   return btn;
 }
 
-function makeTimerBtns() {
-  const btns = el('div', 'timer-btns');
-  if (timerState === 'idle') {
-    btns.appendChild(timerBtn('START', 'timer-btn-start', timerStart));
-  } else if (timerState === 'running') {
-    btns.appendChild(timerBtn('STOP', 'timer-btn-stop', timerStop));
-  } else {
-    btns.appendChild(timerBtn('RESUME',  'timer-btn-start',   timerResume));
-    btns.appendChild(timerBtn('RESTART', 'timer-btn-restart', timerRestart));
-    btns.appendChild(timerBtn('SAVE',    'timer-btn-save',    timerSave));
-  }
-  return btns;
-}
-
-function timerBtn(label, cls, handler) {
-  const b = elText('button', 'timer-btn ' + cls, label);
-  b.addEventListener('click', handler);
-  return b;
-}
-
 function toggleDenseMode() {
   isDenseMode = !isDenseMode;
   settings.denseMode = isDenseMode;
   saveSettings(settings);
   render();
-}
-
-function refreshTimerBtns() {
-  const widget = document.querySelector('.timer-widget');
-  if (!widget) return;
-  const old = widget.querySelector('.timer-btns');
-  if (old) old.remove();
-  widget.appendChild(makeTimerBtns());
-}
-
-function timerStart() {
-  timerState = 'running';
-  timerInterval = setInterval(() => {
-    timerSeconds++;
-    const d = document.getElementById('timer-display');
-    if (d) d.textContent = fmtTimer(timerSeconds);
-  }, 1000);
-  refreshTimerBtns();
-}
-
-function timerStop() {
-  clearInterval(timerInterval);
-  timerInterval = null;
-  timerState = 'paused';
-  refreshTimerBtns();
-}
-
-function timerResume() {
-  timerState = 'running';
-  timerInterval = setInterval(() => {
-    timerSeconds++;
-    const d = document.getElementById('timer-display');
-    if (d) d.textContent = fmtTimer(timerSeconds);
-  }, 1000);
-  refreshTimerBtns();
-}
-
-function timerRestart() {
-  clearInterval(timerInterval);
-  timerInterval = null;
-  timerSeconds  = 0;
-  timerState    = 'idle';
-  const d = document.getElementById('timer-display');
-  if (d) d.textContent = fmtTimer(0);
-  refreshTimerBtns();
-}
-
-function timerSave() {
-  clearInterval(timerInterval);
-  timerInterval = null;
-  timerSeconds  = 0;
-  timerState    = 'idle';
-  const d = document.getElementById('timer-display');
-  if (d) d.textContent = fmtTimer(0);
-  refreshTimerBtns();
 }
 
 // ── Settings modal ────────────────────────────────────────────────

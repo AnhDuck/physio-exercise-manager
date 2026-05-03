@@ -584,6 +584,26 @@ body.notes-open .grid-table {
   gap: 10px;
 }
 
+.group-add-btn {
+  display: none;
+  margin-left: auto;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg-card);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .3px;
+  line-height: 1;
+  padding: 6px 8px;
+  text-transform: uppercase;
+}
+
+.group-add-btn:hover {
+  background: var(--bg-hover);
+}
+
 .collapse-chevron {
   display: inline-block;
   font-size: 12px;
@@ -1177,10 +1197,14 @@ body.dense-mode .ex-meta-resistance .ex-meta-chip-label {
 
 body.dense-mode .ex-meta-frequency,
 body.dense-mode .ex-meta-frequency-sep,
-body.dense-mode .ex-meta-sep,
-body.dense-mode .add-exercise-row,
-body.dense-mode .summary-row {
+body.dense-mode .ex-meta-sep {
   display: none !important;
+}
+
+body.dense-mode .group-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 body.dense-mode .instructions-text {
@@ -1475,80 +1499,6 @@ body.dense-mode .dose-marker {
   border: 1px solid var(--border);
 }
 
-/* ── Completion % summary row ────────────────────────────────────── */
-.summary-row {
-  display: grid;
-  grid-template-columns: var(--label-col-w) repeat(7, var(--day-col-w));
-  border-top: 2px solid var(--border);
-  background: var(--bg-header);
-}
-
-.summary-label {
-  padding: 12px 18px;
-  font-size: 14px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .4px;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-}
-
-.summary-pct {
-  border-left: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 4px;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.summary-pct.today { background: rgba(99,179,237,.04); }
-.summary-pct.full  { color: var(--accent-green); }
-
-/* ── Timer widget ────────────────────────────────────────────────── */
-.timer-widget {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.timer-display {
-  font-size: 15px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  color: var(--text);
-  min-width: 88px;
-  letter-spacing: .3px;
-}
-
-.timer-btns {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.timer-btn {
-  padding: 5px 11px;
-  border: none;
-  border-radius: 5px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .6px;
-  cursor: pointer;
-  transition: opacity .15s;
-  text-transform: uppercase;
-}
-
-.timer-btn:hover { opacity: .82; }
-.timer-btn-start   { background: #3d6e3d; color: #fff; }
-.timer-btn-stop    { background: #7a3020; color: #fff; }
-.timer-btn-restart { background: #555; color: #fff; }
-.timer-btn-save    { background: #2b4a7a; color: #fff; }
-
 .dense-toggle-btn {
   background: #334155;
   border: 1px solid #4c617d;
@@ -1657,12 +1607,13 @@ body.dense-mode .dose-marker {
   bottom: 18px;
   z-index: 160;
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) auto auto auto;
+  grid-template-columns: minmax(170px, 1fr) minmax(76px, auto) minmax(44px, auto) minmax(312px, 1.2fr);
   align-items: center;
-  column-gap: 14px;
+  column-gap: 10px;
   row-gap: 8px;
   width: min(720px, calc(100vw - 36px));
-  padding: 14px 54px 14px 14px;
+  overflow: hidden;
+  padding: 14px;
   border: 1px solid var(--border);
   border-left: 6px solid var(--tracker-color);
   border-radius: 8px;
@@ -1751,6 +1702,7 @@ body.dense-mode .dose-marker {
   grid-column: 1 / -1;
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   gap: 10px;
   min-width: 0;
   margin-top: -2px;
@@ -1767,7 +1719,7 @@ body.dense-mode .dose-marker {
   font-size: 12px;
   font-weight: 700;
   min-width: 0;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .set-tracker-progress {
@@ -1793,28 +1745,10 @@ body.dense-mode .dose-marker {
 
 .set-tracker-actions {
   display: grid;
-  grid-template-columns: minmax(150px, auto) auto auto;
+  grid-template-columns: minmax(108px, 1fr) minmax(108px, 1fr) minmax(72px, .65fr);
   gap: 8px;
-}
-
-.set-tracker-close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 34px;
-  height: 34px;
-  border: 1px solid #64748b;
-  border-radius: 6px;
-  background: #e2e8f0;
-  color: #111827;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.set-tracker-close:hover {
-  background: #ffffff;
+  min-width: 0;
+  width: 100%;
 }
 
 .set-action {
@@ -1824,8 +1758,10 @@ body.dense-mode .dose-marker {
   cursor: pointer;
   font-size: 13px;
   font-weight: 800;
+  min-width: 0;
   min-height: 42px;
-  padding: 0 14px;
+  overflow-wrap: anywhere;
+  padding: 0 10px;
 }
 
 .set-action:disabled {
@@ -1837,7 +1773,6 @@ body.dense-mode .dose-marker {
   background: var(--tracker-color);
   border-color: var(--tracker-color);
   color: #fff;
-  min-width: 128px;
 }
 
 .set-action-finish {
@@ -1918,7 +1853,6 @@ body.dense-mode .dose-marker {
     width: calc(100vw - 20px);
     grid-template-columns: 1fr;
     gap: 10px;
-    padding-right: 54px;
   }
 
   .set-tracker-progress {
