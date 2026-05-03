@@ -105,7 +105,7 @@ const DAY_NAMES  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const GROUP_ORDER = ['arm-day1', 'arm-day2', 'legs'];
 const SET_TIMER_CAP_SECONDS = 60 * 60;
-const PERSONAL_DAY_START_HOUR = 7;
+const DEFAULT_PERSONAL_DAY_START_TIME = '07:00';
 
 let draggedExerciseId = null;
 
@@ -1314,15 +1314,52 @@ function buildTimelineDay(group) {
 }
 
 function timelineDaySegment(timeStr) {
-  const [hourRaw] = (timeStr || '').split(':').map(Number);
-  if (Number.isNaN(hourRaw)) return 'awake';
-  return hourRaw < PERSONAL_DAY_START_HOUR ? 'late' : 'awake';
+  const minutes = timeToMinutes(timeStr);
+  if (minutes === null) return 'awake';
+  return minutes < getPersonalDayStartMinutes() ? 'late' : 'awake';
 }
 
 function buildTimelineBoundary() {
   const boundary = el('div', 'timeline-boundary');
-  boundary.appendChild(elText('span', 'timeline-boundary-label', 'Before 7 AM'));
+  boundary.appendChild(elText('span', 'timeline-boundary-label', `Before ${formatBoundaryTime(getPersonalDayStartTime())}`));
   return boundary;
+}
+
+function getPersonalDayStartTime() {
+  return isValidTime(settings.personalDayStartTime)
+    ? settings.personalDayStartTime
+    : DEFAULT_PERSONAL_DAY_START_TIME;
+}
+
+function getPersonalDayStartMinutes() {
+  return timeToMinutes(getPersonalDayStartTime()) ?? timeToMinutes(DEFAULT_PERSONAL_DAY_START_TIME);
+}
+
+function timeToMinutes(timeStr) {
+  const [hourRaw, minuteRaw] = (timeStr || '').split(':').map(Number);
+  if (
+    Number.isNaN(hourRaw) ||
+    Number.isNaN(minuteRaw) ||
+    hourRaw < 0 ||
+    hourRaw > 23 ||
+    minuteRaw < 0 ||
+    minuteRaw > 59
+  ) {
+    return null;
+  }
+  return hourRaw * 60 + minuteRaw;
+}
+
+function isValidTime(timeStr) {
+  return timeToMinutes(timeStr) !== null;
+}
+
+function formatBoundaryTime(timeStr) {
+  const [hourRaw, minuteRaw] = timeStr.split(':').map(Number);
+  const suffix = hourRaw >= 12 ? 'PM' : 'AM';
+  const hour = hourRaw % 12 || 12;
+  if (minuteRaw === 0) return `${hour} ${suffix}`;
+  return `${hour}:${String(minuteRaw).padStart(2, '0')} ${suffix}`;
 }
 
 function buildTimelineItem(ev) {
@@ -1638,6 +1675,7 @@ function openSettingsModal() {
   document.querySelectorAll('#settings-modal input[data-dow]').forEach(cb => {
     cb.checked = legsDays.includes(Number(cb.dataset.dow));
   });
+  document.getElementById('setting-personal-day-start').value = getPersonalDayStartTime();
   document.getElementById('setting-cue-sound').checked = settings.setCueSound !== false;
   document.getElementById('setting-cue-vibrate').checked = settings.setCueVibrate !== false;
   document.getElementById('setting-cue-speech').checked = Boolean(settings.setCueSpeech);
@@ -1654,6 +1692,10 @@ function saveSettingsModal() {
     legsDays.push(Number(cb.dataset.dow));
   });
   settings.legsDays = legsDays;
+  const personalDayStartTime = document.getElementById('setting-personal-day-start').value;
+  settings.personalDayStartTime = isValidTime(personalDayStartTime)
+    ? personalDayStartTime
+    : DEFAULT_PERSONAL_DAY_START_TIME;
   settings.setCueSound = document.getElementById('setting-cue-sound').checked;
   settings.setCueVibrate = document.getElementById('setting-cue-vibrate').checked;
   settings.setCueSpeech = document.getElementById('setting-cue-speech').checked;

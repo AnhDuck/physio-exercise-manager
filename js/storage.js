@@ -40,6 +40,7 @@ function loadSettings() {
       setCueSound: true,
       setCueVibrate: true,
       setCueSpeech: false,
+      personalDayStartTime: '07:00',
     };
     saveSettings(defaults);
     return defaults;
@@ -48,6 +49,7 @@ function loadSettings() {
     setCueSound: true,
     setCueVibrate: true,
     setCueSpeech: false,
+    personalDayStartTime: '07:00',
     ...JSON.parse(raw),
   };
 }

@@ -35,7 +35,7 @@ body {
 .app-header {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   gap: 22px;
   padding: 0 24px;
   height: var(--header-h);
@@ -65,10 +65,12 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-.week-nav button {
+.week-nav button,
+.header-actions button {
   background: var(--bg-card);
   border: 1px solid var(--border);
   color: var(--text);
@@ -79,7 +81,8 @@ body {
   transition: background .15s;
 }
 
-.week-nav button:hover { background: var(--bg-hover); }
+.week-nav button:hover,
+.header-actions button:hover { background: var(--bg-hover); }
 
 .week-nav .today-btn {
   background: #2b4a7a;
@@ -95,8 +98,11 @@ body {
   color: var(--text-muted);
 }
 
-#btn-notes {
-  order: -10;
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 0 auto;
 }
 
 /* ── Main layout ─────────────────────────────────────────────────── */
@@ -186,7 +192,7 @@ body.notes-open .grid-table {
 .timeline-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 18px;
   padding-bottom: 20px;
 }
 
@@ -197,8 +203,8 @@ body.notes-open .grid-table {
 }
 
 .timeline-day {
-  border-top: 1px solid var(--border);
-  padding-top: 9px;
+  border-top: 2px solid rgba(255,255,255,.16);
+  padding-top: 13px;
 }
 
 .timeline-day:first-child {
@@ -208,10 +214,10 @@ body.notes-open .grid-table {
 
 .timeline-day-header {
   color: var(--text);
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 800;
   line-height: 1.2;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .timeline-day-rows {
@@ -221,10 +227,7 @@ body.notes-open .grid-table {
 }
 
 .timeline-boundary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 7px 0 5px;
+  margin: 9px 0 4px 6px;
   color: var(--text-dim);
   font-size: 11px;
   font-weight: 800;
@@ -234,10 +237,7 @@ body.notes-open .grid-table {
 
 .timeline-boundary::before,
 .timeline-boundary::after {
-  content: '';
-  height: 1px;
-  background: rgba(255,255,255,.16);
-  flex: 1;
+  content: none;
 }
 
 .timeline-boundary-label {
