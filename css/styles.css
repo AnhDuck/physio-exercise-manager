@@ -17,6 +17,7 @@
   --day-col-w:    minmax(80px, 1fr);
   --label-col-w:  minmax(340px, 420px);
   --header-h:     56px;
+  --notes-panel-w: 360px;
 
   --c-day1: #4a90d9;
   --c-day2: #5ab89e;
@@ -127,15 +128,26 @@ body.set-tracker-open .main-wrap {
 
 .notes-panel {
   display: none;
-  width: 360px;
-  min-width: 360px;
+  width: var(--notes-panel-w);
+  min-width: var(--notes-panel-w);
   height: 100vh;
-  position: sticky;
+  position: fixed;
+  left: 0;
   top: 0;
+  z-index: 80;
   overflow-y: auto;
   border-right: 1px solid var(--border);
   background: #26262a;
   padding: 14px;
+}
+
+body.notes-open .app-header {
+  width: calc(100% - var(--notes-panel-w));
+  margin-left: var(--notes-panel-w);
+}
+
+body.notes-open .main-wrap {
+  padding-left: var(--notes-panel-w);
 }
 
 body.notes-open .notes-panel {
@@ -1730,13 +1742,22 @@ body.dense-mode .dose-marker {
 ::-webkit-scrollbar-thumb:hover { background: #555; }
 
 @media (max-width: 900px) {
+  body.notes-open .app-header {
+    width: 100%;
+    margin-left: 0;
+  }
+
   .main-wrap {
     display: block;
   }
 
+  body.notes-open .main-wrap {
+    padding-left: 0;
+  }
+
   .notes-panel {
     position: fixed;
-    inset: var(--header-h) 0 0 0;
+    inset: 0;
     z-index: 120;
     width: 100%;
     min-width: 0;
