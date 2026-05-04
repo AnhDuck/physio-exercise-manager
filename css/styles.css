@@ -17,6 +17,8 @@
   --day-col-w:    minmax(80px, 1fr);
   --label-col-w:  minmax(340px, 420px);
   --header-h:     56px;
+  --header-pad-x: 24px;
+  --drawer-toggle-size: 34px;
   --notes-panel-w: 360px;
 
   --c-day1: #4a90d9;
@@ -38,7 +40,7 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0 24px;
+  padding: 0 var(--header-pad-x);
   height: var(--header-h);
   background: var(--bg-header);
   border-bottom: 1px solid var(--border);
@@ -48,8 +50,8 @@ body {
   display: inline-grid;
   place-content: center;
   gap: 4px;
-  width: 34px;
-  height: 34px;
+  width: var(--drawer-toggle-size);
+  height: var(--drawer-toggle-size);
   flex: 0 0 auto;
   border: 1px solid transparent;
   border-radius: 6px;
@@ -67,15 +69,14 @@ body {
   background: currentColor;
 }
 
-.drawer-toggle:hover,
-.drawer-toggle.active {
+.drawer-toggle:hover {
   background: var(--bg-card);
   border-color: var(--border);
   color: var(--text);
 }
 
 .drawer-toggle.active {
-  border-color: #c084fc;
+  color: var(--text-muted);
 }
 
 .app-title {
@@ -172,7 +173,7 @@ body.set-tracker-open .main-wrap {
   overflow-y: auto;
   border-right: 1px solid var(--border);
   background: #26262a;
-  padding: 14px;
+  padding: 0 14px 14px;
 }
 
 body.notes-open .app-header {
@@ -200,12 +201,15 @@ body.notes-open .grid-table {
 
 .notes-panel-header {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   align-items: center;
+  height: var(--header-h);
+  margin: 0 -14px 11px;
+  padding: 0 var(--header-pad-x);
 }
 
 .notes-panel-toggle {
-  margin: -7px 2px -7px -4px;
+  margin: 0;
 }
 
 .notes-panel-title {
