@@ -1840,7 +1840,7 @@ body.dense-mode .dose-marker {
 .set-tracker-actions {
   grid-area: actions;
   display: grid;
-  grid-template-columns: minmax(132px, 1fr) minmax(132px, 1fr) minmax(96px, .72fr);
+  grid-template-columns: minmax(132px, 1fr) minmax(132px, 1fr) minmax(56px, .42fr);
   gap: 8px;
   min-width: 0;
   width: 100%;
@@ -1879,6 +1879,7 @@ body.dense-mode .dose-marker {
   background: rgba(127, 29, 29, .62);
   border-color: #a84040;
   color: #fee2e2;
+  padding-inline: 8px;
 }
 
 .set-action-secondary {
