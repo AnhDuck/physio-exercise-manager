@@ -105,6 +105,67 @@
         </div>
       </div>
 
+      <div class="progression-fields">
+        <div class="form-row">
+          <div class="form-field">
+            <label for="field-dose-status">Dose status</label>
+            <select id="field-dose-status">
+              <option value="settled">Settled</option>
+              <option value="trial">Trial</option>
+              <option value="progressing">Progressing</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label for="field-change-source">Change source</label>
+            <select id="field-change-source">
+              <option value="">Unspecified</option>
+              <option value="self">Self adjustment</option>
+              <option value="physio">Physio change</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label for="field-baseline-sets">Baseline sets</label>
+            <input type="number" id="field-baseline-sets" min="1" max="20" />
+          </div>
+          <div class="form-field">
+            <label for="field-baseline-reps">Baseline reps</label>
+            <input type="text" id="field-baseline-reps" placeholder="e.g. 10" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label for="field-baseline-resistance">Baseline resistance</label>
+            <input type="text" id="field-baseline-resistance" placeholder="e.g. 10 lbs" />
+          </div>
+          <div class="form-field">
+            <label for="field-progress-start">Progression start</label>
+            <input type="date" id="field-progress-start" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label for="field-target-sets">Target sets</label>
+            <input type="number" id="field-target-sets" min="1" max="20" />
+          </div>
+          <div class="form-field">
+            <label for="field-target-reps">Target reps</label>
+            <input type="text" id="field-target-reps" placeholder="e.g. 15" />
+          </div>
+        </div>
+
+        <div class="form-row full">
+          <div class="form-field">
+            <label for="field-target-resistance">Target resistance</label>
+            <input type="text" id="field-target-resistance" placeholder="e.g. heavier band" />
+          </div>
+        </div>
+      </div>
+
       <div class="form-row full">
         <div class="form-field">
           <label for="field-group">Group</label>
