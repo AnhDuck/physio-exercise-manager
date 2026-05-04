@@ -743,25 +743,14 @@ body.notes-open .grid-table {
 .ex-meta span { white-space: nowrap; }
 .ex-meta .sep { color: var(--text-dim); }
 
-.ex-dose-status {
+.ex-progression-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 22px;
-  padding: 2px 7px;
   border-radius: 999px;
-  font-size: 12px;
   font-weight: 800;
   line-height: 1;
-}
-
-.ex-dose-trial {
-  border: 1px solid rgba(99,179,237,.38);
-  background: rgba(99,179,237,.11);
-  color: #bee3f8;
-}
-
-.ex-dose-progressing {
   width: 22px;
   padding: 0;
   border: 1px solid rgba(90,184,158,.52);
@@ -1228,15 +1217,11 @@ body.dense-mode .ex-meta-sep {
   display: none !important;
 }
 
-body.dense-mode .ex-dose-status {
+body.dense-mode .ex-progression-badge {
   grid-column: 5;
   align-self: center;
   justify-self: start;
   min-height: 20px;
-  font-size: 10px;
-}
-
-body.dense-mode .ex-dose-progressing {
   width: 20px;
   font-size: 14px;
 }
@@ -1416,6 +1401,26 @@ body.dense-mode .dose-marker {
   border: 1px solid rgba(255,255,255,.08);
   border-radius: 8px;
   background: rgba(255,255,255,.025);
+}
+
+.progression-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.set-tracker-progression {
+  color: #fbd38d;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+  margin-top: 3px;
 }
 
 .modal-actions {

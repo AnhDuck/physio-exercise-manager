@@ -432,14 +432,9 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber) {
   }
   meta.appendChild(elText('span', 'sep ex-meta-sep ex-meta-frequency-sep', '/'));
   meta.appendChild(elText('span', 'ex-meta-item ex-meta-frequency', ex.frequency));
-  const status = doseStatus(ex);
-  if (status === 'trial') {
-    const trial = elText('span', 'ex-dose-status ex-dose-trial', 'Trial');
-    trial.title = progressionTooltip(ex);
-    meta.appendChild(trial);
-  } else if (status === 'progressing') {
-    const progressIcon = elText('span', 'ex-dose-status ex-dose-progressing', String.fromCharCode(8593));
-    progressIcon.title = progressionTooltip(ex);
+  if (isProgressingExercise(ex)) {
+    const progressIcon = elText('span', 'ex-progression-badge', String.fromCharCode(8593));
+    progressIcon.title = progressionBadgeText(ex);
     progressIcon.setAttribute('aria-label', 'Progressing upward');
     meta.appendChild(progressIcon);
   }
@@ -575,7 +570,13 @@ function eventsForDate(dateStr) {
 
 function timelineEvents() {
   return events
-    .filter(ev => ev.type === 'note' || ev.type === 'dose-change' || ev.type === 'exercise-added')
+    .filter(ev =>
+      ev.type === 'note' ||
+      ev.type === 'dose-change' ||
+      ev.type === 'exercise-added' ||
+      ev.type === 'progression-started' ||
+      ev.type === 'progression-ended'
+    )
     .sort((a, b) => {
       const aKey = `${a.date || ''}T${a.time || '00:00'}`;
       const bKey = `${b.date || ''}T${b.time || '00:00'}`;
@@ -620,79 +621,38 @@ function getSessionForEdit(dateStr) {
 }
 
 function targetSetsForExercise(ex) {
-  if (isProgressingExercise(ex)) {
-    const setCounts = [ex.sets, ex.baselinePlan?.sets, ex.targetPlan?.sets]
-      .map(value => Number.parseInt(value, 10))
-      .filter(value => Number.isFinite(value) && value > 0);
-    if (setCounts.length) return Math.max(...setCounts);
-  }
   const sets = Number.parseInt(ex?.sets, 10);
   return Number.isFinite(sets) && sets > 0 ? sets : 1;
 }
 
-function planFromExercise(ex) {
-  return {
-    sets: targetSetsForExercise(ex),
-    reps: ex?.reps || '',
-    resistance: ex?.resistance || '',
-  };
-}
-
-function normalizedPlan(plan, fallback) {
-  const base = fallback || {};
-  const sets = Number.parseInt(plan?.sets ?? base.sets, 10);
-  return {
-    sets: Number.isFinite(sets) && sets > 0 ? sets : targetSetsForExercise(base),
-    reps: String(plan?.reps ?? base.reps ?? '').trim(),
-    resistance: String(plan?.resistance ?? base.resistance ?? '').trim(),
-  };
-}
-
-function doseStatus(ex) {
-  return ex?.doseStatus === 'trial' || ex?.doseStatus === 'progressing' ? ex.doseStatus : 'settled';
-}
-
 function isProgressingExercise(ex) {
-  return doseStatus(ex) === 'progressing' && ex?.targetPlan;
+  return Boolean(ex?.progression && progressionCompletedHardSets(ex) < targetSetsForExercise(ex));
 }
 
-function planText(plan) {
-  if (!plan) return '';
-  const parts = [`${plan.sets || 1}x${plan.reps || '?'}`];
-  if (plan.resistance) parts.push(`@ ${plan.resistance}`);
-  return parts.join(' ');
+function progressionCompletedHardSets(ex) {
+  const completed = Number.parseInt(ex?.progression?.completedHardSets, 10);
+  const value = Number.isFinite(completed) ? completed : 0;
+  return Math.min(targetSetsForExercise(ex), Math.max(0, value));
 }
 
-function progressionHardSetCount(ex) {
+function progressionHardSetsToday(ex) {
   if (!isProgressingExercise(ex)) return 0;
-  const targetSets = targetSetsForExercise(ex);
-  const completed = Number.parseInt(ex.progression?.hardSetsCompleted, 10);
-  return Math.min(targetSets, Math.max(0, Number.isFinite(completed) ? completed : 0));
+  return Math.min(targetSetsForExercise(ex), progressionCompletedHardSets(ex) + 1);
 }
 
-function activeHardSetCount(ex) {
-  if (!isProgressingExercise(ex)) return 0;
-  return Math.min(targetSetsForExercise(ex), progressionHardSetCount(ex) + 1);
+function progressionBadgeText(ex) {
+  return `Progressing resistance: ${harderSetsText(progressionHardSetsToday(ex))} harder`;
 }
 
-function setPlanForExercise(ex, setIndex) {
-  const fallback = planFromExercise(ex);
-  if (!isProgressingExercise(ex)) return fallback;
-  const baseline = normalizedPlan(ex.baselinePlan, fallback);
-  const target = normalizedPlan(ex.targetPlan, fallback);
-  return setIndex < activeHardSetCount(ex) ? target : baseline;
+function harderSetsText(count) {
+  if (count <= 0) return 'no sets';
+  if (count === 1) return 'set 1';
+  return `sets 1-${count}`;
 }
 
-function trackerSetPlans(ex) {
-  return Array.from({ length: targetSetsForExercise(ex) }, (_, index) => setPlanForExercise(ex, index));
-}
-
-function progressionTooltip(ex) {
-  if (doseStatus(ex) === 'trial') return 'Trial dose: use the prescribed range to find the right working dose';
+function progressionTrackerText(ex) {
   if (!isProgressingExercise(ex)) return '';
-  const target = normalizedPlan(ex.targetPlan, planFromExercise(ex));
-  const hardNow = activeHardSetCount(ex);
-  return `Progressing to ${planText(target)}; ${hardNow}/${targetSetsForExercise(ex)} harder sets today`;
+  return `Progressing resistance: ${harderSetsText(progressionHardSetsToday(ex))} ${progressionHardSetsToday(ex) === 1 ? 'is' : 'are'} harder`;
 }
 
 function getSetProgress(dateStr, exId) {
@@ -720,29 +680,14 @@ function setCompletion(dateStr, exId, complete) {
 
 function maybeAdvanceProgression(ex, dateStr, progress) {
   if (!isProgressingExercise(ex) || !isProgressComplete(progress)) return false;
-  const progression = ex.progression || {};
-  const startedAtDate = progression.startedAtDate || dateStr;
-  const lastCountedDate = progression.lastCountedDate || '';
-  if (dateStr < startedAtDate || (lastCountedDate && dateStr <= lastCountedDate)) return false;
-
   const targetSets = targetSetsForExercise(ex);
-  const nextHardSets = Math.min(targetSets, progressionHardSetCount(ex) + 1);
-  ex.progression = {
-    ...progression,
-    startedAtDate,
-    lastCountedDate: dateStr,
-    hardSetsCompleted: nextHardSets,
-  };
+  const nextHardSets = Math.min(targetSets, progressionCompletedHardSets(ex) + 1);
 
   if (nextHardSets >= targetSets) {
-    const target = normalizedPlan(ex.targetPlan, planFromExercise(ex));
-    ex.sets = target.sets;
-    ex.reps = target.reps;
-    ex.resistance = target.resistance;
-    delete ex.doseStatus;
-    delete ex.baselinePlan;
-    delete ex.targetPlan;
     delete ex.progression;
+    logProgressionEvent(ex, 'progression-ended', dateStr);
+  } else {
+    ex.progression = { completedHardSets: nextHardSets };
   }
 
   saveExercises(exercises);
@@ -1086,11 +1031,10 @@ function renderSetTracker() {
   const info = el('div', 'set-tracker-info');
   info.appendChild(elText('div', 'set-tracker-kicker', dateStr === todayStr() ? 'Active today' : dateStr));
   info.appendChild(elText('div', 'set-tracker-name', ex.name));
-  const setPlans = trackerSetPlans(ex);
-  const planSummary = isProgressingExercise(ex)
-    ? setPlans.map((plan, index) => `S${index + 1}: ${plan.reps}${plan.resistance ? ` @ ${plan.resistance}` : ''}`).join(' | ')
-    : `${ex.reps} reps${ex.resistance ? ` | ${ex.resistance}` : ''}`;
+  const planSummary = `${ex.reps} reps${ex.resistance ? ` | ${ex.resistance}` : ''}`;
   info.appendChild(elText('div', 'set-tracker-meta', `${progress.completedSets}/${progress.targetSets} sets | ${planSummary}`));
+  const progressionText = progressionTrackerText(ex);
+  if (progressionText) info.appendChild(elText('div', 'set-tracker-progression', progressionText));
   main.appendChild(info);
   panel.appendChild(main);
 
@@ -1103,9 +1047,9 @@ function renderSetTracker() {
 
   const progressWrap = el('div', 'set-tracker-progress');
   for (let i = 1; i <= progress.targetSets; i++) {
-    const plan = setPlans[i - 1] || planFromExercise(ex);
-    const dot = el('span', 'set-dot' + (i <= progress.completedSets ? ' filled' : '') + (isProgressingExercise(ex) && i <= activeHardSetCount(ex) ? ' harder' : ''));
-    dot.title = `Set ${i}: ${plan.reps || '?'}${plan.resistance ? ` @ ${plan.resistance}` : ''}`;
+    const isHarderSet = isProgressingExercise(ex) && i <= progressionHardSetsToday(ex);
+    const dot = el('span', 'set-dot' + (i <= progress.completedSets ? ' filled' : '') + (isHarderSet ? ' harder' : ''));
+    dot.title = isHarderSet ? `Set ${i}: harder resistance` : `Set ${i}`;
     dot.appendChild(elText('span', 'set-dot-label', String(i)));
     progressWrap.appendChild(dot);
   }
@@ -1227,7 +1171,7 @@ function openEditModal(exId) {
   document.getElementById('field-frequency').value = ex.frequency || '';
   document.getElementById('field-instructions').value = ex.instructions || '';
   document.getElementById('field-group').value = ex.group;
-  fillDosePlanFields(ex);
+  fillProgressionFields(ex);
 
   document.getElementById('delete-btn').style.display = 'inline-block';
   showModal();
@@ -1243,12 +1187,7 @@ function openAddModal(group) {
   document.getElementById('field-frequency').value = '3x/week';
   document.getElementById('field-instructions').value = '';
   document.getElementById('field-group').value = group;
-  fillDosePlanFields({
-    sets: 3,
-    reps: '10',
-    resistance: '',
-    doseStatus: 'settled',
-  });
+  fillProgressionFields({ sets: 3 });
   document.getElementById('delete-btn').style.display = 'none';
   showModal();
 }
@@ -1262,61 +1201,25 @@ function closeModal() {
   editingExId = null;
 }
 
-function fillDosePlanFields(ex) {
-  const fallback = planFromExercise(ex);
-  const baseline = normalizedPlan(ex.baselinePlan, fallback);
-  const target = normalizedPlan(ex.targetPlan, fallback);
-  document.getElementById('field-dose-status').value = doseStatus(ex);
-  document.getElementById('field-change-source').value = '';
-  document.getElementById('field-baseline-sets').value = baseline.sets;
-  document.getElementById('field-baseline-reps').value = baseline.reps;
-  document.getElementById('field-baseline-resistance').value = baseline.resistance;
-  document.getElementById('field-target-sets').value = target.sets;
-  document.getElementById('field-target-reps').value = target.reps;
-  document.getElementById('field-target-resistance').value = target.resistance;
-  document.getElementById('field-progress-start').value = ex.progression?.startedAtDate || todayStr();
+function fillProgressionFields(ex) {
+  const totalSets = targetSetsForExercise(ex);
+  const stage = progressionCompletedHardSets(ex);
+  const stageField = document.getElementById('field-progression-stage');
+  document.getElementById('field-progression-active').checked = isProgressingExercise(ex);
+  stageField.max = String(totalSets);
+  stageField.value = String(stage);
 }
 
-function readPlanFields(prefix, fallback) {
-  const sets = parseInt(document.getElementById(`field-${prefix}-sets`).value, 10);
-  return normalizedPlan({
-    sets: Number.isFinite(sets) && sets > 0 ? sets : fallback.sets,
-    reps: document.getElementById(`field-${prefix}-reps`).value.trim() || fallback.reps,
-    resistance: document.getElementById(`field-${prefix}-resistance`).value.trim(),
-  }, fallback);
-}
-
-function readDosePlanFields(fields, previous) {
-  const status = document.getElementById('field-dose-status').value;
-  const fallback = normalizedPlan({
-    sets: fields.sets,
-    reps: fields.reps,
-    resistance: fields.resistance,
-  }, previous || fields);
-  const baselinePlan = readPlanFields('baseline', fallback);
-  const targetPlan = readPlanFields('target', fallback);
-  const doseFields = {};
-  if (status === 'trial') {
-    doseFields.doseStatus = 'trial';
-    doseFields.baselinePlan = baselinePlan;
-    doseFields.targetPlan = targetPlan;
-  } else if (status === 'progressing') {
-    const previousProgression = previous?.progression || {};
-    doseFields.doseStatus = 'progressing';
-    doseFields.baselinePlan = baselinePlan;
-    doseFields.targetPlan = targetPlan;
-    doseFields.progression = {
-      startedAtDate: document.getElementById('field-progress-start').value || todayStr(),
-      lastCountedDate: previousProgression.lastCountedDate || null,
-      hardSetsCompleted: Math.max(0, Number.parseInt(previousProgression.hardSetsCompleted, 10) || 0),
-    };
-  } else {
-    doseFields.doseStatus = undefined;
-    doseFields.baselinePlan = undefined;
-    doseFields.targetPlan = undefined;
-    doseFields.progression = undefined;
-  }
-  return doseFields;
+function readProgressionFields(fields, previous) {
+  const active = document.getElementById('field-progression-active').checked;
+  const totalSets = targetSetsForExercise(fields);
+  const rawStage = Number.parseInt(document.getElementById('field-progression-stage').value, 10);
+  const completedHardSets = Math.min(totalSets, Math.max(0, Number.isFinite(rawStage) ? rawStage : 0));
+  const wasProgressing = isProgressingExercise(previous);
+  const willProgress = active && completedHardSets < totalSets;
+  if (!wasProgressing && willProgress) logProgressionEvent(fields, 'progression-started');
+  if (wasProgressing && !willProgress) logProgressionEvent(fields, 'progression-ended');
+  return willProgress ? { completedHardSets } : undefined;
 }
 
 function saveExerciseModal() {
@@ -1332,21 +1235,19 @@ function saveExerciseModal() {
     instructions: document.getElementById('field-instructions').value.trim(),
     group:        document.getElementById('field-group').value,
   };
-  const changeSource = document.getElementById('field-change-source').value;
 
   if (editingExId) {
     const idx = exercises.findIndex(e => e.id === editingExId);
     if (idx !== -1) {
       const previous = { ...exercises[idx] };
-      const doseFields = readDosePlanFields(fields, previous);
-      const next = { ...exercises[idx], ...fields, ...doseFields };
-      Object.keys(next).forEach(key => {
-        if (next[key] === undefined) delete next[key];
-      });
+      const progression = readProgressionFields(fields, previous);
+      const next = { ...exercises[idx], ...fields };
+      if (progression) next.progression = progression;
+      else delete next.progression;
       const changes = doseChanges(previous, next);
       exercises[idx] = next;
       if (Object.keys(changes).length) {
-        logDoseChange(exercises[idx], changes, changeSource);
+        logDoseChange(exercises[idx], changes);
       }
     }
   } else {
@@ -1358,10 +1259,8 @@ function saveExerciseModal() {
       order: maxOrder + 1,
       ...fields,
     };
-    Object.assign(exercise, readDosePlanFields(fields, exercise));
-    Object.keys(exercise).forEach(key => {
-      if (exercise[key] === undefined) delete exercise[key];
-    });
+    const progression = readProgressionFields(exercise, null);
+    if (progression) exercise.progression = progression;
     exercises.push(exercise);
     logExerciseAdded(exercise);
   }
@@ -1460,17 +1359,15 @@ function makeId(prefix) {
 
 function doseChanges(previous, nextFields) {
   const changes = {};
-  ['sets', 'reps', 'resistance', 'frequency', 'doseStatus', 'baselinePlan', 'targetPlan'].forEach(field => {
+  ['sets', 'reps', 'resistance', 'frequency'].forEach(field => {
     const from = previous[field] ?? '';
     const to = nextFields[field] ?? '';
-    const fromKey = typeof from === 'object' ? JSON.stringify(from) : String(from);
-    const toKey = typeof to === 'object' ? JSON.stringify(to) : String(to);
-    if (fromKey !== toKey) changes[field] = { from, to };
+    if (String(from) !== String(to)) changes[field] = { from, to };
   });
   return changes;
 }
 
-function logDoseChange(exercise, changes, source) {
+function logDoseChange(exercise, changes) {
   events.push({
     id: makeId('event'),
     type: 'dose-change',
@@ -1479,7 +1376,19 @@ function logDoseChange(exercise, changes, source) {
     exerciseId: exercise.id,
     exerciseName: exercise.name,
     changes,
-    source: source || undefined,
+    createdAt: new Date().toISOString(),
+  });
+  saveEvents(events);
+}
+
+function logProgressionEvent(exercise, type, dateStr = todayStr()) {
+  events.push({
+    id: makeId('event'),
+    type,
+    date: dateStr,
+    time: currentTimeStr(),
+    exerciseId: exercise.id,
+    exerciseName: exercise.name,
     createdAt: new Date().toISOString(),
   });
   saveEvents(events);
@@ -1758,7 +1667,7 @@ function buildDoseChangeInput(field, direction, value) {
   control.appendChild(elText('span', '', direction === 'from' ? 'From' : 'To'));
   const input = document.createElement('input');
   input.type = 'text';
-  input.value = doseChangeValueText(value) === 'blank' ? '' : doseChangeValueText(value);
+  input.value = value ?? '';
   input.dataset.changeField = field;
   input.dataset.changeDirection = direction;
   control.appendChild(input);
@@ -1771,9 +1680,6 @@ function doseFieldLabel(field) {
     reps: 'Reps',
     resistance: 'Resistance',
     frequency: 'Frequency',
-    doseStatus: 'Dose status',
-    baselinePlan: 'Baseline',
-    targetPlan: 'Target',
   }[field] || field;
 }
 
@@ -1836,11 +1742,10 @@ function buildEventItem(ev) {
 }
 
 function eventTitle(ev) {
-  if (ev.type === 'dose-change') {
-    const source = ev.source === 'physio' ? 'Physio' : (ev.source === 'self' ? 'Self' : 'Dose');
-    return `${source} change: ${ev.exerciseName || 'Exercise'}`;
-  }
+  if (ev.type === 'dose-change') return `Dose change: ${ev.exerciseName || 'Exercise'}`;
   if (ev.type === 'exercise-added') return `Added exercise: ${ev.exerciseName || 'Exercise'}`;
+  if (ev.type === 'progression-started') return `Started progression: ${ev.exerciseName || 'Exercise'}`;
+  if (ev.type === 'progression-ended') return `Finished progression: ${ev.exerciseName || 'Exercise'}`;
   const tags = [ev.symptomName, ev.exerciseName].filter(Boolean).join(' + ');
   return tags || 'Note';
 }
@@ -1848,17 +1753,13 @@ function eventTitle(ev) {
 function eventText(ev) {
   if (ev.type === 'dose-change') {
     return Object.entries(ev.changes || {})
-      .map(([field, change]) => `${doseFieldLabel(field)}: ${doseChangeValueText(change.from)} -> ${doseChangeValueText(change.to)}`)
+      .map(([field, change]) => `${doseFieldLabel(field)}: ${change.from || 'blank'} -> ${change.to || 'blank'}`)
       .join(' / ');
   }
   if (ev.type === 'exercise-added') return 'New exercise added to the program.';
+  if (ev.type === 'progression-started') return 'Resistance progression started.';
+  if (ev.type === 'progression-ended') return 'Resistance progression finished.';
   return ev.text || '';
-}
-
-function doseChangeValueText(value) {
-  if (value === undefined || value === null || value === '') return 'blank';
-  if (typeof value === 'object') return planText(normalizedPlan(value, { sets: value.sets || 1 }));
-  return String(value);
 }
 
 function buildDenseToggle() {
