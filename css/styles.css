@@ -36,14 +36,33 @@ body {
 
 /* ── Header ─────────────────────────────────────────────────────── */
 .app-header {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 0 var(--header-pad-x);
   height: var(--header-h);
+  overflow: hidden;
   background: var(--bg-header);
   border-bottom: 1px solid var(--border);
+}
+
+.app-header::before {
+  content: "";
+  position: absolute;
+  inset: -24px 12% -24px auto;
+  width: min(460px, 46vw);
+  pointer-events: none;
+  opacity: .24;
+  background-image: radial-gradient(circle, rgba(232,234,237,.48) 1px, transparent 1.5px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(90deg, transparent, #000 28%, #000 70%, transparent);
+}
+
+.app-header > * {
+  position: relative;
+  z-index: 1;
 }
 
 .drawer-toggle {
@@ -83,11 +102,17 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 9px;
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 16px;
   font-weight: 600;
   color: var(--text);
   letter-spacing: .3px;
   white-space: nowrap;
+}
+
+.app-title > span:not(.header-quote) {
+  flex: 0 0 auto;
 }
 
 .app-title-icon {
@@ -97,12 +122,21 @@ body {
   border-radius: 7px;
 }
 
-.week-nav {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1 1 auto;
+.header-quote {
   min-width: 0;
+  max-width: 34vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.header-quote::before {
+  content: "·";
+  margin: 0 2px 0 1px;
+  color: var(--text-dim);
 }
 
 .week-nav button,
@@ -119,6 +153,10 @@ body {
 
 .week-nav button:hover,
 .header-actions button:hover { background: var(--bg-hover); }
+
+.header-quote::before {
+  content: "-";
+}
 
 .week-nav .today-btn {
   background: #2b4a7a;
@@ -544,13 +582,35 @@ body.notes-open .grid-table {
 
 .col-header-row.compact .spacer { padding: 5px 16px; }
 
-.col-header-row .spacer { padding: 10px 16px; }
+.col-header-row .spacer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 10px 16px;
+}
 
 .header-tools {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.col-header-row .week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.col-header-row .week-label {
+  flex: 0 0 auto;
 }
 
 .day-header {
@@ -2204,6 +2264,15 @@ body.dense-mode .dose-marker {
     position: sticky;
     top: 0;
     z-index: 140;
+  }
+
+  .app-header::before {
+    width: 42vw;
+    opacity: .16;
+  }
+
+  .header-quote {
+    display: none;
   }
 
   body.notes-open .app-header {

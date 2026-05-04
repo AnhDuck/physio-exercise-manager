@@ -18,6 +18,59 @@ let settingsModalSnapshot = null;
 let toastTimer = null;
 let lastBlockDropWarningAt = 0;
 
+const PHYSIO_HEADER_QUOTES = [
+  'Let us earn that ice pack.',
+  'Tiny reps, suspiciously big destiny.',
+  'Mobility is calling, and it brought a clipboard.',
+  'Today we negotiate with connective tissue.',
+  'A little stretch, a little swagger.',
+  'Your future self requested better range of motion.',
+  'Time to make the joints less dramatic.',
+  'Coffee later. Controlled movement now.',
+  'Respect the plan. Befriend the band.',
+  'We are only one set away from feeling responsible.',
+  'Let us put the therapy in physiotherapy.',
+  'Progress: now available in tiny increments.',
+  'The resistance band believes in you, unfortunately.',
+  'Joint mobility, but make it administratively satisfying.',
+  'Today is sponsored by form and patience.',
+  'Move gently. Log aggressively.',
+  'Your tendons appreciate boring consistency.',
+  'Small exercises, large main-character energy.',
+  'Another glamorous day at the mobility factory.',
+  'Do the set before the set does you.',
+  'Stretch like someone with calendar reminders.',
+  'Let us turn stiffness into paperwork.',
+  'The road to recovery has excellent tracking.',
+  'Nothing says wellness like counting to ten slowly.',
+  'Your range of motion has entered the chat.',
+  'Every rep is a tiny memo to your nervous system.',
+  'Today we make discomfort file a status report.',
+  'Low drama, high compliance.',
+  'The body keeps score, so we made a spreadsheet.',
+  'A noble quest, mostly involving elastic.',
+  'Make the physio proud and the muscles confused.',
+  'One controlled rep at a time, obviously.',
+  'Welcome back to strategic wiggling.',
+  'Your recovery arc has tasks due today.',
+  'Let us knock a set off your list.',
+  'Soft tissue, firm commitment.',
+  'The vibes are clinical and mildly triumphant.',
+  'Rehab: because momentum loves receipts.',
+  'Today we collect reps like responsible adults.',
+  'Some heroes wear braces and track sets.',
+  'Your joints asked for a status meeting.',
+  'Motion first, overthinking second.',
+  'The plan is simple: move, log, repeat.',
+  'Let us be brave in a very small range.',
+  'Consistency: boring, effective, rude.',
+  'Theraband time, naturally.',
+  'Your muscles have been assigned homework.',
+  'Recovery looks suspiciously like showing up.',
+  'Do the tiny thing. Become slightly less creaky.',
+  'Physio time: the glamorous admin of healing.'
+];
+
 // ── Init ─────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   exercises = loadExercises();
@@ -29,11 +82,20 @@ document.addEventListener('DOMContentLoaded', () => {
   currentWeekStart = getMonday(new Date());
   lastTodayStr = todayStr();
   restoreActiveTracker();
+  setHeaderQuote();
   render();
   bindStaticEvents();
   renderNotesPanel();
   startRealtimeUpdates();
 });
+
+function setHeaderQuote() {
+  const quote = document.getElementById('header-quote');
+  if (!quote) return;
+
+  const index = Math.floor(Math.random() * PHYSIO_HEADER_QUOTES.length);
+  quote.textContent = PHYSIO_HEADER_QUOTES[index];
+}
 
 // One-shot data migrations for existing localStorage installs
 function runMigrations() {
@@ -144,16 +206,15 @@ function render(options = {}) {
   const dates = weekDates(currentWeekStart);
   const todayS = todayStr();
 
-  // Month label in nav
   const months = [...new Set(dates.map(d => MONTH_ABBR[d.getMonth()]))];
-  document.getElementById('week-label').textContent = months.join(' / ');
+  const monthLabel = months.join(' / ');
 
   const app = document.getElementById('app');
   app.innerHTML = '';
   document.body.classList.toggle('dense-mode', isDenseMode);
   document.body.classList.toggle('set-tracker-open', Boolean(activeTracker));
 
-  app.appendChild(buildColHeaders(dates, todayS));
+  app.appendChild(buildColHeaders(dates, todayS, monthLabel));
 
   let exerciseNumber = 1;
   for (const group of GROUP_ORDER) {
@@ -170,12 +231,13 @@ function render(options = {}) {
 }
 
 // ── Column headers ────────────────────────────────────────────────
-function buildColHeaders(dates, todayS) {
+function buildColHeaders(dates, todayS, monthLabel) {
   const row = el('div', 'col-header-row');
   const spacer = el('div', 'spacer');
   const tools = el('div', 'header-tools');
   tools.appendChild(buildDenseToggle());
   spacer.appendChild(tools);
+  spacer.appendChild(buildWeekNav(monthLabel));
   row.appendChild(spacer);
 
   dates.forEach((date, i) => {
@@ -218,6 +280,34 @@ function buildColHeaders(dates, todayS) {
   });
 
   return row;
+}
+
+function buildWeekNav(monthLabel) {
+  const nav = el('nav', 'week-nav');
+
+  const prev = elText('button', '', '\u2190 Week');
+  prev.id = 'btn-prev-week';
+  prev.type = 'button';
+  prev.addEventListener('click', prevWeek);
+
+  const label = elText('span', 'week-label', monthLabel);
+  label.id = 'week-label';
+
+  const next = elText('button', '', 'Week \u2192');
+  next.id = 'btn-next-week';
+  next.type = 'button';
+  next.addEventListener('click', nextWeek);
+
+  const today = elText('button', 'today-btn', 'TODAY');
+  today.id = 'btn-today';
+  today.type = 'button';
+  today.addEventListener('click', goToToday);
+
+  nav.appendChild(prev);
+  nav.appendChild(label);
+  nav.appendChild(next);
+  nav.appendChild(today);
+  return nav;
 }
 
 // ── Group section ────────────────────────────────────────────────
@@ -2373,9 +2463,6 @@ function updateCompactHeader() {
 
 // ── Static event bindings ─────────────────────────────────────────
 function bindStaticEvents() {
-  document.getElementById('btn-prev-week').addEventListener('click', prevWeek);
-  document.getElementById('btn-next-week').addEventListener('click', nextWeek);
-  document.getElementById('btn-today').addEventListener('click', goToToday);
   document.querySelectorAll('.notes-toggle').forEach(btn => {
     btn.addEventListener('click', toggleNotesPanel);
   });
