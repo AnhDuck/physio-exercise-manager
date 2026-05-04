@@ -1648,13 +1648,13 @@ body.dense-mode .dose-marker {
   bottom: 18px;
   z-index: 160;
   display: grid;
-  grid-template-columns: minmax(170px, 1fr) minmax(76px, auto) minmax(44px, auto) minmax(312px, 1.2fr);
+  grid-template-columns: minmax(190px, 1fr) minmax(170px, auto) minmax(44px, auto) minmax(312px, 1.2fr);
   align-items: center;
   column-gap: 10px;
-  row-gap: 8px;
-  width: min(720px, calc(100vw - 36px));
+  row-gap: 10px;
+  width: min(800px, calc(100vw - 36px));
   overflow: hidden;
-  padding: 14px;
+  padding: 18px 16px;
   border: 1px solid var(--border);
   border-left: 6px solid var(--tracker-color);
   border-radius: 8px;
@@ -1702,11 +1702,17 @@ body.dense-mode .dose-marker {
 
 .set-tracker-timer {
   display: grid;
-  justify-items: center;
+  grid-template-columns: repeat(2, minmax(76px, 1fr));
+  gap: 10px;
+  justify-items: stretch;
   align-content: center;
-  min-width: 94px;
+  min-width: 170px;
   color: var(--text);
-  text-align: center;
+  text-align: left;
+}
+
+.set-tracker-metric {
+  min-width: 0;
 }
 
 .set-tracker-timer-label {
@@ -1720,12 +1726,12 @@ body.dense-mode .dose-marker {
 
 .set-tracker-timer-value {
   color: #f8fafc;
-  font-size: 30px;
+  font-size: 22px;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
-  line-height: .98;
-  margin-top: 3px;
+  line-height: 1;
+  margin-top: 5px;
   white-space: nowrap;
 }
 
@@ -1742,9 +1748,7 @@ body.dense-mode .dose-marker {
 .set-tracker-footer {
   grid-column: 1 / -1;
   display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 10px;
+  align-items: center;
   min-width: 0;
   margin-top: -2px;
 }
@@ -1926,8 +1930,7 @@ body.dense-mode .dose-marker {
 
 @media (max-width: 480px) {
   .set-tracker-timer {
-    justify-items: start;
-    text-align: left;
+    grid-template-columns: 1fr 1fr;
   }
 
   .set-tracker-footer {

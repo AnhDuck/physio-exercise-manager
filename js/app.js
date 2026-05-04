@@ -702,6 +702,9 @@ function normalizeSetProgress(progress, ex) {
     setDurations: Array.isArray(progress?.setDurations)
       ? progress.setDurations.map(value => Math.max(0, Number(value) || 0))
       : [],
+    setCompletedAt: Array.isArray(progress?.setCompletedAt)
+      ? progress.setCompletedAt.slice(0, targetSets)
+      : [],
     timerStartedAt: progress?.timerStartedAt || null,
     elapsedSeconds: Math.max(0, Number(progress?.elapsedSeconds) || 0),
     timerStoppedAt: progress?.timerStoppedAt || null,
@@ -767,6 +770,7 @@ function openSetTracker(exId, dateStr) {
       completedAt: wasComplete ? now : null,
       finishedEarly: false,
       setDurations: [],
+      setCompletedAt: [],
       timerStartedAt: wasComplete ? null : now,
       elapsedSeconds: 0,
       timerStoppedAt: wasComplete ? now : null,
@@ -803,6 +807,7 @@ function logSet() {
   }
   const setDuration = currentTimerSegmentSeconds(progress, now);
   progress.setDurations[progress.completedSets] = setDuration;
+  progress.setCompletedAt[progress.completedSets] = now.toISOString();
   progress.elapsedSeconds = Math.min(SET_TIMER_CAP_SECONDS, progress.elapsedSeconds + setDuration);
   progress.completedSets = Math.min(progress.targetSets, progress.completedSets + 1);
   progress.updatedAt = now.toISOString();
@@ -833,6 +838,7 @@ function completeActiveExercise() {
   progress.completedSets = progress.targetSets;
   progress.updatedAt = now.toISOString();
   progress.completedAt = progress.updatedAt;
+  progress.setCompletedAt[progress.targetSets - 1] = progress.updatedAt;
   progress.finishedEarly = false;
   session.setProgress[ex.id] = progress;
   setCompletion(dateStr, ex.id, true);
@@ -873,14 +879,17 @@ function decrementActiveSet() {
     progress.finishedEarly = false;
     progress.completedSets = Math.max(0, progress.completedSets - 1);
     progress.setDurations.splice(progress.completedSets, 1);
+    progress.setCompletedAt.splice(progress.completedSets, 1);
     if (!progress.timerStartedAt && !progress.timerCapped) startSetTimer(progress);
   } else if (progress.completedSets >= progress.targetSets) {
     progress.completedSets = Math.max(0, progress.completedSets - 1);
     progress.setDurations.splice(progress.completedSets, 1);
+    progress.setCompletedAt.splice(progress.completedSets, 1);
     if (!progress.timerStartedAt && !progress.timerCapped) startSetTimer(progress);
   } else {
     progress.completedSets = Math.max(0, progress.completedSets - 1);
     progress.setDurations.splice(progress.completedSets, 1);
+    progress.setCompletedAt.splice(progress.completedSets, 1);
     if (!progress.timerStartedAt && !progress.timerCapped) startSetTimer(progress);
   }
   progress.updatedAt = new Date().toISOString();
@@ -943,6 +952,8 @@ function getActiveTrackerParts() {
       updatedAt: now,
       completedAt: null,
       finishedEarly: false,
+      setDurations: [],
+      setCompletedAt: [],
     };
   }
   progress = normalizeSetProgress(progress, ex);
@@ -968,17 +979,23 @@ function renderSetTracker() {
 
   const main = el('div', 'set-tracker-main');
   const info = el('div', 'set-tracker-info');
-  info.appendChild(elText('div', 'set-tracker-kicker', dateStr === todayStr() ? 'Active today' : dateStr));
+  info.appendChild(elText('div', 'set-tracker-kicker', `${dateStr} | Started ${trackerStartedTime(progress)}`));
   info.appendChild(elText('div', 'set-tracker-name', ex.name));
   info.appendChild(elText('div', 'set-tracker-meta', `${progress.completedSets}/${progress.targetSets} sets | ${ex.reps} reps${ex.resistance ? ` | ${ex.resistance}` : ''}`));
   main.appendChild(info);
   panel.appendChild(main);
 
   const timer = el('div', 'set-tracker-timer');
-  timer.appendChild(elText('div', 'set-tracker-timer-label', 'Timer'));
-  timer.appendChild(elText('div', 'set-tracker-timer-value', trackerTimerValue(progress)));
+  const totalMetric = el('div', 'set-tracker-metric');
+  totalMetric.appendChild(elText('div', 'set-tracker-timer-label', 'Total'));
+  totalMetric.appendChild(elText('div', 'set-tracker-timer-value', trackerTotalTimeValue(progress)));
+  timer.appendChild(totalMetric);
+  const sinceSetMetric = el('div', 'set-tracker-metric');
+  sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-label', progress.completedSets > 0 ? 'Since last set' : 'Since start'));
+  sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-value', trackerSinceLastSetValue(progress)));
   const timerDetail = trackerTimerDetail(progress);
-  if (timerDetail) timer.appendChild(elText('div', 'set-tracker-timer-detail', timerDetail));
+  if (timerDetail) sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-detail', timerDetail));
+  timer.appendChild(sinceSetMetric);
   panel.appendChild(timer);
 
   const progressWrap = el('div', 'set-tracker-progress');
@@ -1002,7 +1019,6 @@ function renderSetTracker() {
   panel.appendChild(actions);
 
   const footer = el('div', 'set-tracker-footer');
-  footer.appendChild(elText('div', 'set-tracker-recency', trackerStatusText(progress)));
   footer.appendChild(elText('div', 'set-tracker-help', 'Arrow keys adjust sets | Pause & Close saves partial progress'));
   panel.appendChild(footer);
   root.appendChild(panel);
@@ -1018,14 +1034,20 @@ function formatLastLogged(iso) {
   return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
-function trackerTimerValue(progress) {
+function trackerStartedTime(progress) {
+  return formatClockTime(progress.startedAt);
+}
+
+function trackerSinceLastSetValue(progress) {
+  return fmtShortDuration(secondsSinceLastSet(progress));
+}
+
+function trackerTotalTimeValue(progress) {
   return fmtShortDuration(activeElapsedSeconds(progress));
 }
 
 function trackerTimerDetail(progress) {
   const parts = [];
-  const lastDuration = progress.setDurations[progress.completedSets - 1];
-  if (lastDuration !== undefined) parts.push(`last set ${fmtShortDuration(lastDuration)}`);
   if (progress.timerCapped) parts.push('stopped at 60m');
   return parts.join(' | ');
 }
@@ -1041,6 +1063,24 @@ function fmtShortDuration(totalSeconds) {
   const remainder = seconds % 60;
   if (minutes >= 60) return '60:00';
   return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
+}
+
+function secondsSinceLastSet(progress, now = new Date()) {
+  const lastSetAt = progress.setCompletedAt?.[progress.completedSets - 1];
+  const iso = progress.completedSets > 0 ? (lastSetAt || progress.updatedAt) : progress.startedAt;
+  const time = new Date(iso).getTime();
+  if (!iso || Number.isNaN(time)) return 0;
+  return Math.max(0, Math.floor((now.getTime() - time) / 1000));
+}
+
+function formatClockTime(iso) {
+  const time = new Date(iso).getTime();
+  if (!iso || Number.isNaN(time)) return '--:--';
+  return new Date(time).toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
 }
 
 function playSetCue(setNumber) {
