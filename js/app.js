@@ -990,6 +990,7 @@ function renderSetTracker() {
   info.appendChild(titleRow);
   info.appendChild(elText('div', 'set-tracker-meta', `${progress.completedSets}/${progress.targetSets} sets | ${ex.reps} reps${ex.resistance ? ` | ${ex.resistance}` : ''}`));
   main.appendChild(info);
+  main.appendChild(elText('div', 'set-tracker-help', 'Arrow keys adjust sets | Pause & Close saves partial progress'));
   panel.appendChild(main);
 
   const actions = el('div', 'set-tracker-actions');
@@ -1019,9 +1020,6 @@ function renderSetTracker() {
   panel.appendChild(timer);
   panel.appendChild(actions);
 
-  const footer = el('div', 'set-tracker-footer');
-  footer.appendChild(elText('div', 'set-tracker-help', 'Arrow keys adjust sets | Pause & Close saves partial progress'));
-  panel.appendChild(footer);
   root.appendChild(panel);
 }
 
