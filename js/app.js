@@ -1594,21 +1594,6 @@ function logExerciseAdded(exercise) {
   saveEvents(events);
 }
 
-function fillEventSelect(id, items, emptyLabel) {
-  const select = document.getElementById(id);
-  select.innerHTML = '';
-  const empty = document.createElement('option');
-  empty.value = '';
-  empty.textContent = emptyLabel;
-  select.appendChild(empty);
-  items.forEach(item => {
-    const option = document.createElement('option');
-    option.value = item.id;
-    option.textContent = item.name;
-    select.appendChild(option);
-  });
-}
-
 function setNotesPanelOpen(open, shouldFocus = false) {
   settings.notesOpen = open;
   saveSettings(settings);
@@ -1642,7 +1627,6 @@ function renderNotesPanel() {
     btn.setAttribute('aria-label', label);
   });
 
-  fillEventSelect('quick-note-exercise', exercises, 'No exercise tag');
   const dateField = document.getElementById('quick-note-date');
   const timeField = document.getElementById('quick-note-time');
   if (!dateField.value) dateField.value = todayStr();
@@ -1664,15 +1648,11 @@ function addQuickNote() {
   const text = textField.value.trim();
   if (!text) { alert('Note text is required.'); return; }
 
-  const exerciseId = document.getElementById('quick-note-exercise').value;
-  const exercise = exercises.find(ex => ex.id === exerciseId);
   events.push({
     id: makeId('event'),
     type: 'note',
     date: document.getElementById('quick-note-date').value || todayStr(),
     time: document.getElementById('quick-note-time').value || currentTimeStr(),
-    exerciseId: exerciseId || undefined,
-    exerciseName: exercise?.name,
     text,
     createdAt: new Date().toISOString(),
   });
@@ -1806,9 +1786,6 @@ function openEventModal(eventId) {
   document.getElementById('event-modal-title').textContent = ev.type === 'note' ? 'Edit note' : 'Edit history item';
   document.getElementById('event-field-date').value = ev.date || todayStr();
   document.getElementById('event-field-time').value = ev.time || currentTimeStr();
-  fillEventSelect('event-field-exercise', exercises, 'No exercise tag');
-  document.getElementById('event-field-exercise').value = ev.exerciseId || '';
-  document.getElementById('event-field-exercise').disabled = ev.type !== 'note';
   document.getElementById('event-field-text').value = ev.type === 'note' ? (ev.text || '') : (ev.annotation || '');
   document.getElementById('event-field-text').placeholder = ev.type === 'note'
     ? 'Timeline note'
@@ -1893,13 +1870,11 @@ function readEventDoseChanges(existingChanges = {}) {
 function saveEventModal() {
   const ev = events.find(item => item.id === editingEventId);
   if (!ev) return;
-  const exerciseId = document.getElementById('event-field-exercise').value;
-  const exercise = exercises.find(ex => ex.id === exerciseId);
   ev.date = document.getElementById('event-field-date').value || todayStr();
   ev.time = document.getElementById('event-field-time').value || currentTimeStr();
   if (ev.type === 'note') {
-    ev.exerciseId = exerciseId || undefined;
-    ev.exerciseName = exercise?.name;
+    delete ev.exerciseId;
+    delete ev.exerciseName;
     ev.text = document.getElementById('event-field-text').value.trim();
   } else {
     ev.annotation = document.getElementById('event-field-text').value.trim();
@@ -1937,8 +1912,7 @@ function buildEventItem(ev) {
 function eventTitle(ev) {
   if (ev.type === 'dose-change') return `Dose change: ${ev.exerciseName || 'Exercise'}`;
   if (ev.type === 'exercise-added') return `Added exercise: ${ev.exerciseName || 'Exercise'}`;
-  const tags = [ev.symptomName, ev.exerciseName].filter(Boolean).join(' + ');
-  return tags || 'Note';
+  return 'Note';
 }
 
 function eventText(ev) {
