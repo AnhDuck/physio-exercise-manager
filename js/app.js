@@ -1066,11 +1066,10 @@ function fmtShortDuration(totalSeconds) {
 }
 
 function secondsSinceLastSet(progress, now = new Date()) {
-  const lastSetAt = progress.setCompletedAt?.[progress.completedSets - 1];
-  const iso = progress.completedSets > 0 ? (lastSetAt || progress.updatedAt) : progress.startedAt;
-  const time = new Date(iso).getTime();
-  if (!iso || Number.isNaN(time)) return 0;
-  return Math.max(0, Math.floor((now.getTime() - time) / 1000));
+  const completedSetSeconds = progress.setDurations
+    .slice(0, progress.completedSets)
+    .reduce((total, value) => total + Math.max(0, Number(value) || 0), 0);
+  return Math.max(0, activeElapsedSeconds(progress, now) - completedSetSeconds);
 }
 
 function formatClockTime(iso) {
