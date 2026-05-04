@@ -510,7 +510,7 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber) {
       ev.type === 'dose-change' && ev.date === dateS && ev.exerciseId === ex.id
     );
     const progressionEvents = events.filter(ev =>
-      isProgressionEvent(ev) && ev.date === dateS && eventMatchesExercise(ev, ex)
+      isProgressionEvent(ev) && ev.date === dateS && progressionEventMatchesExercise(ev, ex)
     );
 
     const btn = el('button', 'check-btn set-cell-btn' + (done ? ' done' : '') + (progress && !done ? ' in-progress' : ''));
@@ -586,8 +586,7 @@ function timelineEvents() {
       ev.type === 'note' ||
       ev.type === 'dose-change' ||
       ev.type === 'exercise-added' ||
-      ev.type === 'progression-started' ||
-      ev.type === 'progression-ended'
+      (isProgressionEvent(ev) && progressionEventHasLiveExercise(ev))
     )
     .sort((a, b) => {
       const aKey = `${a.date || ''}T${a.time || '00:00'}`;
@@ -645,10 +644,12 @@ function isProgressionEvent(ev) {
   return ev?.type === 'progression-started' || ev?.type === 'progression-ended';
 }
 
-function eventMatchesExercise(ev, ex) {
-  if (!ev || !ex) return false;
-  if (ev.exerciseId) return ev.exerciseId === ex.id;
-  return Boolean(ev.exerciseName && ev.exerciseName === ex.name);
+function progressionEventMatchesExercise(ev, ex) {
+  return Boolean(ev?.exerciseId && ex?.id && ev.exerciseId === ex.id);
+}
+
+function progressionEventHasLiveExercise(ev) {
+  return exercises.some(ex => progressionEventMatchesExercise(ev, ex));
 }
 
 function progressionCompletedHardSets(ex) {
@@ -1304,7 +1305,15 @@ function saveExerciseModal() {
 function deleteExercise() {
   if (!editingExId) return;
   if (!confirm('Delete this exercise? This cannot be undone.')) return;
+  const deletedExercise = exercises.find(e => e.id === editingExId);
   exercises = exercises.filter(e => e.id !== editingExId);
+  if (deletedExercise) {
+    events = events.filter(ev => !(
+      isProgressionEvent(ev) &&
+      (progressionEventMatchesExercise(ev, deletedExercise) || (!ev.exerciseId && ev.exerciseName === deletedExercise.name))
+    ));
+    saveEvents(events);
+  }
   saveExercises(exercises);
   closeModal();
   render();
