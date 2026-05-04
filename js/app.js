@@ -985,24 +985,12 @@ function renderSetTracker() {
   main.appendChild(info);
   panel.appendChild(main);
 
-  const timer = el('div', 'set-tracker-timer');
-  const totalMetric = el('div', 'set-tracker-metric set-tracker-metric-total');
-  totalMetric.appendChild(elText('div', 'set-tracker-timer-label', 'Total'));
-  totalMetric.appendChild(elText('div', 'set-tracker-timer-value', trackerTotalTimeValue(progress)));
-  timer.appendChild(totalMetric);
-  const sinceSetMetric = el('div', 'set-tracker-metric set-tracker-metric-since');
-  sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-label', progress.completedSets > 0 ? 'Since last set' : 'Since start'));
-  sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-value', trackerSinceLastSetValue(progress)));
-  const timerDetail = trackerTimerDetail(progress);
-  if (timerDetail) sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-detail', timerDetail));
-  timer.appendChild(sinceSetMetric);
-  panel.appendChild(timer);
-
+  const controls = el('div', 'set-tracker-controls');
   const progressWrap = el('div', 'set-tracker-progress');
   for (let i = 1; i <= progress.targetSets; i++) {
     progressWrap.appendChild(el('span', 'set-dot' + (i <= progress.completedSets ? ' filled' : '')));
   }
-  panel.appendChild(progressWrap);
+  controls.appendChild(progressWrap);
 
   const actions = el('div', 'set-tracker-actions');
   const completeSet = elText('button', 'set-action set-action-primary', 'Complete Set');
@@ -1016,7 +1004,21 @@ function renderSetTracker() {
   actions.appendChild(completeSet);
   actions.appendChild(doneBtn);
   actions.appendChild(clear);
-  panel.appendChild(actions);
+  controls.appendChild(actions);
+  panel.appendChild(controls);
+
+  const timer = el('div', 'set-tracker-timer');
+  const totalMetric = el('div', 'set-tracker-metric set-tracker-metric-total');
+  totalMetric.appendChild(elText('div', 'set-tracker-timer-label', 'Total elapsed'));
+  totalMetric.appendChild(elText('div', 'set-tracker-timer-value', trackerTotalTimeValue(progress)));
+  timer.appendChild(totalMetric);
+  const sinceSetMetric = el('div', 'set-tracker-metric set-tracker-metric-since');
+  sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-label', progress.completedSets > 0 ? 'Since last set' : 'Since start'));
+  sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-value', trackerSinceLastSetValue(progress)));
+  const timerDetail = trackerTimerDetail(progress);
+  if (timerDetail) sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-detail', timerDetail));
+  timer.appendChild(sinceSetMetric);
+  panel.appendChild(timer);
 
   const footer = el('div', 'set-tracker-footer');
   footer.appendChild(elText('div', 'set-tracker-help', 'Arrow keys adjust sets | Pause & Close saves partial progress'));

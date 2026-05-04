@@ -1648,13 +1648,17 @@ body.dense-mode .dose-marker {
   bottom: 18px;
   z-index: 160;
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(240px, auto) minmax(58px, auto) minmax(312px, 1.05fr);
-  align-items: center;
-  column-gap: 16px;
+  grid-template-columns: minmax(220px, 1fr) minmax(430px, auto);
+  grid-template-areas:
+    "info controls"
+    "timer timer"
+    "footer footer";
+  align-items: start;
+  column-gap: 18px;
   row-gap: 12px;
-  width: min(900px, calc(100vw - 36px));
-  overflow: hidden;
-  padding: 18px 16px;
+  width: min(960px, calc(100vw - 36px));
+  overflow: visible;
+  padding: 16px;
   border: 1px solid var(--border);
   border-left: 6px solid var(--tracker-color);
   border-radius: 8px;
@@ -1667,6 +1671,7 @@ body.dense-mode .dose-marker {
 }
 
 .set-tracker-main {
+  grid-area: info;
   min-width: 0;
 }
 
@@ -1701,18 +1706,27 @@ body.dense-mode .dose-marker {
 }
 
 .set-tracker-timer {
+  grid-area: timer;
   display: grid;
-  grid-template-columns: minmax(94px, .9fr) minmax(124px, 1fr);
-  gap: 18px;
+  grid-template-columns: minmax(150px, auto) minmax(150px, 1fr);
+  gap: 0;
   justify-items: stretch;
   align-content: center;
-  min-width: 240px;
+  min-width: 0;
+  max-width: 520px;
+  padding: 10px 12px;
+  border: 1px solid rgba(148, 163, 184, .22);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, .22);
   color: var(--text);
   text-align: left;
 }
 
 .set-tracker-metric {
   min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 3px;
 }
 
 .set-tracker-metric-total .set-tracker-timer-label,
@@ -1720,11 +1734,17 @@ body.dense-mode .dose-marker {
   color: #f8fafc;
 }
 
+.set-tracker-metric-since {
+  margin-left: 18px;
+  padding-left: 18px;
+  border-left: 1px solid rgba(148, 163, 184, .28);
+}
+
 .set-tracker-timer-label {
   color: var(--tracker-color);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 900;
-  letter-spacing: .6px;
+  letter-spacing: .4px;
   line-height: 1;
   text-transform: uppercase;
   white-space: nowrap;
@@ -1737,18 +1757,21 @@ body.dense-mode .dose-marker {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
   line-height: 1;
-  margin-top: 5px;
   white-space: nowrap;
 }
 
 .set-tracker-metric-total .set-tracker-timer-value {
-  font-size: 32px;
+  font-size: 34px;
   line-height: .95;
-  margin-top: 4px;
 }
 
 .set-tracker-metric-since .set-tracker-timer-value {
   color: #dbeafe;
+  font-size: 28px;
+}
+
+.set-tracker-metric-since .set-tracker-timer-label {
+  color: #7dd3fc;
 }
 
 .set-tracker-timer-detail {
@@ -1763,10 +1786,11 @@ body.dense-mode .dose-marker {
 
 .set-tracker-footer {
   grid-column: 1 / -1;
+  grid-area: footer;
   display: flex;
   align-items: center;
   min-width: 0;
-  margin-top: -2px;
+  margin-top: -4px;
 }
 
 .set-tracker-recency {
@@ -1788,7 +1812,17 @@ body.dense-mode .dose-marker {
   flex-wrap: wrap;
   gap: 6px;
   justify-content: flex-start;
-  max-width: 58px;
+  max-width: 86px;
+  min-width: 44px;
+}
+
+.set-tracker-controls {
+  grid-area: controls;
+  display: grid;
+  grid-template-columns: minmax(44px, auto) minmax(330px, 1fr);
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
 }
 
 .set-dot {
@@ -1806,7 +1840,7 @@ body.dense-mode .dose-marker {
 
 .set-tracker-actions {
   display: grid;
-  grid-template-columns: minmax(108px, 1fr) minmax(108px, 1fr) minmax(72px, .65fr);
+  grid-template-columns: minmax(118px, 1fr) minmax(118px, 1fr) minmax(84px, .75fr);
   gap: 8px;
   min-width: 0;
   width: 100%;
@@ -1923,7 +1957,13 @@ body.dense-mode .dose-marker {
     bottom: 10px;
     width: calc(100vw - 20px);
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "info"
+      "timer"
+      "controls"
+      "footer";
     gap: 10px;
+    overflow: visible;
   }
 
   .set-tracker-progress {
@@ -1939,6 +1979,10 @@ body.dense-mode .dose-marker {
     font-size: 28px;
   }
 
+  .set-tracker-controls {
+    grid-template-columns: 1fr;
+  }
+
   .set-action-primary {
     min-width: 0;
   }
@@ -1947,6 +1991,20 @@ body.dense-mode .dose-marker {
 @media (max-width: 480px) {
   .set-tracker-timer {
     grid-template-columns: 1fr 1fr;
+    max-width: none;
+  }
+
+  .set-tracker-metric-since {
+    margin-left: 12px;
+    padding-left: 12px;
+  }
+
+  .set-tracker-metric-total .set-tracker-timer-value {
+    font-size: 30px;
+  }
+
+  .set-tracker-metric-since .set-tracker-timer-value {
+    font-size: 24px;
   }
 
   .set-tracker-footer {
