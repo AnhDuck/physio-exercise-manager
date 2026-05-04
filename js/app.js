@@ -980,17 +980,17 @@ function renderSetTracker() {
   const main = el('div', 'set-tracker-main');
   const info = el('div', 'set-tracker-info');
   info.appendChild(elText('div', 'set-tracker-kicker', `${dateStr} | Started ${trackerStartedTime(progress)}`));
-  info.appendChild(elText('div', 'set-tracker-name', ex.name));
-  info.appendChild(elText('div', 'set-tracker-meta', `${progress.completedSets}/${progress.targetSets} sets | ${ex.reps} reps${ex.resistance ? ` | ${ex.resistance}` : ''}`));
-  main.appendChild(info);
-  panel.appendChild(main);
-
-  const controls = el('div', 'set-tracker-controls');
+  const titleRow = el('div', 'set-tracker-title-row');
+  titleRow.appendChild(elText('div', 'set-tracker-name', ex.name));
   const progressWrap = el('div', 'set-tracker-progress');
   for (let i = 1; i <= progress.targetSets; i++) {
     progressWrap.appendChild(el('span', 'set-dot' + (i <= progress.completedSets ? ' filled' : '')));
   }
-  controls.appendChild(progressWrap);
+  titleRow.appendChild(progressWrap);
+  info.appendChild(titleRow);
+  info.appendChild(elText('div', 'set-tracker-meta', `${progress.completedSets}/${progress.targetSets} sets | ${ex.reps} reps${ex.resistance ? ` | ${ex.resistance}` : ''}`));
+  main.appendChild(info);
+  panel.appendChild(main);
 
   const actions = el('div', 'set-tracker-actions');
   const completeSet = elText('button', 'set-action set-action-primary', 'Complete Set');
@@ -1004,8 +1004,6 @@ function renderSetTracker() {
   actions.appendChild(completeSet);
   actions.appendChild(doneBtn);
   actions.appendChild(clear);
-  controls.appendChild(actions);
-  panel.appendChild(controls);
 
   const timer = el('div', 'set-tracker-timer');
   const totalMetric = el('div', 'set-tracker-metric set-tracker-metric-total');
@@ -1019,6 +1017,7 @@ function renderSetTracker() {
   if (timerDetail) sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-detail', timerDetail));
   timer.appendChild(sinceSetMetric);
   panel.appendChild(timer);
+  panel.appendChild(actions);
 
   const footer = el('div', 'set-tracker-footer');
   footer.appendChild(elText('div', 'set-tracker-help', 'Arrow keys adjust sets | Pause & Close saves partial progress'));
