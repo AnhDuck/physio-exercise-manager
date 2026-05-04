@@ -1807,13 +1807,19 @@ body.dense-mode .dose-marker {
   color: #cbd5e1;
   font-size: 12px;
   font-weight: 700;
-  justify-self: end;
   line-height: 1.25;
-  margin-top: 2px;
   max-width: none;
   min-width: 0;
   text-align: right;
   white-space: nowrap;
+}
+
+.set-tracker-utility {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
 }
 
 .set-tracker-progress {
@@ -1842,9 +1848,16 @@ body.dense-mode .dose-marker {
 .set-tracker-actions {
   grid-area: actions;
   display: grid;
-  grid-template-columns: minmax(132px, 1fr) minmax(132px, 1fr) minmax(56px, .42fr);
-  gap: 8px;
+  grid-template-columns: 1fr;
+  justify-items: start;
   min-width: 0;
+  width: 100%;
+}
+
+.set-tracker-main-actions {
+  display: grid;
+  grid-template-columns: minmax(132px, 1fr) minmax(132px, 1fr);
+  gap: 8px;
   width: 100%;
 }
 
@@ -1873,15 +1886,20 @@ body.dense-mode .dose-marker {
 }
 
 .set-action-finish {
-  background: #365340;
-  border-color: #4f805f;
+  background: rgba(51, 65, 85, .68);
+  border-color: rgba(148, 163, 184, .36);
+  color: #e2e8f0;
 }
 
 .set-action-danger {
-  background: rgba(127, 29, 29, .62);
-  border-color: #a84040;
-  color: #fee2e2;
-  padding-inline: 8px;
+  background: transparent;
+  border-color: rgba(248, 113, 113, .55);
+  color: #fecaca;
+  font-size: 12px;
+  min-height: 28px;
+  padding: 0 12px;
+  flex: 0 0 auto;
+  width: auto;
 }
 
 .set-action-secondary {
@@ -1890,6 +1908,11 @@ body.dense-mode .dose-marker {
 
 .set-action:not(:disabled):hover {
   filter: brightness(1.12);
+}
+
+.set-action-danger:not(:disabled):hover {
+  background: rgba(127, 29, 29, .28);
+  border-color: #f87171;
 }
 
 /* ── Image modal ─────────────────────────────────────────────────── */
@@ -1972,6 +1995,10 @@ body.dense-mode .dose-marker {
     grid-template-columns: 1fr;
   }
 
+  .set-tracker-main-actions {
+    grid-template-columns: 1fr;
+  }
+
   .set-tracker-timer-value {
     font-size: 28px;
   }
@@ -1985,8 +2012,11 @@ body.dense-mode .dose-marker {
     row-gap: 6px;
   }
 
+  .set-tracker-utility {
+    justify-content: space-between;
+  }
+
   .set-tracker-help {
-    justify-self: start;
     max-width: none;
     text-align: left;
     white-space: normal;

@@ -990,21 +990,25 @@ function renderSetTracker() {
   info.appendChild(titleRow);
   info.appendChild(elText('div', 'set-tracker-meta', `${progress.completedSets}/${progress.targetSets} sets | ${ex.reps} reps${ex.resistance ? ` | ${ex.resistance}` : ''}`));
   main.appendChild(info);
-  main.appendChild(elText('div', 'set-tracker-help', 'Arrow keys adjust sets | Pause & Close saves partial progress'));
+  const utility = el('div', 'set-tracker-utility');
+  utility.appendChild(elText('div', 'set-tracker-help', 'Arrow keys adjust sets | Pause & Close saves partial progress'));
+  const clear = elText('button', 'set-action set-action-danger', 'Clear');
+  clear.addEventListener('click', clearActiveProgress);
+  utility.appendChild(clear);
+  main.appendChild(utility);
   panel.appendChild(main);
 
   const actions = el('div', 'set-tracker-actions');
+  const mainActions = el('div', 'set-tracker-main-actions');
   const completeSet = elText('button', 'set-action set-action-primary', 'Complete Set');
   completeSet.disabled = done || progress.timerCapped;
   completeSet.title = 'Right arrow';
   completeSet.addEventListener('click', logSet);
   const doneBtn = elText('button', 'set-action set-action-finish', 'Pause & Close');
   doneBtn.addEventListener('click', pauseAndCloseTracker);
-  const clear = elText('button', 'set-action set-action-danger', 'Clear');
-  clear.addEventListener('click', clearActiveProgress);
-  actions.appendChild(completeSet);
-  actions.appendChild(doneBtn);
-  actions.appendChild(clear);
+  mainActions.appendChild(completeSet);
+  mainActions.appendChild(doneBtn);
+  actions.appendChild(mainActions);
 
   const timer = el('div', 'set-tracker-timer');
   const totalMetric = el('div', 'set-tracker-metric set-tracker-metric-total');
