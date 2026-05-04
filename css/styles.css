@@ -37,11 +37,45 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 22px;
+  gap: 12px;
   padding: 0 24px;
   height: var(--header-h);
   background: var(--bg-header);
   border-bottom: 1px solid var(--border);
+}
+
+.drawer-toggle {
+  display: inline-grid;
+  place-content: center;
+  gap: 4px;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+
+.drawer-toggle span {
+  display: block;
+  width: 17px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.drawer-toggle:hover,
+.drawer-toggle.active {
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.drawer-toggle.active {
+  border-color: #c084fc;
 }
 
 .app-title {
@@ -162,9 +196,15 @@ body.notes-open .grid-table {
 
 .notes-panel-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: baseline;
+}
+
+.notes-panel-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .notes-panel-header h2 {
@@ -173,14 +213,8 @@ body.notes-open .grid-table {
 }
 
 .notes-panel-subtitle {
-  margin-top: 3px;
   color: var(--text-dim);
   font-size: 12px;
-}
-
-.panel-close-btn {
-  width: 28px;
-  height: 28px;
 }
 
 .note-composer {
@@ -1537,12 +1571,6 @@ body.dense-mode .dose-marker {
 }
 .btn-settings:hover { background: var(--bg-hover); color: var(--text); }
 
-.btn-notes.active {
-  background: #3b2f57;
-  border-color: #c084fc;
-  color: #f3e8ff;
-}
-
 /* ── Day-of-week checkboxes (settings modal) ─────────────────────── */
 .day-check-row {
   display: flex;
@@ -1819,6 +1847,12 @@ body.dense-mode .dose-marker {
 ::-webkit-scrollbar-thumb:hover { background: #555; }
 
 @media (max-width: 900px) {
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 140;
+  }
+
   body.notes-open .app-header {
     width: 100%;
     margin-left: 0;
@@ -1834,7 +1868,7 @@ body.dense-mode .dose-marker {
 
   .notes-panel {
     position: fixed;
-    inset: 0;
+    inset: var(--header-h) 0 0 0;
     z-index: 120;
     width: 100%;
     min-width: 0;

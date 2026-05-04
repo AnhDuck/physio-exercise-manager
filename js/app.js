@@ -1337,7 +1337,9 @@ function renderNotesPanel() {
 
   document.body.classList.toggle('notes-open', Boolean(settings.notesOpen));
   btn.classList.toggle('active', Boolean(settings.notesOpen));
-  btn.textContent = settings.notesOpen ? 'Hide Notes' : 'Notes';
+  btn.setAttribute('aria-expanded', String(Boolean(settings.notesOpen)));
+  btn.title = settings.notesOpen ? 'Hide notes panel' : 'Show notes panel';
+  btn.setAttribute('aria-label', btn.title);
 
   fillEventSelect('quick-note-exercise', exercises, 'No exercise tag');
   const dateField = document.getElementById('quick-note-date');
@@ -1914,7 +1916,6 @@ function bindStaticEvents() {
   document.getElementById('btn-next-week').addEventListener('click', nextWeek);
   document.getElementById('btn-today').addEventListener('click', goToToday);
   document.getElementById('btn-notes').addEventListener('click', toggleNotesPanel);
-  document.getElementById('notes-panel-close').addEventListener('click', () => setNotesPanelOpen(false));
   document.getElementById('quick-note-save').addEventListener('click', addQuickNote);
   document.getElementById('quick-note-text').addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
