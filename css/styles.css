@@ -180,6 +180,10 @@ body.notes-open .app-header {
   margin-left: var(--notes-panel-w);
 }
 
+body.notes-open .app-header .notes-toggle {
+  display: none;
+}
+
 body.notes-open .main-wrap {
   padding-left: var(--notes-panel-w);
 }
@@ -196,7 +200,12 @@ body.notes-open .grid-table {
 
 .notes-panel-header {
   display: flex;
-  align-items: baseline;
+  gap: 8px;
+  align-items: center;
+}
+
+.notes-panel-toggle {
+  margin: -7px 2px -7px -4px;
 }
 
 .notes-panel-title {
@@ -1856,6 +1865,10 @@ body.dense-mode .dose-marker {
   body.notes-open .app-header {
     width: 100%;
     margin-left: 0;
+  }
+
+  body.notes-open .app-header .notes-toggle {
+    display: none;
   }
 
   .main-wrap {

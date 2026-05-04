@@ -1332,14 +1332,18 @@ function openNotesModal(dateStr = todayStr()) {
 
 function renderNotesPanel() {
   const panel = document.getElementById('notes-panel');
-  const btn = document.getElementById('btn-notes');
-  if (!panel || !btn) return;
+  const buttons = document.querySelectorAll('.notes-toggle');
+  if (!panel || !buttons.length) return;
 
-  document.body.classList.toggle('notes-open', Boolean(settings.notesOpen));
-  btn.classList.toggle('active', Boolean(settings.notesOpen));
-  btn.setAttribute('aria-expanded', String(Boolean(settings.notesOpen)));
-  btn.title = settings.notesOpen ? 'Hide notes panel' : 'Show notes panel';
-  btn.setAttribute('aria-label', btn.title);
+  const isOpen = Boolean(settings.notesOpen);
+  const label = isOpen ? 'Hide notes panel' : 'Show notes panel';
+  document.body.classList.toggle('notes-open', isOpen);
+  buttons.forEach(btn => {
+    btn.classList.toggle('active', isOpen);
+    btn.setAttribute('aria-expanded', String(isOpen));
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+  });
 
   fillEventSelect('quick-note-exercise', exercises, 'No exercise tag');
   const dateField = document.getElementById('quick-note-date');
@@ -1915,7 +1919,9 @@ function bindStaticEvents() {
   document.getElementById('btn-prev-week').addEventListener('click', prevWeek);
   document.getElementById('btn-next-week').addEventListener('click', nextWeek);
   document.getElementById('btn-today').addEventListener('click', goToToday);
-  document.getElementById('btn-notes').addEventListener('click', toggleNotesPanel);
+  document.querySelectorAll('.notes-toggle').forEach(btn => {
+    btn.addEventListener('click', toggleNotesPanel);
+  });
   document.getElementById('quick-note-save').addEventListener('click', addQuickNote);
   document.getElementById('quick-note-text').addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {

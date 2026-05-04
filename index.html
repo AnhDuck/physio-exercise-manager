@@ -10,7 +10,7 @@
 <body>
 
   <header class="app-header">
-    <button id="btn-notes" class="drawer-toggle" type="button" title="Toggle notes panel" aria-label="Toggle notes panel" aria-controls="notes-panel" aria-expanded="false">
+    <button id="btn-notes" class="drawer-toggle notes-toggle" type="button" title="Toggle notes panel" aria-label="Toggle notes panel" aria-controls="notes-panel" aria-expanded="false">
       <span></span>
       <span></span>
       <span></span>
@@ -33,6 +33,11 @@
   <main class="main-wrap">
     <aside class="notes-panel" id="notes-panel">
       <div class="notes-panel-header">
+        <button id="btn-notes-panel" class="drawer-toggle notes-toggle notes-panel-toggle" type="button" title="Hide notes panel" aria-label="Hide notes panel" aria-controls="notes-panel" aria-expanded="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
         <div class="notes-panel-title">
           <h2>Notes</h2>
           <span class="notes-panel-subtitle">Timeline and regimen changes</span>
