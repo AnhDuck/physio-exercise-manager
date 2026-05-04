@@ -15,6 +15,7 @@ let completedActionMenu = null; // { exerciseId, dateStr }
 let lastSetLogAt = 0;
 let cueAudioContext = null;
 let settingsModalSnapshot = null;
+let toastTimer = null;
 
 // ── Init ─────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -456,6 +457,10 @@ function moveExercise(dragId, targetGroup, targetId = null, position = 'after') 
   const dragged = exercises.find(ex => ex.id === dragId);
   if (!dragged || !targetGroup) return;
   if (targetId === dragId) return;
+  if (normalizedBlockId(dragged)) {
+    showBlockDropWarning();
+    return;
+  }
 
   const oldGroup = dragged.group;
   const targetItems = sortedExercisesInGroup(targetGroup).filter(ex => ex.id !== dragId);
@@ -486,8 +491,8 @@ function handleExerciseDragStart(e) {
 function handleExerciseDragEnd(e) {
   e.currentTarget.draggable = false;
   e.currentTarget.classList.remove('dragging');
-  document.querySelectorAll('.drop-before, .drop-after, .drop-end').forEach(elm => {
-    elm.classList.remove('drop-before', 'drop-after', 'drop-end');
+  document.querySelectorAll('.drop-before, .drop-after, .drop-end, .drop-denied').forEach(elm => {
+    elm.classList.remove('drop-before', 'drop-after', 'drop-end', 'drop-denied');
   });
   draggedExerciseId = null;
 }
@@ -500,6 +505,12 @@ function handleExerciseDragOver(e) {
   const target = e.currentTarget;
   clearDropPosition({ currentTarget: target });
 
+  if (isBlockedGridDrop(draggedExerciseId, target)) {
+    e.dataTransfer.dropEffect = 'none';
+    target.classList.add('drop-denied');
+    return;
+  }
+
   if (target.classList.contains('exercise-row')) {
     const rect = target.getBoundingClientRect();
     const isAfter = e.clientY > rect.top + rect.height / 2;
@@ -510,13 +521,19 @@ function handleExerciseDragOver(e) {
 }
 
 function clearDropPosition(e) {
-  e.currentTarget.classList.remove('drop-before', 'drop-after', 'drop-end');
+  e.currentTarget.classList.remove('drop-before', 'drop-after', 'drop-end', 'drop-denied');
 }
 
 function handleExerciseDropOnRow(e) {
   if (!draggedExerciseId) return;
   e.preventDefault();
+  e.stopPropagation();
   const target = e.currentTarget;
+  if (isBlockedGridDrop(draggedExerciseId, target)) {
+    showBlockDropWarning();
+    clearDropPosition({ currentTarget: target });
+    return;
+  }
   const position = target.classList.contains('drop-before') ? 'before' : 'after';
   moveExercise(draggedExerciseId, target.dataset.group, target.dataset.exId, position);
 }
@@ -525,7 +542,24 @@ function handleExerciseDropAtEnd(e) {
   if (!draggedExerciseId) return;
   e.preventDefault();
   e.stopPropagation();
+  const target = e.currentTarget;
+  if (isBlockedGridDrop(draggedExerciseId, target)) {
+    showBlockDropWarning();
+    clearDropPosition({ currentTarget: target });
+    return;
+  }
   moveExercise(draggedExerciseId, e.currentTarget.dataset.group);
+}
+
+function isBlockedGridDrop(dragId, target) {
+  const dragged = exercises.find(ex => ex.id === dragId);
+  if (!dragged) return true;
+  if (normalizedBlockId(dragged)) return true;
+  return target.classList.contains('block-row');
+}
+
+function showBlockDropWarning() {
+  showToast('Blocks are managed in Settings. Unblocked exercises must stay below blocks.');
 }
 
 function buildExerciseRows(ex, group, dates, todayS, exerciseNumber, blockInfo = null) {
@@ -2430,4 +2464,21 @@ function buildDoseMetaChip(className, label, value, normalText) {
   chip.appendChild(elText('span', 'ex-meta-chip-label', label));
   chip.appendChild(elText('span', 'ex-meta-chip-value', String(value)));
   return chip;
+}
+
+function showToast(message) {
+  let toast = document.getElementById('app-toast');
+  if (!toast) {
+    toast = el('div', 'app-toast');
+    toast.id = 'app-toast';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add('show');
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3200);
 }

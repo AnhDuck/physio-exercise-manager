@@ -694,6 +694,15 @@ body.notes-open .grid-table {
 .exercise-row.dragging { opacity: .55; }
 .exercise-row.drop-before { box-shadow: inset 0 3px 0 var(--accent-green); }
 .exercise-row.drop-after { box-shadow: inset 0 -3px 0 var(--accent-green); }
+.exercise-row.drop-denied,
+.group-header.drop-denied,
+.add-exercise-row.drop-denied {
+  box-shadow: inset 0 0 0 2px rgba(248,113,113,.65);
+}
+
+.exercise-row.drop-denied {
+  background: rgba(127,29,29,.16);
+}
 
 .exercise-row.block-row {
   border-top-color: rgba(255,255,255,.055);
@@ -745,6 +754,32 @@ body.notes-open .grid-table {
   color: var(--exercise-group-color, var(--accent-green));
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.app-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 260;
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 11px 14px;
+  border: 1px solid rgba(248,113,113,.48);
+  border-radius: 8px;
+  background: rgba(31, 31, 34, .97);
+  box-shadow: 0 16px 34px rgba(0,0,0,.42);
+  color: #fee2e2;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 8px);
+  transition: opacity .16s, transform .16s;
+}
+
+.app-toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 /* Left label cell */
