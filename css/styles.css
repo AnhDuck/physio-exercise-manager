@@ -695,6 +695,76 @@ body.notes-open .grid-table {
 .exercise-row.drop-before { box-shadow: inset 0 3px 0 var(--accent-green); }
 .exercise-row.drop-after { box-shadow: inset 0 -3px 0 var(--accent-green); }
 
+.exercise-row.block-row {
+  border-top-color: rgba(255,255,255,.055);
+}
+
+.exercise-row.block-first,
+.exercise-row.block-single {
+  border-top: 1px dashed rgba(255,255,255,.18);
+  border-top-color: color-mix(in srgb, var(--exercise-group-color, var(--accent-green)) 72%, transparent);
+}
+
+.exercise-row.block-last,
+.exercise-row.block-single {
+  border-bottom: 1px dashed rgba(255,255,255,.18);
+  border-bottom-color: color-mix(in srgb, var(--exercise-group-color, var(--accent-green)) 72%, transparent);
+}
+
+.exercise-row.block-row .ex-label {
+  border-left: 1px dashed rgba(255,255,255,.16);
+  border-left-color: color-mix(in srgb, var(--exercise-group-color, var(--accent-green)) 68%, transparent);
+}
+
+.exercise-row.block-row .day-cell:last-child {
+  border-right: 1px dashed rgba(255,255,255,.16);
+  border-right-color: color-mix(in srgb, var(--exercise-group-color, var(--accent-green)) 68%, transparent);
+}
+
+.block-cell {
+  box-shadow: inset 0 0 0 999px rgba(255,255,255,.008);
+}
+
+.block-inline-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  margin-bottom: 4px;
+  padding: 1px 3px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.block-inline-header:hover,
+.block-inline-header:focus-visible {
+  background: rgba(255,255,255,.04);
+  outline: none;
+}
+
+.block-title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--exercise-group-color, var(--accent-green));
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.block-edit-glyph {
+  color: var(--text-dim);
+  flex-shrink: 0;
+  font-size: 10px;
+  opacity: .75;
+}
+
 /* Left label cell */
 .ex-label {
   display: flex;
@@ -1069,6 +1139,19 @@ body.dense-mode .ex-info {
   align-items: center;
   column-gap: 5px;
   flex: 1;
+}
+
+body.dense-mode .block-inline-header {
+  grid-column: 1 / -1;
+  min-height: 13px;
+  margin-bottom: 1px;
+  font-size: 9px;
+  gap: 4px;
+}
+
+body.dense-mode .exercise-row.block-first .ex-label,
+body.dense-mode .exercise-row.block-single .ex-label {
+  padding-top: 3px;
 }
 
 body.dense-mode .ex-name-row {

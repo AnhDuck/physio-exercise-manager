@@ -34,14 +34,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // One-shot data migrations for existing localStorage installs
 function runMigrations() {
+  let exercisesChanged = false;
   // Move "Rubber Band Pinky & Ring Finger" from Arm Day 1 → Arm Day 2
   const pinky = exercises.find(e => e.id === 'a1-8');
   if (pinky && pinky.group === 'arm-day1') {
     pinky.group = 'arm-day2';
     pinky.order = 5;
-    saveExercises(exercises);
+    exercisesChanged = true;
   }
 
+  if (!settings.defaultBlocksApplied) {
+    settings.defaultBlocksApplied = true;
+    saveSettings(settings);
+  }
+
+  exercises.forEach(ex => {
+    if (ex.blockTitle && normalizedBlockId(ex)) {
+      const titleKey = blockTitleKey(ex.group, normalizedBlockId(ex));
+      if (!settings.blockTitles || typeof settings.blockTitles !== 'object') settings.blockTitles = {};
+      if (!settings.blockTitles[titleKey]) settings.blockTitles[titleKey] = ex.blockTitle;
+      delete ex.blockTitle;
+      saveSettings(settings);
+      exercisesChanged = true;
+    }
+    if ('blockMinGapHours' in ex) {
+      delete ex.blockMinGapHours;
+      exercisesChanged = true;
+    }
+    if ('blockPreferredGapHours' in ex) {
+      delete ex.blockPreferredGapHours;
+      exercisesChanged = true;
+    }
+  });
+
+  if (exercisesChanged) {
+    saveExercises(exercises);
+  }
 }
 
 // ── Arm day rotation (pure calendar-based) ────────────────────────
@@ -235,7 +263,19 @@ function buildGroupSection(group, exs, dates, todayS, startNumber) {
   if (isCollapsed) return frag;
 
   // Exercise rows
-  exs.forEach((ex, i) => frag.appendChild(buildExerciseRows(ex, group, dates, todayS, startNumber + i)));
+  let numberOffset = 0;
+  groupedExercisesForRender(exs).forEach(section => {
+    section.exercises.forEach((ex, i) => {
+      const blockInfo = section.block
+        ? {
+            ...section.block,
+            position: blockPositionClass(i, section.exercises.length),
+          }
+        : null;
+      frag.appendChild(buildExerciseRows(ex, group, dates, todayS, startNumber + numberOffset, blockInfo));
+      numberOffset++;
+    });
+  });
 
   if (!isDenseMode) {
     const addRow = el('div', 'add-exercise-row');
@@ -270,6 +310,86 @@ function sortedExercisesInGroup(group) {
   return exercises
     .filter(e => e.group === group)
     .sort((a, b) => a.order - b.order);
+}
+
+function groupedExercisesForRender(exs) {
+  const blocks = new Map();
+  const unblocked = [];
+
+  exs.forEach(ex => {
+    const blockId = normalizedBlockId(ex);
+    if (!blockId) {
+      unblocked.push(ex);
+      return;
+    }
+    if (!blocks.has(blockId)) {
+      blocks.set(blockId, {
+        block: blockMetaFromExercise(ex.group, blockId),
+        exercises: [],
+        firstOrder: ex.order,
+      });
+    }
+    const section = blocks.get(blockId);
+    section.exercises.push(ex);
+    section.firstOrder = Math.min(section.firstOrder, ex.order);
+    section.block = mergeBlockMeta(section.block, ex);
+  });
+
+  const sections = Array.from(blocks.values())
+    .sort((a, b) => a.firstOrder - b.firstOrder)
+    .map(section => ({
+      block: section.block,
+      exercises: section.exercises.sort((a, b) => a.order - b.order),
+    }));
+
+  if (unblocked.length) {
+    sections.push({ block: null, exercises: unblocked.sort((a, b) => a.order - b.order) });
+  }
+  return sections;
+}
+
+function normalizedBlockId(ex) {
+  return String(ex?.blockId || '').trim();
+}
+
+function blockMetaFromExercise(group, blockId) {
+  return {
+    group,
+    id: blockId,
+    title: blockTitleFor(group, blockId),
+  };
+}
+
+function mergeBlockMeta(block, ex) {
+  return {
+    ...block,
+    title: block.title || blockTitleFor(ex.group, block.id),
+  };
+}
+
+function blockTitleKey(group, blockId) {
+  return `${group}:${blockId}`;
+}
+
+function blockTitleFor(group, blockId) {
+  const title = settings.blockTitles?.[blockTitleKey(group, blockId)];
+  return title && String(title).trim() ? title : blockTitleFromId(blockId);
+}
+
+function blockTitleFromId(blockId) {
+  const suffix = String(blockId || '')
+    .replace(/^block[-_ ]*/i, '')
+    .replace(/[-_]+/g, ' ')
+    .trim();
+  if (!suffix) return 'Block';
+  return `Block ${suffix.toUpperCase()}`;
+}
+
+function blockPositionClass(index, count) {
+  if (count === 1) return ' single';
+  if (index === 0) return ' first';
+  if (index === count - 1) return ' last';
+  return ' middle';
 }
 
 function normalizeGroupOrders(groups = GROUP_ORDER) {
@@ -353,9 +473,9 @@ function handleExerciseDropAtEnd(e) {
   moveExercise(draggedExerciseId, e.currentTarget.dataset.group);
 }
 
-function buildExerciseRows(ex, group, dates, todayS, exerciseNumber) {
+function buildExerciseRows(ex, group, dates, todayS, exerciseNumber, blockInfo = null) {
   const frag = document.createDocumentFragment();
-  const row = el('div', 'exercise-row');
+  const row = el('div', 'exercise-row' + blockRowClass(blockInfo));
   row.style.setProperty('--exercise-group-color', GROUPS[group].color);
   row.dataset.exId = ex.id;
   row.dataset.group = group;
@@ -393,6 +513,9 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber) {
 
   // Info
   const info = el('div', 'ex-info');
+  if (blockInfo && (blockInfo.position === ' first' || blockInfo.position === ' single')) {
+    info.appendChild(buildBlockHeader(blockInfo));
+  }
   const nameRow = el('div', 'ex-name-row');
   const number = elText('span', 'ex-number' + (ex.instructions && isDenseMode ? ' has-instructions' : ''), String(exerciseNumber));
   if (ex.instructions && isDenseMode) {
@@ -497,7 +620,7 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber) {
     const progress = getSetProgress(dateS, ex.id);
     const done = isExerciseDone(dateS, ex.id);
     const isActive = activeTracker?.dateStr === dateS && activeTracker?.exerciseId === ex.id;
-    const cell = el('div', 'day-cell' + (isToday ? ' today' : '') + (isActive ? ' active-tracked' : ''));
+    const cell = el('div', 'day-cell' + (isToday ? ' today' : '') + (isActive ? ' active-tracked' : '') + blockCellClass(blockInfo));
     cell.dataset.exId = ex.id;
     cell.dataset.dateStr = dateS;
     const doseEvents = events.filter(ev =>
@@ -556,6 +679,30 @@ function buildDenseInstructionRow(ex) {
 }
 
 // ── Summary row ───────────────────────────────────────────────────
+function blockRowClass(blockInfo) {
+  if (!blockInfo) return '';
+  return ` block-row block-${blockInfo.position.trim()}`;
+}
+
+function blockCellClass(blockInfo) {
+  if (!blockInfo) return '';
+  return ` block-cell block-${blockInfo.position.trim()}`;
+}
+
+function buildBlockHeader(blockInfo) {
+  const header = el('button', 'block-inline-header');
+  header.type = 'button';
+  header.title = 'Edit block title';
+  header.setAttribute('aria-label', `Edit title for ${blockInfo.title}`);
+  header.addEventListener('click', (e) => {
+    e.stopPropagation();
+    editBlockTitle(blockInfo.group, blockInfo.id);
+  });
+  header.appendChild(elText('span', 'block-title', blockInfo.title));
+  header.appendChild(elText('span', 'block-edit-glyph', String.fromCharCode(9998)));
+  return header;
+}
+
 function eventsForDate(dateStr) {
   return events
     .filter(ev => ev.date === dateStr)
@@ -1145,6 +1292,8 @@ function openEditModal(exId) {
   document.getElementById('field-frequency').value = ex.frequency || '';
   document.getElementById('field-instructions').value = ex.instructions || '';
   document.getElementById('field-group').value = ex.group;
+  document.getElementById('field-block-id').value = ex.blockId || '';
+  fillBlockOptions(ex.group);
 
   document.getElementById('delete-btn').style.display = 'inline-block';
   showModal();
@@ -1160,6 +1309,8 @@ function openAddModal(group) {
   document.getElementById('field-frequency').value = '3x/week';
   document.getElementById('field-instructions').value = '';
   document.getElementById('field-group').value = group;
+  document.getElementById('field-block-id').value = '';
+  fillBlockOptions(group);
   document.getElementById('delete-btn').style.display = 'none';
   showModal();
 }
@@ -1173,10 +1324,58 @@ function closeModal() {
   editingExId = null;
 }
 
+function readBlockFields() {
+  const rawId = document.getElementById('field-block-id').value.trim();
+  return {
+    blockId: normalizeBlockInput(rawId),
+  };
+}
+
+function normalizeBlockInput(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function fillBlockOptions(group) {
+  const list = document.getElementById('block-id-options');
+  if (!list) return;
+  list.innerHTML = '';
+  const seen = new Set();
+  exercises
+    .filter(ex => ex.group === group && normalizedBlockId(ex))
+    .sort((a, b) => a.order - b.order)
+    .forEach(ex => {
+      const blockId = normalizedBlockId(ex);
+      if (seen.has(blockId)) return;
+      seen.add(blockId);
+      const option = document.createElement('option');
+      option.value = blockId;
+      option.label = blockTitleFor(group, blockId);
+      list.appendChild(option);
+    });
+}
+
+function editBlockTitle(group, blockId) {
+  const currentTitle = settings.blockTitles?.[blockTitleKey(group, blockId)] || '';
+  const nextTitle = prompt('Block title', currentTitle);
+  if (nextTitle === null) return;
+  if (!settings.blockTitles || typeof settings.blockTitles !== 'object') settings.blockTitles = {};
+  const key = blockTitleKey(group, blockId);
+  const trimmed = nextTitle.trim();
+  if (trimmed) settings.blockTitles[key] = trimmed;
+  else delete settings.blockTitles[key];
+  saveSettings(settings);
+  render();
+}
+
 function saveExerciseModal() {
   const name = document.getElementById('field-name').value.trim();
   if (!name) { alert('Exercise name is required.'); return; }
 
+  const blockFields = readBlockFields();
   const fields = {
     name,
     sets:         parseInt(document.getElementById('field-sets').value) || 1,
@@ -1185,6 +1384,7 @@ function saveExerciseModal() {
     frequency:    document.getElementById('field-frequency').value.trim(),
     instructions: document.getElementById('field-instructions').value.trim(),
     group:        document.getElementById('field-group').value,
+    ...blockFields,
   };
 
   if (editingExId) {
@@ -1193,6 +1393,9 @@ function saveExerciseModal() {
       const previous = { ...exercises[idx] };
       const changes = doseChanges(previous, fields);
       exercises[idx] = { ...exercises[idx], ...fields };
+      delete exercises[idx].blockTitle;
+      delete exercises[idx].blockMinGapHours;
+      delete exercises[idx].blockPreferredGapHours;
       if (Object.keys(changes).length) {
         logDoseChange(exercises[idx], changes);
       }
@@ -1978,6 +2181,7 @@ function bindStaticEvents() {
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
   document.getElementById('modal-save').addEventListener('click', saveExerciseModal);
   document.getElementById('delete-btn').addEventListener('click', deleteExercise);
+  document.getElementById('field-group').addEventListener('change', (e) => fillBlockOptions(e.target.value));
 
   document.getElementById('exercise-modal').addEventListener('click', (e) => {
     if (e.target === document.getElementById('exercise-modal')) closeModal();
