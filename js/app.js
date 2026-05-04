@@ -16,6 +16,7 @@ let lastSetLogAt = 0;
 let cueAudioContext = null;
 let settingsModalSnapshot = null;
 let toastTimer = null;
+let lastBlockDropWarningAt = 0;
 
 // ── Init ─────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -486,6 +487,10 @@ function handleExerciseDragStart(e) {
   e.currentTarget.classList.add('dragging');
   e.dataTransfer.effectAllowed = 'move';
   e.dataTransfer.setData('text/plain', draggedExerciseId);
+  const dragged = exercises.find(ex => ex.id === draggedExerciseId);
+  if (dragged && normalizedBlockId(dragged)) {
+    showBlockDropWarning();
+  }
 }
 
 function handleExerciseDragEnd(e) {
@@ -508,6 +513,7 @@ function handleExerciseDragOver(e) {
   if (isBlockedGridDrop(draggedExerciseId, target)) {
     e.dataTransfer.dropEffect = 'none';
     target.classList.add('drop-denied');
+    showBlockDropWarningThrottled();
     return;
   }
 
@@ -562,6 +568,13 @@ function showBlockDropWarning() {
   showToast('Blocks are managed in Settings. Unblocked exercises must stay below blocks.');
 }
 
+function showBlockDropWarningThrottled() {
+  const now = Date.now();
+  if (now - lastBlockDropWarningAt < 1800) return;
+  lastBlockDropWarningAt = now;
+  showBlockDropWarning();
+}
+
 function buildExerciseRows(ex, group, dates, todayS, exerciseNumber, blockInfo = null) {
   const frag = document.createDocumentFragment();
   const row = el('div', 'exercise-row' + blockRowClass(blockInfo));
@@ -582,7 +595,10 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber, blockInfo =
   dragHandle.title = 'Drag to reorder';
   dragHandle.setAttribute('aria-label', 'Drag to reorder exercise');
   dragHandle.innerHTML = '&#9776;';
-  dragHandle.addEventListener('mousedown', () => { row.draggable = true; });
+  dragHandle.addEventListener('mousedown', () => {
+    row.draggable = true;
+    if (blockInfo) showBlockDropWarningThrottled();
+  });
   dragHandle.addEventListener('mouseup', () => { row.draggable = false; });
   label.appendChild(dragHandle);
 
