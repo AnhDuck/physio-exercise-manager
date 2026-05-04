@@ -441,18 +441,36 @@ body.notes-open .grid-table {
   box-shadow: inset 3px 0 0 #d8b4fe;
 }
 
-.timeline-dose-change .timeline-event-title {
+.timeline-progression-started,
+.timeline-progression-ended {
+  border: 1px solid rgba(251,191,36,.82);
+  background: rgba(113,63,18,.88);
+  box-shadow: inset 3px 0 0 #fbbf24;
+}
+
+.timeline-dose-change .timeline-event-title,
+.timeline-progression-started .timeline-event-title,
+.timeline-progression-ended .timeline-event-title {
   color: #ffffff;
   font-weight: 750;
 }
 
-.timeline-dose-change .timeline-row-content {
+.timeline-dose-change .timeline-row-content,
+.timeline-progression-started .timeline-row-content,
+.timeline-progression-ended .timeline-row-content {
   color: #eadcff;
   font-size: 14px;
   line-height: 1.3;
 }
 
-.timeline-dose-change .timeline-time {
+.timeline-progression-started .timeline-row-content,
+.timeline-progression-ended .timeline-row-content {
+  color: #ffedc2;
+}
+
+.timeline-dose-change .timeline-time,
+.timeline-progression-started .timeline-time,
+.timeline-progression-ended .timeline-time {
   color: #ffffff;
 }
 
@@ -460,8 +478,20 @@ body.notes-open .grid-table {
   color: #e9d5ff;
 }
 
-.timeline-dose-change .timeline-edit {
+.timeline-progression-started .timeline-event-detail,
+.timeline-progression-ended .timeline-event-detail {
+  color: #fde68a;
+}
+
+.timeline-dose-change .timeline-edit,
+.timeline-progression-started .timeline-edit,
+.timeline-progression-ended .timeline-edit {
   color: #f3e8ff;
+}
+
+.timeline-progression-started .timeline-edit,
+.timeline-progression-ended .timeline-edit {
+  color: #fef3c7;
 }
 
 .timeline-exercise-added {
@@ -923,6 +953,13 @@ body.notes-open .grid-table {
   line-height: 1;
 }
 
+.progression-marker {
+  right: 29px;
+  border-color: rgba(251,191,36,.82);
+  background: rgba(251,191,36,.18);
+  color: #fde68a;
+}
+
 /* ── Add exercise button ─────────────────────────────────────────── */
 .add-exercise-row {
   display: grid;
@@ -1301,6 +1338,10 @@ body.dense-mode .dose-marker {
   min-width: 14px;
   height: 14px;
   font-size: 9px;
+}
+
+body.dense-mode .progression-marker {
+  right: 20px;
 }
 
 /* ── Modal overlay ───────────────────────────────────────────────── */

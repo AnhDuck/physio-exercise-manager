@@ -509,6 +509,9 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber) {
     const doseEvents = events.filter(ev =>
       ev.type === 'dose-change' && ev.date === dateS && ev.exerciseId === ex.id
     );
+    const progressionEvents = events.filter(ev =>
+      isProgressionEvent(ev) && ev.date === dateS && eventMatchesExercise(ev, ex)
+    );
 
     const btn = el('button', 'check-btn set-cell-btn' + (done ? ' done' : '') + (progress && !done ? ' in-progress' : ''));
     btn.title = isActive ? 'Complete all sets' : (done ? 'View or clear log' : 'Track sets');
@@ -531,6 +534,15 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber) {
     if (doseEvents.length) {
       const marker = elText('button', 'dose-marker', String(doseEvents.length));
       marker.title = 'Dose change logged';
+      marker.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openNotesModal(dateS);
+      });
+      cell.appendChild(marker);
+    }
+    if (progressionEvents.length) {
+      const marker = elText('button', 'dose-marker progression-marker', String(progressionEvents.length));
+      marker.title = 'Progression change logged';
       marker.addEventListener('click', (e) => {
         e.stopPropagation();
         openNotesModal(dateS);
@@ -629,6 +641,16 @@ function isProgressingExercise(ex) {
   return Boolean(ex?.progression && progressionCompletedHardSets(ex) < targetSetsForExercise(ex));
 }
 
+function isProgressionEvent(ev) {
+  return ev?.type === 'progression-started' || ev?.type === 'progression-ended';
+}
+
+function eventMatchesExercise(ev, ex) {
+  if (!ev || !ex) return false;
+  if (ev.exerciseId) return ev.exerciseId === ex.id;
+  return Boolean(ev.exerciseName && ev.exerciseName === ex.name);
+}
+
 function progressionCompletedHardSets(ex) {
   const completed = Number.parseInt(ex?.progression?.completedHardSets, 10);
   const value = Number.isFinite(completed) ? completed : 0;
@@ -680,6 +702,7 @@ function setCompletion(dateStr, exId, complete) {
 
 function maybeAdvanceProgression(ex, dateStr, progress) {
   if (!isProgressingExercise(ex) || !isProgressComplete(progress)) return false;
+  if (ex.progression?.lastAdvancedDate === dateStr) return false;
   const targetSets = targetSetsForExercise(ex);
   const nextHardSets = Math.min(targetSets, progressionCompletedHardSets(ex) + 1);
 
@@ -687,7 +710,10 @@ function maybeAdvanceProgression(ex, dateStr, progress) {
     delete ex.progression;
     logProgressionEvent(ex, 'progression-ended', dateStr);
   } else {
-    ex.progression = { completedHardSets: nextHardSets };
+    ex.progression = {
+      completedHardSets: nextHardSets,
+      lastAdvancedDate: dateStr,
+    };
   }
 
   saveExercises(exercises);
@@ -1219,7 +1245,12 @@ function readProgressionFields(fields, previous) {
   const willProgress = active && completedHardSets < totalSets;
   if (!wasProgressing && willProgress) logProgressionEvent(fields, 'progression-started');
   if (wasProgressing && !willProgress) logProgressionEvent(fields, 'progression-ended');
-  return willProgress ? { completedHardSets } : undefined;
+  if (!willProgress) return undefined;
+  const progression = { completedHardSets };
+  if (previous?.progression?.lastAdvancedDate) {
+    progression.lastAdvancedDate = previous.progression.lastAdvancedDate;
+  }
+  return progression;
 }
 
 function saveExerciseModal() {
@@ -1240,8 +1271,8 @@ function saveExerciseModal() {
     const idx = exercises.findIndex(e => e.id === editingExId);
     if (idx !== -1) {
       const previous = { ...exercises[idx] };
-      const progression = readProgressionFields(fields, previous);
       const next = { ...exercises[idx], ...fields };
+      const progression = readProgressionFields(next, previous);
       if (progression) next.progression = progression;
       else delete next.progression;
       const changes = doseChanges(previous, next);
@@ -1727,7 +1758,7 @@ function deleteEventModal() {
   events = events.filter(item => item.id !== editingEventId);
   saveEvents(events);
   closeEventModal();
-  renderNotesPanel();
+  render();
 }
 
 function buildEventItem(ev) {
