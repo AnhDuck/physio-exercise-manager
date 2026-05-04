@@ -986,11 +986,11 @@ function renderSetTracker() {
   panel.appendChild(main);
 
   const timer = el('div', 'set-tracker-timer');
-  const totalMetric = el('div', 'set-tracker-metric');
+  const totalMetric = el('div', 'set-tracker-metric set-tracker-metric-total');
   totalMetric.appendChild(elText('div', 'set-tracker-timer-label', 'Total'));
   totalMetric.appendChild(elText('div', 'set-tracker-timer-value', trackerTotalTimeValue(progress)));
   timer.appendChild(totalMetric);
-  const sinceSetMetric = el('div', 'set-tracker-metric');
+  const sinceSetMetric = el('div', 'set-tracker-metric set-tracker-metric-since');
   sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-label', progress.completedSets > 0 ? 'Since last set' : 'Since start'));
   sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-value', trackerSinceLastSetValue(progress)));
   const timerDetail = trackerTimerDetail(progress);
