@@ -1765,8 +1765,8 @@ function buildTimelineDay(group) {
   let lastSegment = null;
   group.events.forEach(ev => {
     const segment = timelineDaySegment(ev.time);
-    if (lastSegment === 'awake' && segment === 'late') {
-      rows.appendChild(buildTimelineBoundary());
+    if (segment === 'late' && lastSegment !== 'late') {
+      rows.appendChild(buildTimelineBoundary(ev));
     }
     rows.appendChild(buildTimelineItem(ev));
     lastSegment = segment;
@@ -1776,14 +1776,16 @@ function buildTimelineDay(group) {
 }
 
 function timelineDaySegment(timeStr) {
-  const minutes = timeToMinutes(timeStr);
-  if (minutes === null) return 'awake';
-  return minutes < getPersonalDayStartMinutes() ? 'late' : 'awake';
+  return isBeforePersonalDayStart(timeStr, getPersonalDayStartTime()) ? 'late' : 'awake';
 }
 
-function buildTimelineBoundary() {
+function buildTimelineBoundary(ev) {
+  const personalDayStartTime = getPersonalDayStartTime();
+  const wakingDay = getWakingDayForEvent(ev?.date, ev?.time, personalDayStartTime);
+  const wakingDayLabel = formatShortDate(wakingDay);
+  const label = `Before ${formatBoundaryTime(personalDayStartTime)} · ${wakingDayLabel} waking day`;
   const boundary = el('div', 'timeline-boundary');
-  boundary.appendChild(elText('span', 'timeline-boundary-label', `Before ${formatBoundaryTime(getPersonalDayStartTime())}`));
+  boundary.appendChild(elText('span', 'timeline-boundary-label', label));
   return boundary;
 }
 
@@ -1793,8 +1795,21 @@ function getPersonalDayStartTime() {
     : DEFAULT_PERSONAL_DAY_START_TIME;
 }
 
-function getPersonalDayStartMinutes() {
-  return timeToMinutes(getPersonalDayStartTime()) ?? timeToMinutes(DEFAULT_PERSONAL_DAY_START_TIME);
+function isBeforePersonalDayStart(eventTime, personalDayStartTime) {
+  const eventMinutes = timeToMinutes(eventTime);
+  const startMinutes = timeToMinutes(personalDayStartTime);
+  if (eventMinutes === null || startMinutes === null) return false;
+  return eventMinutes < startMinutes;
+}
+
+function getWakingDayForEvent(dateStr, timeStr, personalDayStartTime) {
+  if (!isBeforePersonalDayStart(timeStr, personalDayStartTime) || !isValidDateStr(dateStr)) {
+    return dateStr;
+  }
+
+  const wakingDate = dateFromStr(dateStr);
+  wakingDate.setDate(wakingDate.getDate() - 1);
+  return toDateStr(wakingDate);
 }
 
 function timeToMinutes(timeStr) {
@@ -1814,6 +1829,12 @@ function timeToMinutes(timeStr) {
 
 function isValidTime(timeStr) {
   return timeToMinutes(timeStr) !== null;
+}
+
+function isValidDateStr(dateStr) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr || '')) return false;
+  const date = dateFromStr(dateStr);
+  return toDateStr(date) === dateStr;
 }
 
 function formatBoundaryTime(timeStr) {
@@ -1849,13 +1870,19 @@ function buildTimelineItem(ev) {
 }
 
 function formatEventDateShort(dateStr) {
+  return formatShortDate(dateStr);
+}
+
+function formatShortDate(dateStr) {
   if (!dateStr || dateStr === 'undated') return 'No date';
+  if (!isValidDateStr(dateStr)) return dateStr;
   const d = dateFromStr(dateStr);
   return `${MONTH_ABBR[d.getMonth()]} ${d.getDate()}`;
 }
 
 function formatEventDate(dateStr) {
   if (!dateStr || dateStr === 'undated') return 'No date';
+  if (!isValidDateStr(dateStr)) return dateStr;
   const d = dateFromStr(dateStr);
   return `${MONTH_ABBR[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
