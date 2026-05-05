@@ -1429,6 +1429,7 @@ function playSetCue(setNumber) {
   if (settings.setCueSpeech && window.speechSynthesis) {
     const utterance = new SpeechSynthesisUtterance(`set ${setNumber} completed`);
     utterance.rate = 1.1;
+    utterance.volume = clampSetCueSpeechVolume(settings.setCueSpeechVolume ?? 1);
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
   }
@@ -2047,13 +2048,16 @@ function openSettingsModal() {
   document.getElementById('setting-cue-sound').checked = settings.setCueSound !== false;
   document.getElementById('setting-cue-vibrate').checked = settings.setCueVibrate !== false;
   document.getElementById('setting-cue-speech').checked = Boolean(settings.setCueSpeech);
+  syncSpeechVolumeControl();
   renderBlockSettings();
   document.getElementById('settings-modal').classList.remove('hidden');
 }
 
 function closeSettingsModal(restore = true) {
   if (restore && settingsModalSnapshot) {
+    const savedSpeechVolume = settings.setCueSpeechVolume;
     settings = JSON.parse(JSON.stringify(settingsModalSnapshot.settings));
+    settings.setCueSpeechVolume = clampSetCueSpeechVolume(savedSpeechVolume);
     settingsModalSnapshot.exerciseBlocks.forEach(saved => {
       const ex = exercises.find(item => item.id === saved.id);
       if (ex) ex.blockId = saved.blockId;
@@ -2076,11 +2080,40 @@ function saveSettingsModal() {
   settings.setCueSound = document.getElementById('setting-cue-sound').checked;
   settings.setCueVibrate = document.getElementById('setting-cue-vibrate').checked;
   settings.setCueSpeech = document.getElementById('setting-cue-speech').checked;
+  settings.setCueSpeechVolume = readSpeechVolumeSlider();
   readBlockSettingsForm();
   saveSettings(settings);
   saveExercises(exercises);
   closeSettingsModal(false);
   render();
+}
+
+function syncSpeechVolumeControl() {
+  const input = document.getElementById('setting-cue-speech-volume');
+  const speechToggle = document.getElementById('setting-cue-speech');
+  if (!input || !speechToggle) return;
+  const percent = Math.round(clampSetCueSpeechVolume(settings.setCueSpeechVolume) * 100);
+  input.value = String(percent);
+  updateSpeechVolumeLabel(percent);
+  input.disabled = !speechToggle.checked;
+  input.closest('.cue-volume-label')?.classList.toggle('is-disabled', input.disabled);
+}
+
+function updateSpeechVolumeLabel(percent = readSpeechVolumeSlider() * 100) {
+  const label = document.getElementById('setting-cue-speech-volume-label');
+  if (!label) return;
+  label.textContent = `Speech volume: ${Math.round(percent)}%`;
+}
+
+function readSpeechVolumeSlider() {
+  const input = document.getElementById('setting-cue-speech-volume');
+  return clampSetCueSpeechVolume(input ? Number(input.value) / 100 : settings.setCueSpeechVolume);
+}
+
+function handleSpeechVolumeInput() {
+  settings.setCueSpeechVolume = readSpeechVolumeSlider();
+  updateSpeechVolumeLabel(settings.setCueSpeechVolume * 100);
+  saveSettings(settings);
 }
 
 function renderBlockSettings() {
@@ -2507,6 +2540,8 @@ function bindStaticEvents() {
   document.getElementById('btn-settings').addEventListener('click', openSettingsModal);
   document.getElementById('settings-cancel').addEventListener('click', closeSettingsModal);
   document.getElementById('settings-save').addEventListener('click', saveSettingsModal);
+  document.getElementById('setting-cue-speech-volume').addEventListener('input', handleSpeechVolumeInput);
+  document.getElementById('setting-cue-speech').addEventListener('change', syncSpeechVolumeControl);
   document.getElementById('settings-modal').addEventListener('click', (e) => {
     if (e.target === document.getElementById('settings-modal')) closeSettingsModal();
   });

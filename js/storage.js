@@ -38,22 +38,36 @@ function loadSettings() {
       setCueSound: true,
       setCueVibrate: true,
       setCueSpeech: false,
+      setCueSpeechVolume: 1,
       personalDayStartTime: '07:00',
     };
     saveSettings(defaults);
     return defaults;
   }
-  return {
+  const loaded = {
     setCueSound: true,
     setCueVibrate: true,
     setCueSpeech: false,
+    setCueSpeechVolume: 1,
     personalDayStartTime: '07:00',
     ...JSON.parse(raw),
   };
+  loaded.setCueSpeechVolume = clampSetCueSpeechVolume(loaded.setCueSpeechVolume);
+  return loaded;
 }
 
 function saveSettings(settings) {
-  localStorage.setItem(KEYS.SETTINGS, JSON.stringify(settings));
+  const nextSettings = {
+    ...settings,
+    setCueSpeechVolume: clampSetCueSpeechVolume(settings.setCueSpeechVolume),
+  };
+  localStorage.setItem(KEYS.SETTINGS, JSON.stringify(nextSettings));
+}
+
+function clampSetCueSpeechVolume(value) {
+  const volume = Number(value);
+  if (!Number.isFinite(volume)) return 1;
+  return Math.max(0, Math.min(1, volume));
 }
 
 function loadEvents() {

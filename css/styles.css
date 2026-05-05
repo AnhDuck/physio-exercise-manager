@@ -1846,6 +1846,33 @@ body.dense-mode .dose-marker {
   accent-color: var(--c-day1);
 }
 
+.form-field .cue-volume-label {
+  display: grid;
+  gap: 7px;
+  max-width: 340px;
+  margin-top: 10px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.form-field .cue-volume-label input[type="range"] {
+  width: 100%;
+  height: 6px;
+  accent-color: var(--c-day1);
+  cursor: pointer;
+}
+
+.form-field .cue-volume-label.is-disabled {
+  opacity: .55;
+}
+
+.form-field .cue-volume-label.is-disabled input[type="range"] {
+  cursor: not-allowed;
+}
+
 .set-tracker {
   position: fixed;
   right: 18px;
