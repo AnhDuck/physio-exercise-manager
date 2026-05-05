@@ -159,8 +159,8 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   color: #f2e7df;
-  font-family: Georgia, "Times New Roman", Times, serif;
-  font-size: 27px;
+  font-family: inherit;
+  font-size: 14px;
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0;
@@ -2325,7 +2325,7 @@ body.dense-mode .dose-marker {
 
   .header-quote {
     font-family: inherit;
-    font-size: 15px;
+    font-size: 12px;
     font-weight: 600;
   }
 
