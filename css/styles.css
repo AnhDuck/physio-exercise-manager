@@ -287,10 +287,10 @@ body.notes-open .grid-table {
 
 .notes-panel-title {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
   min-width: 0;
-  flex-wrap: wrap;
 }
 
 .notes-panel-header h2 {
@@ -301,6 +301,17 @@ body.notes-open .grid-table {
 .notes-panel-subtitle {
   color: var(--text-dim);
   font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timeline-copy-btn {
+  flex: 0 0 auto;
+  min-width: 102px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 750;
 }
 
 .note-composer {

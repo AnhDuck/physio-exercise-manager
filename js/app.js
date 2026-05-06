@@ -906,10 +906,10 @@ function timelineEvents() {
     });
 }
 
-function groupedTimelineEvents() {
+function groupedTimelineEvents(items = timelineEvents()) {
   const groups = [];
   const byDate = new Map();
-  timelineEvents().forEach(ev => {
+  items.forEach(ev => {
     const date = ev.date || 'undated';
     if (!byDate.has(date)) {
       const group = { date, events: [] };
@@ -1755,6 +1755,156 @@ function addQuickNote() {
   textField.focus();
 }
 
+async function copyTimelineMarkdown() {
+  const timeline = timelineEvents();
+  if (!timeline.length) {
+    showToast('No notes or timeline items to copy.');
+    return;
+  }
+
+  const markdown = buildTimelineMarkdown(timeline);
+  const copied = await writeTextToClipboard(markdown);
+  const count = timeline.length;
+  const chars = markdown.length;
+
+  if (copied) {
+    showToast(`Copied ${formatNumber(count)} timeline ${count === 1 ? 'item' : 'items'} (${formatNumber(chars)} characters).`);
+  } else {
+    showToast(`Could not copy ${formatNumber(count)} timeline ${count === 1 ? 'item' : 'items'} (${formatNumber(chars)} characters).`);
+  }
+}
+
+function buildTimelineMarkdown(timeline) {
+  const lines = [
+    '# Physio Timeline Notes',
+    '',
+    `Generated: ${formatExportTimestamp(new Date())}`,
+    `Items: ${formatNumber(timeline.length)}`,
+    `Date range: ${timelineDateRange(timeline)}`,
+    '',
+  ];
+
+  groupedTimelineEvents(timeline).forEach((group, groupIndex) => {
+    if (groupIndex > 0) lines.push('');
+    lines.push(`## ${formatEventDate(group.date)}`);
+    lines.push('');
+    group.events.forEach(ev => {
+      lines.push(formatTimelineEventMarkdown(ev));
+    });
+  });
+
+  return lines.join('\n');
+}
+
+function formatTimelineEventMarkdown(ev) {
+  const time = formatEventTime(ev.time) || 'No time';
+  return `- **${time}** - ${formatTimelineEventMarkdownBody(ev)}`;
+}
+
+function formatTimelineEventMarkdownBody(ev) {
+  if (ev.type === 'note') return formatMarkdownEntryText(ev.text || '');
+
+  const parts = [`**${eventTitle(ev)}**`];
+  const detail = eventText(ev);
+  if (detail) parts.push(detail);
+  if (ev.annotation) parts.push(formatMarkdownEntryText(ev.annotation));
+  return parts.join(': ');
+}
+
+function formatMarkdownEntryText(text) {
+  return String(text || '')
+    .replace(/\r\n?/g, '\n')
+    .trim()
+    .replace(/\n/g, '\n  ');
+}
+
+function timelineDateRange(timeline) {
+  const dates = timeline
+    .map(ev => ev.date)
+    .filter(date => date && date !== 'undated')
+    .sort();
+
+  if (!dates.length) return 'No dated items';
+  const first = dates[0];
+  const last = dates[dates.length - 1];
+  if (first === last) return formatEventDate(first);
+  return `${formatEventDate(first)} - ${formatEventDate(last)}`;
+}
+
+function formatExportTimestamp(date) {
+  return `${formatEventDate(toDateStr(date))} ${formatEventTime(`${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`)}`;
+}
+
+async function writeTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (err) {
+      // File URLs and non-secure contexts often reject the async Clipboard API.
+    }
+  }
+
+  return fallbackCopyText(text);
+}
+
+function fallbackCopyText(text) {
+  if (copyTextWithEvent(text)) return true;
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
+  textarea.style.top = '0';
+
+  const selection = document.getSelection();
+  const selectedRange = selection && selection.rangeCount ? selection.getRangeAt(0) : null;
+
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+
+  let copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch (err) {
+    copied = false;
+  }
+
+  document.body.removeChild(textarea);
+
+  if (selection && selectedRange) {
+    selection.removeAllRanges();
+    selection.addRange(selectedRange);
+  }
+
+  return copied;
+}
+
+function copyTextWithEvent(text) {
+  let copied = false;
+  const handleCopy = (event) => {
+    event.clipboardData.setData('text/plain', text);
+    event.preventDefault();
+    copied = true;
+  };
+
+  document.addEventListener('copy', handleCopy);
+  try {
+    copied = document.execCommand('copy') && copied;
+  } catch (err) {
+    copied = false;
+  }
+  document.removeEventListener('copy', handleCopy);
+
+  return copied;
+}
+
+function formatNumber(value) {
+  return Number(value).toLocaleString();
+}
+
 function buildTimelineDay(group) {
   const section = el('section', 'timeline-day');
   const header = elText('div', 'timeline-day-header', formatEventDateShort(group.date));
@@ -2526,6 +2676,7 @@ function bindStaticEvents() {
   document.querySelectorAll('.notes-toggle').forEach(btn => {
     btn.addEventListener('click', toggleNotesPanel);
   });
+  document.getElementById('timeline-copy').addEventListener('click', copyTimelineMarkdown);
   document.getElementById('quick-note-save').addEventListener('click', addQuickNote);
   document.getElementById('quick-note-text').addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
