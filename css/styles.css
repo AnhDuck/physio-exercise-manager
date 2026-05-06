@@ -485,7 +485,18 @@ body.notes-open .grid-table {
   border-radius: 5px;
   cursor: pointer;
   font-size: 13px;
-  padding: 2px 6px;
+  line-height: 1;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  opacity: 0;
+  transition: opacity .12s, color .12s, background .12s, border-color .12s;
+}
+
+.timeline-row:hover .timeline-edit,
+.timeline-row:focus-within .timeline-edit,
+.timeline-edit:focus-visible {
+  opacity: 1;
 }
 
 .timeline-edit:hover {

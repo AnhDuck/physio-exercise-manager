@@ -2064,8 +2064,11 @@ function buildTimelineItem(ev) {
   }
 
   item.appendChild(content);
-  const editBtn = elText('button', 'timeline-edit', 'Edit');
+  const editBtn = el('button', 'timeline-edit');
   editBtn.type = 'button';
+  editBtn.title = 'Edit timeline item';
+  editBtn.setAttribute('aria-label', 'Edit timeline item');
+  editBtn.innerHTML = '&#9998;';
   editBtn.addEventListener('click', () => openEventModal(ev.id));
   item.appendChild(editBtn);
   return item;
