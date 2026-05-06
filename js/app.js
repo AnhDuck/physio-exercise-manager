@@ -445,6 +445,20 @@ function groupedExercisesForRender(exs) {
   return sections;
 }
 
+function exerciseSectionsForGroup(group) {
+  return groupedExercisesForRender(sortedExercisesInGroup(group));
+}
+
+function displayOrderedExercisesInGroup(group) {
+  return exerciseSectionsForGroup(group).flatMap(section => section.exercises);
+}
+
+function applyGroupDisplayOrder(group, sections) {
+  sections.flatMap(section => section.exercises).forEach((ex, i) => {
+    ex.order = i + 1;
+  });
+}
+
 function normalizedBlockId(ex) {
   return String(ex?.blockId || '').trim();
 }
@@ -548,8 +562,29 @@ function moveExercise(dragId, targetGroup, targetId = null, position = 'after') 
   const dragged = exercises.find(ex => ex.id === dragId);
   if (!dragged || !targetGroup) return;
   if (targetId === dragId) return;
-  if (normalizedBlockId(dragged)) {
-    showBlockDropWarning();
+  const draggedBlockId = normalizedBlockId(dragged);
+
+  if (draggedBlockId) {
+    const target = exercises.find(ex => ex.id === targetId);
+    if (!target || target.group !== targetGroup || normalizedBlockId(target) !== draggedBlockId) {
+      showBlockDropWarning(dragged, target);
+      return;
+    }
+
+    const sections = exerciseSectionsForGroup(targetGroup);
+    const section = sections.find(item => item.block?.id === draggedBlockId);
+    if (!section) return;
+    const targetItems = section.exercises.filter(ex => ex.id !== dragId);
+    let insertAt = targetItems.findIndex(ex => ex.id === targetId);
+    if (insertAt === -1) return;
+    if (position === 'after') insertAt += 1;
+    targetItems.splice(insertAt, 0, dragged);
+    section.exercises = targetItems;
+    applyGroupDisplayOrder(targetGroup, sections);
+
+    saveExercises(exercises);
+    render();
+    refreshOpenBlockSettings();
     return;
   }
 
@@ -570,6 +605,7 @@ function moveExercise(dragId, targetGroup, targetId = null, position = 'after') 
 
   saveExercises(exercises);
   render();
+  refreshOpenBlockSettings();
 }
 
 function handleExerciseDragStart(e) {
@@ -577,10 +613,6 @@ function handleExerciseDragStart(e) {
   e.currentTarget.classList.add('dragging');
   e.dataTransfer.effectAllowed = 'move';
   e.dataTransfer.setData('text/plain', draggedExerciseId);
-  const dragged = exercises.find(ex => ex.id === draggedExerciseId);
-  if (dragged && normalizedBlockId(dragged)) {
-    showBlockDropWarning();
-  }
 }
 
 function handleExerciseDragEnd(e) {
@@ -603,7 +635,7 @@ function handleExerciseDragOver(e) {
   if (isBlockedGridDrop(draggedExerciseId, target)) {
     e.dataTransfer.dropEffect = 'none';
     target.classList.add('drop-denied');
-    showBlockDropWarningThrottled();
+    showBlockDropWarningThrottled(exercises.find(ex => ex.id === draggedExerciseId), target);
     return;
   }
 
@@ -626,7 +658,7 @@ function handleExerciseDropOnRow(e) {
   e.stopPropagation();
   const target = e.currentTarget;
   if (isBlockedGridDrop(draggedExerciseId, target)) {
-    showBlockDropWarning();
+    showBlockDropWarning(exercises.find(ex => ex.id === draggedExerciseId), target);
     clearDropPosition({ currentTarget: target });
     return;
   }
@@ -640,7 +672,7 @@ function handleExerciseDropAtEnd(e) {
   e.stopPropagation();
   const target = e.currentTarget;
   if (isBlockedGridDrop(draggedExerciseId, target)) {
-    showBlockDropWarning();
+    showBlockDropWarning(exercises.find(ex => ex.id === draggedExerciseId), target);
     clearDropPosition({ currentTarget: target });
     return;
   }
@@ -650,19 +682,37 @@ function handleExerciseDropAtEnd(e) {
 function isBlockedGridDrop(dragId, target) {
   const dragged = exercises.find(ex => ex.id === dragId);
   if (!dragged) return true;
-  if (normalizedBlockId(dragged)) return true;
+  const targetId = target.dataset.exId;
+  const draggedBlockId = normalizedBlockId(dragged);
+
+  if (draggedBlockId) {
+    if (!target.classList.contains('exercise-row') || !targetId) return true;
+    const targetExercise = exercises.find(ex => ex.id === targetId);
+    return !targetExercise
+      || targetExercise.group !== dragged.group
+      || normalizedBlockId(targetExercise) !== draggedBlockId;
+  }
+
   return target.classList.contains('block-row');
 }
 
-function showBlockDropWarning() {
+function showBlockDropWarning(dragged = null, target = null) {
+  if (dragged && normalizedBlockId(dragged)) {
+    showToast('Exercises inside a block can only be reordered within that block. Move blocks in Settings.');
+    return;
+  }
+  if (target && target.classList?.contains('block-row')) {
+    showToast('Unblocked exercises must stay below blocks. Assign blocks in Settings.');
+    return;
+  }
   showToast('Blocks are managed in Settings. Unblocked exercises must stay below blocks.');
 }
 
-function showBlockDropWarningThrottled() {
+function showBlockDropWarningThrottled(dragged = null, target = null) {
   const now = Date.now();
   if (now - lastBlockDropWarningAt < 1800) return;
   lastBlockDropWarningAt = now;
-  showBlockDropWarning();
+  showBlockDropWarning(dragged, target);
 }
 
 function buildExerciseRows(ex, group, dates, todayS, exerciseNumber, blockInfo = null) {
@@ -682,12 +732,14 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber, blockInfo =
 
   const dragHandle = el('button', 'drag-handle');
   dragHandle.type = 'button';
-  dragHandle.title = 'Drag to reorder';
-  dragHandle.setAttribute('aria-label', 'Drag to reorder exercise');
+  const dragTooltip = blockInfo
+    ? 'Drag and drop to reorder exercises inside this block. Move blocks in Settings.'
+    : 'Drag to reorder exercise';
+  dragHandle.title = dragTooltip;
+  dragHandle.setAttribute('aria-label', dragTooltip);
   dragHandle.innerHTML = '&#9776;';
   dragHandle.addEventListener('mousedown', () => {
     row.draggable = true;
-    if (blockInfo) showBlockDropWarningThrottled();
   });
   dragHandle.addEventListener('mouseup', () => { row.draggable = false; });
   label.appendChild(dragHandle);
@@ -2300,6 +2352,13 @@ function renderBlockSettings() {
   GROUP_ORDER.forEach(group => root.appendChild(buildBlockSettingsGroup(group)));
 }
 
+function refreshOpenBlockSettings() {
+  const modal = document.getElementById('settings-modal');
+  if (!modal || modal.classList.contains('hidden')) return;
+  readBlockSettingsForm();
+  renderBlockSettings();
+}
+
 function buildBlockSettingsGroup(group) {
   const cfg = GROUPS[group];
   const panel = el('section', 'block-settings-group');
@@ -2331,7 +2390,7 @@ function buildBlockSettingsGroup(group) {
   panel.appendChild(blockList);
 
   const exerciseList = el('div', 'block-exercise-list');
-  sortedExercisesInGroup(group).forEach(ex => exerciseList.appendChild(buildBlockExerciseAssignment(group, ex)));
+  displayOrderedExercisesInGroup(group).forEach(ex => exerciseList.appendChild(buildBlockExerciseAssignment(group, ex)));
   panel.appendChild(exerciseList);
 
   return panel;
