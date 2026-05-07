@@ -2239,13 +2239,13 @@ body.dense-mode .dose-marker {
 }
 
 .set-tracker-metric-total .set-tracker-timer-value {
-  font-size: 32px;
+  font-size: 28px;
   line-height: .95;
 }
 
 .set-tracker-metric-since .set-tracker-timer-value {
   color: #dbeafe;
-  font-size: 26px;
+  font-size: 34px;
 }
 
 .set-tracker-metric-since .set-tracker-timer-label {
@@ -2271,23 +2271,8 @@ body.dense-mode .dose-marker {
   position: relative;
   display: flex;
   flex-wrap: wrap;
-  gap: 7px 8px;
+  gap: 7px 0;
   min-width: 0;
-  padding-left: 15px;
-}
-
-.set-tracker-set-list::before {
-  content: "";
-  position: absolute;
-  left: 3px;
-  top: 9px;
-  bottom: 9px;
-  width: 1px;
-  background: linear-gradient(
-    to bottom,
-    rgba(123,162,247,.55),
-    rgba(255,255,255,.12)
-  );
 }
 
 .set-tracker-set-item {
@@ -2296,7 +2281,7 @@ body.dense-mode .dose-marker {
   align-items: baseline;
   gap: 6px;
   min-height: 22px;
-  padding: 3px 8px;
+  padding: 3px 9px;
   border: 1px solid rgba(148, 163, 184, .2);
   border-radius: 5px;
   background: rgba(255,255,255,.035);
@@ -2307,18 +2292,18 @@ body.dense-mode .dose-marker {
   white-space: nowrap;
 }
 
-.set-tracker-set-item::before {
+.set-tracker-set-item + .set-tracker-set-item {
+  margin-left: 8px;
+}
+
+.set-tracker-set-item + .set-tracker-set-item::before {
   content: "";
   position: absolute;
-  left: -15px;
-  top: 50%;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #1f1f22;
-  border: 1px solid rgba(123,162,247,.78);
-  box-shadow: 0 0 0 2px #1f1f22;
-  transform: translateY(-50%);
+  left: -5px;
+  top: 5px;
+  bottom: 5px;
+  width: 1px;
+  background: rgba(148, 163, 184, .22);
 }
 
 .set-tracker-set-name {
@@ -2614,11 +2599,11 @@ body.dense-mode .dose-marker {
   }
 
   .set-tracker-metric-total .set-tracker-timer-value {
-    font-size: 30px;
+    font-size: 26px;
   }
 
   .set-tracker-metric-since .set-tracker-timer-value {
-    font-size: 24px;
+    font-size: 30px;
   }
 
   .set-tracker-help {
