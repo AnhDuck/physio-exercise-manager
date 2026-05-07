@@ -1260,24 +1260,22 @@ function decrementActiveSet() {
   const current = getActiveTrackerParts();
   if (!current) return;
   const { ex, dateStr, session, progress } = current;
-  if (progress.completedAt || progress.finishedEarly) {
-    progress.completedAt = null;
-    progress.finishedEarly = false;
-    progress.completedSets = Math.max(0, progress.completedSets - 1);
-    progress.setDurations.splice(progress.completedSets, 1);
-    progress.setCompletedAt.splice(progress.completedSets, 1);
-    if (!progress.timerStartedAt && !progress.timerCapped) startSetTimer(progress);
-  } else if (progress.completedSets >= progress.targetSets) {
-    progress.completedSets = Math.max(0, progress.completedSets - 1);
-    progress.setDurations.splice(progress.completedSets, 1);
-    progress.setCompletedAt.splice(progress.completedSets, 1);
-    if (!progress.timerStartedAt && !progress.timerCapped) startSetTimer(progress);
-  } else {
-    progress.completedSets = Math.max(0, progress.completedSets - 1);
-    progress.setDurations.splice(progress.completedSets, 1);
-    progress.setCompletedAt.splice(progress.completedSets, 1);
-    if (!progress.timerStartedAt && !progress.timerCapped) startSetTimer(progress);
+  if (progress.completedSets <= 0) return;
+
+  progress.completedAt = null;
+  progress.finishedEarly = false;
+  progress.completedSets = Math.max(0, progress.completedSets - 1);
+  const removedDuration = Math.max(0, Number(progress.setDurations[progress.completedSets]) || 0);
+  progress.setDurations.splice(progress.completedSets, 1);
+  progress.setCompletedAt.splice(progress.completedSets, 1);
+  progress.elapsedSeconds = Math.max(0, Math.min(
+    SET_TIMER_CAP_SECONDS,
+    (Number(progress.elapsedSeconds) || 0) - removedDuration
+  ));
+  if (progress.timerCapped && progress.elapsedSeconds < SET_TIMER_CAP_SECONDS) {
+    progress.timerCapped = false;
   }
+  if (!progress.timerStartedAt && !progress.timerCapped) startSetTimer(progress);
   progress.updatedAt = new Date().toISOString();
   session.setProgress[ex.id] = progress;
   setCompletion(dateStr, ex.id, false);
@@ -1402,15 +1400,37 @@ function renderSetTracker() {
   totalMetric.appendChild(elText('div', 'set-tracker-timer-value', trackerTotalTimeValue(progress)));
   timer.appendChild(totalMetric);
   const sinceSetMetric = el('div', 'set-tracker-metric set-tracker-metric-since');
-  sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-label', progress.completedSets > 0 ? 'Since last set' : 'Since start'));
-  sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-value', trackerSinceLastSetValue(progress)));
+  sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-label', 'Current set'));
+  sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-value', trackerCurrentSetTimeValue(progress)));
   const timerDetail = trackerTimerDetail(progress);
   if (timerDetail) sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-detail', timerDetail));
   timer.appendChild(sinceSetMetric);
+  const setTimeline = buildCompletedSetTimeline(progress);
+  if (setTimeline) timer.appendChild(setTimeline);
   panel.appendChild(timer);
   panel.appendChild(actions);
 
   root.appendChild(panel);
+}
+
+function buildCompletedSetTimeline(progress) {
+  const timedSets = progress.setDurations
+    .slice(0, progress.completedSets)
+    .map((value, index) => ({ index, seconds: Number(value) }))
+    .filter(item => Number.isFinite(item.seconds));
+  if (!timedSets.length) return null;
+
+  const timeline = el('div', 'set-tracker-set-timeline');
+  timeline.appendChild(elText('div', 'set-tracker-timer-label set-tracker-set-timeline-label', 'Completed sets'));
+  const list = el('div', 'set-tracker-set-list');
+  timedSets.forEach(item => {
+    const row = el('div', 'set-tracker-set-item');
+    row.appendChild(elText('span', 'set-tracker-set-name', `Set ${item.index + 1}`));
+    row.appendChild(elText('span', 'set-tracker-set-duration', fmtShortDuration(item.seconds)));
+    list.appendChild(row);
+  });
+  timeline.appendChild(list);
+  return timeline;
 }
 
 function formatLastLogged(iso) {
@@ -1427,8 +1447,8 @@ function trackerStartedTime(progress) {
   return formatClockTime(progress.startedAt);
 }
 
-function trackerSinceLastSetValue(progress) {
-  return fmtShortDuration(secondsSinceLastSet(progress));
+function trackerCurrentSetTimeValue(progress) {
+  return fmtShortDuration(currentSetElapsedSeconds(progress));
 }
 
 function trackerTotalTimeValue(progress) {
@@ -1454,7 +1474,8 @@ function fmtShortDuration(totalSeconds) {
   return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
 }
 
-function secondsSinceLastSet(progress, now = new Date()) {
+function currentSetElapsedSeconds(progress, now = new Date()) {
+  if (isProgressComplete(progress)) return 0;
   const completedSetSeconds = progress.setDurations
     .slice(0, progress.completedSets)
     .reduce((total, value) => total + Math.max(0, Number(value) || 0), 0);

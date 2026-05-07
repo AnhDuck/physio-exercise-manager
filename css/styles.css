@@ -2179,10 +2179,12 @@ body.dense-mode .dose-marker {
 .set-tracker-timer {
   grid-area: timer;
   display: grid;
-  grid-template-columns: minmax(150px, auto) minmax(150px, 1fr);
-  gap: 0;
+  grid-template-columns: minmax(136px, max-content) minmax(126px, max-content) minmax(0, 1fr);
+  column-gap: 16px;
+  row-gap: 10px;
   justify-items: stretch;
   align-content: center;
+  align-items: center;
   min-width: 0;
   max-width: none;
   padding: 9px 12px;
@@ -2206,9 +2208,14 @@ body.dense-mode .dose-marker {
 }
 
 .set-tracker-metric-since {
-  margin-left: 16px;
   padding-left: 16px;
   border-left: 1px solid rgba(148, 163, 184, .28);
+}
+
+.set-tracker-set-timeline {
+  min-width: 0;
+  padding-left: 16px;
+  border-left: 1px solid rgba(148, 163, 184, .2);
 }
 
 .set-tracker-timer-label {
@@ -2253,6 +2260,75 @@ body.dense-mode .dose-marker {
   line-height: 1.2;
   margin-top: 4px;
   white-space: nowrap;
+}
+
+.set-tracker-set-timeline-label {
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.set-tracker-set-list {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 8px;
+  min-width: 0;
+  padding-left: 15px;
+}
+
+.set-tracker-set-list::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 9px;
+  bottom: 9px;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    rgba(123,162,247,.55),
+    rgba(255,255,255,.12)
+  );
+}
+
+.set-tracker-set-item {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-height: 22px;
+  padding: 3px 8px;
+  border: 1px solid rgba(148, 163, 184, .2);
+  border-radius: 5px;
+  background: rgba(255,255,255,.035);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.set-tracker-set-item::before {
+  content: "";
+  position: absolute;
+  left: -15px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #1f1f22;
+  border: 1px solid rgba(123,162,247,.78);
+  box-shadow: 0 0 0 2px #1f1f22;
+  transform: translateY(-50%);
+}
+
+.set-tracker-set-name {
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.set-tracker-set-duration {
+  color: #dbeafe;
+  font-variant-numeric: tabular-nums;
 }
 
 .set-tracker-recency {
@@ -2507,6 +2583,18 @@ body.dense-mode .dose-marker {
     text-align: left;
     white-space: normal;
   }
+
+  .set-tracker-timer {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .set-tracker-set-timeline {
+    grid-column: 1 / -1;
+    padding-top: 10px;
+    padding-left: 0;
+    border-top: 1px solid rgba(148, 163, 184, .2);
+    border-left: none;
+  }
 }
 
 @media (max-width: 480px) {
@@ -2522,7 +2610,6 @@ body.dense-mode .dose-marker {
   }
 
   .set-tracker-metric-since {
-    margin-left: 12px;
     padding-left: 12px;
   }
 
