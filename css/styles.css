@@ -2008,8 +2008,19 @@ body.dense-mode .dose-marker {
   align-items: center;
   justify-content: flex-end;
   align-self: start;
-  gap: 6px;
+  gap: 12px;
   min-width: 108px;
+}
+
+.set-tracker-utility-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.set-tracker-utility-danger {
+  padding-left: 10px;
+  border-left: 1px solid rgba(248, 113, 113, .28);
 }
 
 .tracker-icon-btn {
@@ -2026,6 +2037,42 @@ body.dense-mode .dose-marker {
   cursor: pointer;
   padding: 0;
   transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.tracker-tooltip {
+  position: relative;
+}
+
+.tracker-tooltip::after {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  z-index: 220;
+  width: max-content;
+  max-width: min(220px, calc(100vw - 32px));
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #111;
+  color: var(--text);
+  box-shadow: 0 8px 18px rgba(0,0,0,.32);
+  content: attr(data-tooltip);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  opacity: 0;
+  pointer-events: none;
+  text-align: center;
+  text-transform: none;
+  transform: translate(-50%, 4px);
+  transition: opacity .12s ease, transform .12s ease;
+  white-space: normal;
+}
+
+.tracker-tooltip:hover::after,
+.tracker-tooltip:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 .tracker-icon-btn svg {
@@ -2050,6 +2097,19 @@ body.dense-mode .dose-marker {
 .set-log-clear:focus-visible {
   border-color: rgba(248, 113, 113, .72);
   color: #fecaca;
+}
+
+.set-tracker-close {
+  background: rgba(71, 85, 105, .22);
+  border-color: rgba(191, 219, 254, .34);
+  color: #e2e8f0;
+}
+
+.set-tracker-close:hover,
+.set-tracker-close:focus-visible {
+  background: rgba(51, 65, 85, .88);
+  border-color: rgba(191, 219, 254, .72);
+  color: #fff;
 }
 
 .set-tracker.complete {
@@ -2288,11 +2348,21 @@ body.dense-mode .dose-marker {
   display: grid;
   align-content: center;
   gap: 3px;
+  outline: none;
 }
 
 .set-tracker-metric-total .set-tracker-timer-label,
 .set-tracker-metric-total .set-tracker-timer-value {
   color: #f8fafc;
+}
+
+.set-tracker-metric.tracker-tooltip {
+  cursor: help;
+}
+
+.set-tracker-metric.tracker-tooltip:hover,
+.set-tracker-metric.tracker-tooltip:focus-visible {
+  border-color: rgba(148, 163, 184, .4);
 }
 
 .set-tracker-metric-since {
@@ -2748,6 +2818,10 @@ body.dense-mode .dose-marker {
 
   .set-tracker-utility {
     min-width: 108px;
+  }
+
+  .set-tracker-utility-danger {
+    padding-left: 8px;
   }
 
   .set-tracker-help {

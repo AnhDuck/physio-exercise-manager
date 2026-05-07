@@ -70,6 +70,7 @@ const PHYSIO_HEADER_QUOTES = [
   'Do the tiny thing. Become slightly less creaky.',
   'Physio time: the glamorous admin of healing.'
 ];
+const TRACKER_SHORTCUT_TOOLTIP = 'Right arrow completes a set. Left arrow undoes a set.';
 
 // ── Init ─────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -1472,12 +1473,16 @@ function renderSetTracker() {
   panel.style.setProperty('--tracker-color', GROUPS[ex.group]?.color || 'var(--accent-green)');
 
   const utility = el('div', 'set-tracker-utility');
+  const utilityMain = el('div', 'set-tracker-utility-group set-tracker-utility-main');
   const editLogBtn = buildTrackerIconButton('wrench', 'Edit log', 'set-log-toggle', openLogDetails);
   editLogBtn.setAttribute('aria-haspopup', 'dialog');
   editLogBtn.setAttribute('aria-expanded', String(Boolean(activeTracker?.detailsOpen)));
-  utility.appendChild(editLogBtn);
-  utility.appendChild(buildTrackerIconButton('trash', 'Clear set log', 'set-log-clear', clearActiveProgress));
-  utility.appendChild(buildTrackerIconButton('x', 'Close set tracker', 'set-tracker-close', pauseAndCloseTracker));
+  const utilityDanger = el('div', 'set-tracker-utility-group set-tracker-utility-danger');
+  utilityDanger.appendChild(buildTrackerIconButton('trash', 'Clear set log', 'set-log-clear', clearActiveProgress));
+  utility.appendChild(utilityDanger);
+  utilityMain.appendChild(editLogBtn);
+  utilityMain.appendChild(buildTrackerIconButton('x', 'Close set tracker', 'set-tracker-close', pauseAndCloseTracker));
+  utility.appendChild(utilityMain);
 
   const main = el('div', 'set-tracker-main');
   const info = el('div', 'set-tracker-info');
@@ -1508,7 +1513,7 @@ function renderSetTracker() {
   const mainActions = el('div', 'set-tracker-main-actions');
   const completeSet = elText('button', 'set-action set-action-primary', 'Complete Set');
   completeSet.disabled = done || progress.timerCapped || isHistoricalOnly;
-  completeSet.title = 'Right arrow';
+  applyTrackerTooltip(completeSet, TRACKER_SHORTCUT_TOOLTIP);
   completeSet.addEventListener('click', logSet);
   mainActions.appendChild(completeSet);
   actions.appendChild(mainActions);
@@ -1542,6 +1547,12 @@ function buildTrackerIconButton(iconName, label, className, onClick) {
   button.appendChild(buildIconSvg(iconName));
   button.addEventListener('click', onClick);
   return button;
+}
+
+function applyTrackerTooltip(node, text, options = {}) {
+  node.classList.add('tracker-tooltip');
+  node.setAttribute('data-tooltip', text);
+  if (options.focusable) node.tabIndex = 0;
 }
 
 function buildIconSvg(iconName) {
