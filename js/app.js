@@ -1478,7 +1478,6 @@ function renderSetTracker() {
   utility.appendChild(editLogBtn);
   utility.appendChild(buildTrackerIconButton('trash', 'Clear set log', 'set-log-clear', clearActiveProgress));
   utility.appendChild(buildTrackerIconButton('x', 'Close set tracker', 'set-tracker-close', pauseAndCloseTracker));
-  panel.appendChild(utility);
 
   const main = el('div', 'set-tracker-main');
   const info = el('div', 'set-tracker-info');
@@ -1502,6 +1501,7 @@ function renderSetTracker() {
   info.appendChild(titleRow);
   info.appendChild(elText('div', 'set-tracker-meta', `${progress.completedSets}/${progress.targetSets} sets | ${ex.reps} reps${ex.resistance ? ` | ${ex.resistance}` : ''}`));
   main.appendChild(info);
+  main.appendChild(utility);
   panel.appendChild(main);
 
   const actions = el('div', 'set-tracker-actions');
@@ -1538,7 +1538,6 @@ function buildTrackerIconButton(iconName, label, className, onClick) {
   const button = el('button', `tracker-icon-btn ${className || ''}`.trim());
   button.type = 'button';
   button.title = label;
-  button.dataset.tooltip = label;
   button.setAttribute('aria-label', label);
   button.appendChild(buildIconSvg(iconName));
   button.addEventListener('click', onClick);
@@ -2017,7 +2016,7 @@ function syncRealtimeFields() {
   lastTodayStr = nowToday;
   syncQuickNoteDateTime();
   if (isEditingLogDetails()) return;
-  renderSetTracker();
+  refreshSetTrackerTimerDisplay() || renderSetTracker();
 }
 
 function syncSetTrackerTimer() {
@@ -2031,7 +2030,19 @@ function syncSetTrackerTimer() {
     saveSession(dateStr, session);
   }
   if (isEditingLogDetails()) return;
-  renderSetTracker();
+  refreshSetTrackerTimerDisplay() || renderSetTracker();
+}
+
+function refreshSetTrackerTimerDisplay() {
+  const current = getActiveTrackerParts();
+  if (!current) return false;
+  const { progress } = current;
+  const totalValue = document.querySelector('.set-tracker-metric-total .set-tracker-timer-value');
+  const currentValue = document.querySelector('.set-tracker-metric-since .set-tracker-timer-value');
+  if (!totalValue || !currentValue) return false;
+  totalValue.textContent = trackerTotalTimeValue(progress);
+  currentValue.textContent = trackerCurrentSetTimeValue(progress);
+  return true;
 }
 
 function isEditingLogDetails() {

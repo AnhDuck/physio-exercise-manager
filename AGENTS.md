@@ -139,6 +139,8 @@ Clicking an exercise/day cell opens the set tracker. `Complete Set` logs one set
 
 There should be no path that hides the tracker while leaving its timer running.
 
+The real-time set timer must not recreate the tracker or log-edit modal DOM every second. Updating timer text in place is intentional; full rerenders during the timer interval cause hover/focus glitches, duplicate tooltip behavior, and unstable modal inputs.
+
 `Clear` and completed-cell `Clear Log` must confirm before deleting progress.
 
 ## Dense Mode

@@ -1995,7 +1995,7 @@ body.dense-mode .dose-marker {
   row-gap: 9px;
   width: min(880px, calc(100vw - 36px));
   overflow: visible;
-  padding: 14px 128px 14px 16px;
+  padding: 14px 16px;
   border: 1px solid var(--border);
   border-left: 6px solid var(--tracker-color);
   border-radius: 8px;
@@ -2004,14 +2004,12 @@ body.dense-mode .dose-marker {
 }
 
 .set-tracker-utility {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  align-self: start;
   gap: 6px;
+  min-width: 108px;
 }
 
 .tracker-icon-btn {
@@ -2054,36 +2052,6 @@ body.dense-mode .dose-marker {
   color: #fecaca;
 }
 
-.tracker-icon-btn[data-tooltip]::after {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 8px);
-  z-index: 30;
-  width: max-content;
-  max-width: 220px;
-  padding: 7px 9px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: #111;
-  color: var(--text);
-  box-shadow: 0 8px 18px rgba(0,0,0,.32);
-  content: attr(data-tooltip);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.25;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-4px);
-  transition: opacity .12s ease, transform .12s ease;
-  white-space: nowrap;
-}
-
-.tracker-icon-btn[data-tooltip]:hover::after,
-.tracker-icon-btn[data-tooltip]:focus-visible::after {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 .set-tracker.complete {
   border-left-color: var(--accent-green);
 }
@@ -2091,9 +2059,9 @@ body.dense-mode .dose-marker {
 .set-tracker-main {
   grid-area: info;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
-  column-gap: 24px;
+  column-gap: 18px;
   min-width: 0;
 }
 
@@ -2472,7 +2440,7 @@ body.dense-mode .dose-marker {
   z-index: 1;
   display: grid;
   gap: 12px;
-  width: min(640px, 100%);
+  width: min(760px, calc(100% - 36px));
   padding: 16px;
   border: 1px solid rgba(148, 163, 184, .28);
   border-radius: 8px;
@@ -2490,8 +2458,8 @@ body.dense-mode .dose-marker {
 
 .set-log-edit-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: minmax(210px, 1.25fr) minmax(210px, 1.25fr) minmax(160px, .8fr);
+  gap: 10px;
 }
 
 .set-log-datetime,
@@ -2502,7 +2470,7 @@ body.dense-mode .dose-marker {
 }
 
 .set-log-datetime {
-  grid-template-columns: minmax(0, 1fr) minmax(82px, 100px);
+  grid-template-columns: minmax(118px, 1fr) minmax(96px, 112px);
 }
 
 .set-log-datetime-label {
@@ -2746,7 +2714,7 @@ body.dense-mode .dose-marker {
     right: 10px;
     bottom: 10px;
     width: calc(100vw - 20px);
-    padding: 52px 12px 12px;
+    padding: 12px;
     grid-template-columns: 1fr;
     grid-template-areas:
       "info"
@@ -2774,13 +2742,12 @@ body.dense-mode .dose-marker {
   }
 
   .set-tracker-main {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
     row-gap: 6px;
   }
 
   .set-tracker-utility {
-    top: 10px;
-    right: 10px;
+    min-width: 108px;
   }
 
   .set-tracker-help {
