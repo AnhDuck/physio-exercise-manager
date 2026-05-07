@@ -2018,7 +2018,7 @@ body.dense-mode .dose-marker {
   gap: 6px;
 }
 
-.set-tracker-utility-danger {
+.set-tracker-utility-main {
   padding-left: 10px;
   border-left: 1px solid rgba(248, 113, 113, .28);
 }
@@ -2820,7 +2820,7 @@ body.dense-mode .dose-marker {
     min-width: 108px;
   }
 
-  .set-tracker-utility-danger {
+  .set-tracker-utility-main {
     padding-left: 8px;
   }
 
