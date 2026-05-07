@@ -1995,12 +1995,93 @@ body.dense-mode .dose-marker {
   row-gap: 9px;
   width: min(880px, calc(100vw - 36px));
   overflow: visible;
-  padding: 14px 16px;
+  padding: 14px 128px 14px 16px;
   border: 1px solid var(--border);
   border-left: 6px solid var(--tracker-color);
   border-radius: 8px;
   background: rgba(31, 31, 34, .98);
   box-shadow: 0 18px 38px rgba(0,0,0,.42);
+}
+
+.set-tracker-utility {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.tracker-icon-btn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(148, 163, 184, .34);
+  border-radius: 6px;
+  background: rgba(15, 23, 42, .45);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.tracker-icon-btn svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tracker-icon-btn:hover,
+.tracker-icon-btn:focus-visible {
+  background: rgba(51, 65, 85, .76);
+  border-color: rgba(191, 219, 254, .5);
+  color: var(--text);
+  outline: none;
+}
+
+.set-log-clear:hover,
+.set-log-clear:focus-visible {
+  border-color: rgba(248, 113, 113, .72);
+  color: #fecaca;
+}
+
+.tracker-icon-btn[data-tooltip]::after {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 30;
+  width: max-content;
+  max-width: 220px;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #111;
+  color: var(--text);
+  box-shadow: 0 8px 18px rgba(0,0,0,.32);
+  content: attr(data-tooltip);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity .12s ease, transform .12s ease;
+  white-space: nowrap;
+}
+
+.tracker-icon-btn[data-tooltip]:hover::after,
+.tracker-icon-btn[data-tooltip]:focus-visible::after {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .set-tracker.complete {
@@ -2010,7 +2091,7 @@ body.dense-mode .dose-marker {
 .set-tracker-main {
   grid-area: info;
   display: grid;
-  grid-template-columns: minmax(360px, 1fr) minmax(300px, auto);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   column-gap: 24px;
   min-width: 0;
@@ -2355,54 +2436,6 @@ body.dense-mode .dose-marker {
   font-variant-numeric: tabular-nums;
 }
 
-.set-log-edit {
-  grid-area: details;
-  display: grid;
-  gap: 0;
-  min-width: 0;
-  padding: 0;
-  border: 1px solid rgba(148, 163, 184, .18);
-  border-radius: 8px;
-  background: rgba(255,255,255,.025);
-}
-
-.set-log-edit.open {
-  gap: 9px;
-  padding: 10px 12px;
-}
-
-.set-log-summary {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: center;
-  min-width: 0;
-  width: 100%;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text);
-  cursor: pointer;
-  font: inherit;
-  padding: 9px 12px;
-  text-align: left;
-}
-
-.set-log-edit.open .set-log-summary {
-  padding: 0 0 4px;
-  border-bottom: 1px solid rgba(148, 163, 184, .16);
-  border-radius: 0;
-}
-
-.set-log-summary:hover {
-  background: rgba(255,255,255,.035);
-}
-
-.set-log-edit.open .set-log-summary:hover {
-  background: transparent;
-}
-
-.set-log-summary-title,
 .set-log-edit-heading,
 .set-log-datetime-label,
 .set-log-field span {
@@ -2414,22 +2447,45 @@ body.dense-mode .dose-marker {
   text-transform: uppercase;
 }
 
-.set-log-summary-meta {
-  min-width: 0;
+.set-log-modal-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  border-radius: 8px;
   overflow: hidden;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.25;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.set-log-summary-action {
-  color: #dbeafe;
-  font-size: 12px;
+.set-log-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(10, 12, 16, .64);
+  cursor: default;
+  padding: 0;
+}
+
+.set-log-modal {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 12px;
+  width: min(640px, 100%);
+  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, .28);
+  border-radius: 8px;
+  background: #202126;
+  box-shadow: 0 18px 38px rgba(0,0,0,.44);
+}
+
+.set-log-modal-title {
+  margin: 0;
+  color: var(--text);
+  font-size: 15px;
   font-weight: 900;
-  line-height: 1;
+  line-height: 1.15;
 }
 
 .set-log-edit-grid {
@@ -2476,12 +2532,13 @@ body.dense-mode .dose-marker {
 
 .set-log-edit-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
   align-items: center;
 }
 
-.set-log-save {
+.set-log-save,
+.set-log-cancel {
   min-height: 30px;
   padding: 0 12px;
 }
@@ -2505,14 +2562,6 @@ body.dense-mode .dose-marker {
   min-width: 0;
   text-align: right;
   white-space: nowrap;
-}
-
-.set-tracker-utility {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  min-width: 0;
 }
 
 .set-tracker-progress {
@@ -2549,7 +2598,7 @@ body.dense-mode .dose-marker {
 
 .set-tracker-main-actions {
   display: grid;
-  grid-template-columns: minmax(132px, 1fr) minmax(132px, 1fr);
+  grid-template-columns: minmax(132px, 1fr);
   gap: 8px;
   width: 100%;
 }
@@ -2576,12 +2625,6 @@ body.dense-mode .dose-marker {
   background: var(--tracker-color);
   border-color: var(--tracker-color);
   color: #fff;
-}
-
-.set-action-finish {
-  background: rgba(51, 65, 85, .68);
-  border-color: rgba(148, 163, 184, .36);
-  color: #e2e8f0;
 }
 
 .set-action-danger {
@@ -2703,6 +2746,7 @@ body.dense-mode .dose-marker {
     right: 10px;
     bottom: 10px;
     width: calc(100vw - 20px);
+    padding: 52px 12px 12px;
     grid-template-columns: 1fr;
     grid-template-areas:
       "info"
@@ -2735,7 +2779,8 @@ body.dense-mode .dose-marker {
   }
 
   .set-tracker-utility {
-    justify-content: space-between;
+    top: 10px;
+    right: 10px;
   }
 
   .set-tracker-help {
@@ -2758,6 +2803,15 @@ body.dense-mode .dose-marker {
 
   .set-log-edit-grid {
     grid-template-columns: 1fr;
+  }
+
+  .set-log-edit-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .set-log-save,
+  .set-log-cancel {
+    width: 100%;
   }
 }
 

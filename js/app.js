@@ -1471,6 +1471,15 @@ function renderSetTracker() {
   const panel = el('section', 'set-tracker' + (done ? ' complete' : '') + (isHistoricalOnly ? ' historical-only' : ''));
   panel.style.setProperty('--tracker-color', GROUPS[ex.group]?.color || 'var(--accent-green)');
 
+  const utility = el('div', 'set-tracker-utility');
+  const editLogBtn = buildTrackerIconButton('wrench', 'Edit log', 'set-log-toggle', openLogDetails);
+  editLogBtn.setAttribute('aria-haspopup', 'dialog');
+  editLogBtn.setAttribute('aria-expanded', String(Boolean(activeTracker?.detailsOpen)));
+  utility.appendChild(editLogBtn);
+  utility.appendChild(buildTrackerIconButton('trash', 'Clear set log', 'set-log-clear', clearActiveProgress));
+  utility.appendChild(buildTrackerIconButton('x', 'Close set tracker', 'set-tracker-close', pauseAndCloseTracker));
+  panel.appendChild(utility);
+
   const main = el('div', 'set-tracker-main');
   const info = el('div', 'set-tracker-info');
   const startMeta = el('div', 'set-tracker-start-meta');
@@ -1493,14 +1502,6 @@ function renderSetTracker() {
   info.appendChild(titleRow);
   info.appendChild(elText('div', 'set-tracker-meta', `${progress.completedSets}/${progress.targetSets} sets | ${ex.reps} reps${ex.resistance ? ` | ${ex.resistance}` : ''}`));
   main.appendChild(info);
-  const utility = el('div', 'set-tracker-utility');
-  utility.appendChild(elText('div', 'set-tracker-help', isHistoricalOnly
-    ? 'Historical log details'
-    : 'Arrow keys adjust sets | Pause & Close saves partial progress'));
-  const clear = elText('button', 'set-action set-action-danger', 'Clear');
-  clear.addEventListener('click', clearActiveProgress);
-  utility.appendChild(clear);
-  main.appendChild(utility);
   panel.appendChild(main);
 
   const actions = el('div', 'set-tracker-actions');
@@ -1509,10 +1510,7 @@ function renderSetTracker() {
   completeSet.disabled = done || progress.timerCapped || isHistoricalOnly;
   completeSet.title = 'Right arrow';
   completeSet.addEventListener('click', logSet);
-  const doneBtn = elText('button', 'set-action set-action-finish', isHistoricalOnly ? 'Close' : 'Pause & Close');
-  doneBtn.addEventListener('click', pauseAndCloseTracker);
   mainActions.appendChild(completeSet);
-  mainActions.appendChild(doneBtn);
   actions.appendChild(mainActions);
 
   const timer = el('div', 'set-tracker-timer');
@@ -1529,24 +1527,57 @@ function renderSetTracker() {
   const setTimeline = buildCompletedSetTimeline(progress);
   if (setTimeline) timer.appendChild(setTimeline);
   panel.appendChild(timer);
-  panel.appendChild(buildLogEditControls(ex, dateStr, progress));
+  const logEditModal = buildLogEditModal(ex, dateStr, progress);
+  if (logEditModal) panel.appendChild(logEditModal);
   panel.appendChild(actions);
 
   root.appendChild(panel);
 }
 
-function buildLogEditControls(ex, dateStr, progress) {
-  const isOpen = Boolean(activeTracker?.detailsOpen);
-  const wrap = el('div', 'set-log-edit' + (isOpen ? ' open' : ''));
-  const summary = el('button', 'set-log-summary');
-  summary.type = 'button';
-  summary.setAttribute('aria-expanded', String(isOpen));
-  summary.addEventListener('click', toggleLogDetails);
-  summary.appendChild(elText('span', 'set-log-summary-title', 'Log details'));
-  summary.appendChild(elText('span', 'set-log-summary-meta', logDetailsSummary(progress, dateStr)));
-  summary.appendChild(elText('span', 'set-log-summary-action', isOpen ? 'Hide' : 'Edit'));
-  wrap.appendChild(summary);
-  if (!isOpen) return wrap;
+function buildTrackerIconButton(iconName, label, className, onClick) {
+  const button = el('button', `tracker-icon-btn ${className || ''}`.trim());
+  button.type = 'button';
+  button.title = label;
+  button.dataset.tooltip = label;
+  button.setAttribute('aria-label', label);
+  button.appendChild(buildIconSvg(iconName));
+  button.addEventListener('click', onClick);
+  return button;
+}
+
+function buildIconSvg(iconName) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+  const paths = {
+    x: ['M6 6l12 12', 'M18 6L6 18'],
+    wrench: ['M14.7 6.3a4 4 0 0 0-5 5L4.5 16.5a2.1 2.1 0 0 0 3 3l5.2-5.2a4 4 0 0 0 5-5l-2.6 2.6-3-3 2.6-2.6z'],
+    trash: ['M4 7h16', 'M9 7V5h6v2', 'M7 7l1 13h8l1-13', 'M10 11v5', 'M14 11v5'],
+  };
+  (paths[iconName] || paths.x).forEach(d => {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    svg.appendChild(path);
+  });
+  return svg;
+}
+
+function buildLogEditModal(ex, dateStr, progress) {
+  if (!activeTracker?.detailsOpen) return null;
+
+  const layer = el('div', 'set-log-modal-layer');
+  const backdrop = el('button', 'set-log-modal-backdrop');
+  backdrop.type = 'button';
+  backdrop.setAttribute('aria-label', 'Close log editor');
+  backdrop.addEventListener('click', closeLogDetails);
+  layer.appendChild(backdrop);
+
+  const modal = el('div', 'set-log-modal');
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'set-log-modal-title');
+  modal.appendChild(elText('h3', 'set-log-modal-title', 'Edit log'));
 
   const timing = el('div', 'set-log-edit-grid');
   timing.appendChild(buildDateTimeField('Actual start', 'log-start-date', 'log-start-time', progress.startedAt));
@@ -1561,7 +1592,7 @@ function buildLogEditControls(ex, dateStr, progress) {
   sessionField.appendChild(sessionInput);
   timing.appendChild(sessionField);
 
-  wrap.appendChild(timing);
+  modal.appendChild(timing);
 
   const help = ex.deletedAt || ex.missing
     ? 'Historical log for an exercise that is no longer active. Moving changes calendar placement only.'
@@ -1569,27 +1600,29 @@ function buildLogEditControls(ex, dateStr, progress) {
 
   const actions = el('div', 'set-log-edit-actions');
   actions.appendChild(elText('div', 'set-log-edit-help', help));
+  const cancel = elText('button', 'set-action set-action-secondary set-log-cancel', 'Cancel');
+  cancel.type = 'button';
+  cancel.addEventListener('click', closeLogDetails);
+  actions.appendChild(cancel);
   const save = elText('button', 'set-action set-action-secondary set-log-save', 'Save / Move Log');
   save.type = 'button';
   save.addEventListener('click', saveActiveLogDetails);
   actions.appendChild(save);
-  wrap.appendChild(actions);
-  return wrap;
+  modal.appendChild(actions);
+  layer.appendChild(modal);
+  return layer;
 }
 
-function toggleLogDetails() {
+function openLogDetails() {
   if (!activeTracker) return;
-  activeTracker.detailsOpen = !activeTracker.detailsOpen;
+  activeTracker.detailsOpen = true;
   renderSetTracker();
 }
 
-function logDetailsSummary(progress, dateStr) {
-  const parts = [];
-  const started = trackerStartedLabel(progress).replace(/^Started /, '');
-  if (started && started !== '--:--') parts.push(started);
-  const sessionDay = trackerSessionDayLabel(progress, dateStr);
-  if (sessionDay) parts.push(sessionDay);
-  return parts.join(' | ') || 'Actual time and session day';
+function closeLogDetails() {
+  if (!activeTracker) return;
+  activeTracker.detailsOpen = false;
+  renderSetTracker();
 }
 
 function buildDateTimeField(label, dateId, timeId, iso, disabled = false) {
@@ -1662,10 +1695,11 @@ function saveActiveLogDetails() {
       ...activeTracker,
       dateStr: targetDate,
       readOnly: activeTracker?.readOnly,
-      detailsOpen: true,
+      detailsOpen: false,
     };
     currentWeekStart = getMonday(dateFromStr(targetDate));
   } else {
+    activeTracker.detailsOpen = false;
     saveSession(dateStr, session);
   }
 
@@ -2002,7 +2036,7 @@ function syncSetTrackerTimer() {
 
 function isEditingLogDetails() {
   const active = document.activeElement;
-  return Boolean(active?.closest?.('.set-log-edit.open'));
+  return Boolean(active?.closest?.('.set-log-modal'));
 }
 
 function syncQuickNoteDateTime() {
@@ -2027,6 +2061,11 @@ function handleSetTrackerKeydown(e) {
     return;
   }
   if (!activeTracker) return;
+  if (e.key === 'Escape' && activeTracker.detailsOpen) {
+    e.preventDefault();
+    closeLogDetails();
+    return;
+  }
   const tag = document.activeElement?.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
   if (e.key === 'Escape') {
@@ -2452,7 +2491,7 @@ function openExerciseLogFromTimeline(ev) {
   currentWeekStart = getMonday(dateFromStr(ev.sessionDate));
   openSetTracker(ev.exerciseId, ev.sessionDate, {
     readOnly: Boolean(ev.deleted || ev.missing),
-    detailsOpen: true,
+    detailsOpen: Boolean(ev.deleted || ev.missing),
     skipScroll: Boolean(ev.deleted || ev.missing),
   });
   if (!ev.deleted && !ev.missing) {
@@ -2632,12 +2671,7 @@ function eventText(ev) {
   if (ev.type === 'exercise-log') {
     const progress = ev.progress || {};
     const snapshot = ev.snapshot || {};
-    const parts = [`${progress.completedSets || 0}/${progress.targetSets || snapshot.sets || '?'} sets`];
-    if (snapshot.reps) parts.push(`${snapshot.reps} reps`);
-    if (snapshot.resistance) parts.push(snapshot.resistance);
-    if (Number(progress.elapsedSeconds) > 0) parts.push(`${fmtShortDuration(progress.elapsedSeconds)} elapsed`);
-    if (ev.sessionDate && ev.sessionDate !== ev.date) parts.push(`logged to ${formatShortDate(ev.sessionDate)} session day`);
-    return parts.join(' | ');
+    return `${progress.completedSets || 0}/${progress.targetSets || snapshot.sets || '?'} sets`;
   }
   if (ev.type === 'dose-change') {
     return Object.entries(ev.changes || {})
