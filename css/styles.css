@@ -611,6 +611,36 @@ body.notes-open .grid-table {
   background: rgba(40,70,63,.55);
 }
 
+.timeline-exercise-log {
+  border: 1px solid rgba(90, 144, 217, .36);
+  background: rgba(74, 144, 217, .08);
+  cursor: pointer;
+}
+
+.timeline-exercise-log:hover {
+  background: rgba(74, 144, 217, .14);
+}
+
+.timeline-exercise-deleted {
+  border-color: rgba(148, 163, 184, .34);
+  background: rgba(51, 65, 85, .34);
+}
+
+.timeline-broken-link {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 6px;
+  padding: 1px 5px;
+  border: 1px solid rgba(248, 113, 113, .42);
+  border-radius: 4px;
+  color: #fecaca;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
 /* ── Column header row (day labels) ──────────────────────────────── */
 .col-header-row {
   display: grid;
@@ -1959,6 +1989,7 @@ body.dense-mode .dose-marker {
   grid-template-areas:
     "info"
     "timer"
+    "details"
     "actions";
   align-items: start;
   row-gap: 9px;
@@ -2324,6 +2355,148 @@ body.dense-mode .dose-marker {
   font-variant-numeric: tabular-nums;
 }
 
+.set-log-edit {
+  grid-area: details;
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid rgba(148, 163, 184, .18);
+  border-radius: 8px;
+  background: rgba(255,255,255,.025);
+}
+
+.set-log-edit.open {
+  gap: 9px;
+  padding: 10px 12px;
+}
+
+.set-log-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  padding: 9px 12px;
+  text-align: left;
+}
+
+.set-log-edit.open .set-log-summary {
+  padding: 0 0 4px;
+  border-bottom: 1px solid rgba(148, 163, 184, .16);
+  border-radius: 0;
+}
+
+.set-log-summary:hover {
+  background: rgba(255,255,255,.035);
+}
+
+.set-log-edit.open .set-log-summary:hover {
+  background: transparent;
+}
+
+.set-log-summary-title,
+.set-log-edit-heading,
+.set-log-datetime-label,
+.set-log-field span {
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .05em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.set-log-summary-meta {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.set-log-summary-action {
+  color: #dbeafe;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.set-log-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.set-log-datetime,
+.set-log-field {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.set-log-datetime {
+  grid-template-columns: minmax(0, 1fr) minmax(82px, 100px);
+}
+
+.set-log-datetime-label {
+  grid-column: 1 / -1;
+}
+
+.set-log-datetime input,
+.set-log-field input,
+.set-log-field textarea {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, .28);
+  border-radius: 5px;
+  background: rgba(15, 23, 42, .42);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  padding: 7px 8px;
+}
+
+.set-log-field textarea {
+  min-height: 46px;
+  resize: vertical;
+}
+
+.set-log-annotation {
+  grid-template-columns: 1fr;
+}
+
+.set-log-edit-help {
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.set-log-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.set-log-save {
+  min-height: 30px;
+  padding: 0 12px;
+}
+
+.set-tracker-deleted-kicker {
+  color: #fecaca;
+}
+
 .set-tracker-recency {
   color: var(--text-dim);
   flex: 0 0 auto;
@@ -2541,6 +2714,7 @@ body.dense-mode .dose-marker {
     grid-template-areas:
       "info"
       "timer"
+      "details"
       "actions";
     gap: 10px;
     overflow: visible;
@@ -2587,6 +2761,10 @@ body.dense-mode .dose-marker {
     padding-left: 0;
     border-top: 1px solid rgba(148, 163, 184, .2);
     border-left: none;
+  }
+
+  .set-log-edit-grid {
+    grid-template-columns: 1fr;
   }
 }
 

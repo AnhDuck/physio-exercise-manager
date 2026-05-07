@@ -114,6 +114,7 @@ function runMigrations() {
   }
 
   ensureBlockSettings();
+  migrateSetProgressSnapshots();
 
   exercises.forEach(ex => {
     if (ex.blockTitle && normalizedBlockId(ex)) {
@@ -219,7 +220,7 @@ function render(options = {}) {
   let exerciseNumber = 1;
   for (const group of GROUP_ORDER) {
     const exs = exercises
-      .filter(e => e.group === group)
+      .filter(e => e.group === group && isExerciseActive(e))
       .sort((a, b) => a.order - b.order);
     app.appendChild(buildGroupSection(group, exs, dates, todayS, exerciseNumber));
     exerciseNumber += exs.length;
@@ -401,8 +402,12 @@ function toggleGroupCollapse(group) {
 // ── Exercise row ──────────────────────────────────────────────────
 function sortedExercisesInGroup(group) {
   return exercises
-    .filter(e => e.group === group)
+    .filter(e => e.group === group && isExerciseActive(e))
     .sort((a, b) => a.order - b.order);
+}
+
+function isExerciseActive(ex) {
+  return ex && !ex.deletedAt;
 }
 
 function groupedExercisesForRender(exs) {
@@ -949,13 +954,44 @@ function eventsForDate(dateStr) {
 }
 
 function timelineEvents() {
-  return events
+  const eventItems = events
     .filter(ev => ev.type === 'note' || ev.type === 'dose-change' || ev.type === 'exercise-added')
-    .sort((a, b) => {
-      const aKey = `${a.date || ''}T${a.time || '00:00'}`;
-      const bKey = `${b.date || ''}T${b.time || '00:00'}`;
-      return bKey.localeCompare(aKey);
+    .map(ev => ({ ...ev, sortKey: `${ev.date || ''}T${ev.time || '00:00'}` }));
+  return eventItems.concat(exerciseLogTimelineEvents())
+    .sort((a, b) => (b.sortKey || `${b.date || ''}T${b.time || '00:00'}`)
+      .localeCompare(a.sortKey || `${a.date || ''}T${a.time || '00:00'}`));
+}
+
+function exerciseLogTimelineEvents() {
+  const items = [];
+  Object.entries(sessions || {}).forEach(([sessionDate, session]) => {
+    if (!session?.setProgress || typeof session.setProgress !== 'object') return;
+    Object.entries(session.setProgress).forEach(([exId, rawProgress]) => {
+      const progress = normalizeSetProgress(rawProgress, exercises.find(ex => ex.id === exId));
+      if (progress.completedSets < 1 || !progress.startedAt) return;
+      const startedAt = dateFromIso(progress.startedAt);
+      if (!startedAt) return;
+      const ex = displayExerciseForLog(exId, progress);
+      const date = toDateStr(startedAt);
+      const time = `${String(startedAt.getHours()).padStart(2, '0')}:${String(startedAt.getMinutes()).padStart(2, '0')}`;
+      items.push({
+        id: `exercise-log:${sessionDate}:${exId}`,
+        type: 'exercise-log',
+        date,
+        time,
+        sortKey: `${date}T${time}`,
+        sessionDate,
+        exerciseId: exId,
+        exerciseName: ex.name,
+        group: ex.group,
+        deleted: Boolean(ex.deletedAt),
+        missing: Boolean(ex.missing),
+        progress,
+        snapshot: progressSnapshot(progress, exercises.find(item => item.id === exId)),
+      });
     });
+  });
+  return items;
 }
 
 function groupedTimelineEvents(items = timelineEvents()) {
@@ -977,7 +1013,7 @@ function restoreActiveTracker() {
   const todayS = todayStr();
   const s = sessions[todayS];
   const exId = s?.activeExerciseId;
-  if (!exId || !exercises.some(ex => ex.id === exId)) return;
+  if (!exId || !exercises.some(ex => ex.id === exId && isExerciseActive(ex))) return;
   if (isExerciseDone(todayS, exId)) {
     delete s.activeExerciseId;
     saveSession(todayS, s);
@@ -994,9 +1030,53 @@ function getSessionForEdit(dateStr) {
   return s;
 }
 
+function persistSessions() {
+  localStorage.setItem('pem_sessions', JSON.stringify(sessions));
+}
+
 function targetSetsForExercise(ex) {
   const sets = Number.parseInt(ex?.sets, 10);
   return Number.isFinite(sets) && sets > 0 ? sets : 1;
+}
+
+function exerciseSnapshot(ex) {
+  return {
+    id: ex?.id || '',
+    name: ex?.name || '',
+    group: ex?.group || '',
+    sets: ex?.sets || 1,
+    reps: ex?.reps || '',
+    resistance: ex?.resistance || '',
+    frequency: ex?.frequency || '',
+  };
+}
+
+function progressSnapshot(progress, ex) {
+  return progress?.exerciseSnapshot || (ex ? exerciseSnapshot(ex) : {
+    id: '',
+    name: '',
+    group: '',
+    sets: progress?.targetSets || 1,
+    reps: '',
+    resistance: '',
+    frequency: '',
+  });
+}
+
+function displayExerciseForLog(exId, progress) {
+  const ex = exercises.find(item => item.id === exId);
+  const snapshot = progressSnapshot(progress, ex);
+  return {
+    id: exId,
+    name: ex?.name || snapshot.name || exId || 'Exercise',
+    group: ex?.group || snapshot.group || '',
+    sets: ex?.sets || snapshot.sets || progress?.targetSets || 1,
+    reps: ex?.reps || snapshot.reps || '',
+    resistance: ex?.resistance || snapshot.resistance || '',
+    frequency: ex?.frequency || snapshot.frequency || '',
+    deletedAt: ex?.deletedAt || null,
+    missing: !ex,
+  };
 }
 
 function getSetProgress(dateStr, exId) {
@@ -1077,7 +1157,10 @@ function handleSetCellClick(exId, dateStr) {
 }
 
 function normalizeSetProgress(progress, ex) {
-  const targetSets = targetSetsForExercise(ex);
+  const loggedTarget = Number.parseInt(progress?.targetSets, 10);
+  const targetSets = Number.isFinite(loggedTarget) && loggedTarget > 0
+    ? loggedTarget
+    : targetSetsForExercise(ex || progress?.exerciseSnapshot);
   return {
     completedSets: Math.min(targetSets, Math.max(0, Number(progress?.completedSets) || 0)),
     targetSets,
@@ -1095,6 +1178,8 @@ function normalizeSetProgress(progress, ex) {
     elapsedSeconds: Math.max(0, Number(progress?.elapsedSeconds) || 0),
     timerStoppedAt: progress?.timerStoppedAt || null,
     timerCapped: Boolean(progress?.timerCapped),
+    annotation: typeof progress?.annotation === 'string' ? progress.annotation : '',
+    exerciseSnapshot: progress?.exerciseSnapshot || (ex ? exerciseSnapshot(ex) : null),
   };
 }
 
@@ -1140,10 +1225,10 @@ function enforceTimerCap(progress, now = new Date()) {
   return true;
 }
 
-function openSetTracker(exId, dateStr) {
-  const ex = exercises.find(item => item.id === exId);
-  if (!ex) return;
+function openSetTracker(exId, dateStr, options = {}) {
+  let ex = exercises.find(item => item.id === exId);
   const s = getSessionForEdit(dateStr);
+  if (!ex && !s.setProgress[exId]) return;
   if (!s.setProgress[exId]) {
     const now = new Date().toISOString();
     const wasComplete = s.completedExercises.includes(exId);
@@ -1161,23 +1246,40 @@ function openSetTracker(exId, dateStr) {
       elapsedSeconds: 0,
       timerStoppedAt: wasComplete ? now : null,
       timerCapped: false,
+      annotation: '',
+      exerciseSnapshot: exerciseSnapshot(ex),
     };
   } else {
+    ex = displayExerciseForLog(exId, s.setProgress[exId]);
     s.setProgress[exId] = normalizeSetProgress(s.setProgress[exId], ex);
-    if (!isProgressComplete(s.setProgress[exId]) && !s.setProgress[exId].timerStartedAt && !s.setProgress[exId].timerCapped) {
+    if (
+      !options.readOnly &&
+      isExerciseActive(ex) &&
+      !ex.missing &&
+      !isProgressComplete(s.setProgress[exId]) &&
+      !s.setProgress[exId].timerStartedAt &&
+      !s.setProgress[exId].timerCapped
+    ) {
       startSetTimer(s.setProgress[exId]);
     }
   }
-  s.activeExerciseId = exId;
-  activeTracker = { exerciseId: exId, dateStr };
+  if (options.readOnly) delete s.activeExerciseId;
+  else s.activeExerciseId = exId;
+  activeTracker = {
+    exerciseId: exId,
+    dateStr,
+    readOnly: Boolean(options.readOnly),
+    detailsOpen: Boolean(options.detailsOpen),
+  };
   saveSession(dateStr, s);
   render();
-  window.setTimeout(() => scrollActiveCellIntoView(exId, dateStr), 0);
+  if (!options.skipScroll) window.setTimeout(() => scrollActiveCellIntoView(exId, dateStr), 0);
 }
 
 function logSet() {
   const current = getActiveTrackerParts();
   if (!current) return;
+  if (activeTracker?.readOnly || !isExerciseActive(current.ex) || current.ex.missing) return;
   const nowMs = Date.now();
   if (nowMs - lastSetLogAt < 450) return;
   lastSetLogAt = nowMs;
@@ -1217,6 +1319,7 @@ function logSet() {
 function completeActiveExercise() {
   const current = getActiveTrackerParts();
   if (!current) return;
+  if (activeTracker?.readOnly || !isExerciseActive(current.ex) || current.ex.missing) return;
   const { ex, dateStr, session, progress } = current;
   const now = new Date();
   enforceTimerCap(progress, now);
@@ -1236,6 +1339,11 @@ function completeActiveExercise() {
 function pauseAndCloseTracker() {
   const current = getActiveTrackerParts();
   if (!current) return;
+  if (activeTracker?.readOnly || !isExerciseActive(current.ex) || current.ex.missing) {
+    activeTracker = null;
+    render();
+    return;
+  }
   const { ex, dateStr, session, progress } = current;
   const now = new Date();
   enforceTimerCap(progress, now);
@@ -1259,6 +1367,7 @@ function pauseAndCloseTracker() {
 function decrementActiveSet() {
   const current = getActiveTrackerParts();
   if (!current) return;
+  if (activeTracker?.readOnly || !isExerciseActive(current.ex) || current.ex.missing) return;
   const { ex, dateStr, session, progress } = current;
   if (progress.completedSets <= 0) return;
 
@@ -1323,10 +1432,10 @@ function scrollActiveCellIntoView(exId, dateStr) {
 
 function getActiveTrackerParts() {
   if (!activeTracker) return null;
-  const ex = exercises.find(item => item.id === activeTracker.exerciseId);
-  if (!ex) return null;
   const session = getSessionForEdit(activeTracker.dateStr);
-  let progress = session.setProgress[ex.id];
+  let progress = session.setProgress[activeTracker.exerciseId];
+  let ex = exercises.find(item => item.id === activeTracker.exerciseId);
+  if (!ex && !progress) return null;
   if (!progress) {
     const now = new Date().toISOString();
     progress = {
@@ -1338,14 +1447,17 @@ function getActiveTrackerParts() {
       finishedEarly: false,
       setDurations: [],
       setCompletedAt: [],
+      annotation: '',
+      exerciseSnapshot: exerciseSnapshot(ex),
     };
   }
+  ex = displayExerciseForLog(activeTracker.exerciseId, progress);
   progress = normalizeSetProgress(progress, ex);
-  if (enforceTimerCap(progress)) {
+  if (!activeTracker.readOnly && isExerciseActive(ex) && !ex.missing && enforceTimerCap(progress)) {
     progress.updatedAt = new Date().toISOString();
     saveSession(activeTracker.dateStr, session);
   }
-  session.setProgress[ex.id] = progress;
+  session.setProgress[activeTracker.exerciseId] = progress;
   return { ex, dateStr: activeTracker.dateStr, session, progress };
 }
 
@@ -1358,12 +1470,16 @@ function renderSetTracker() {
 
   const { ex, dateStr, progress } = current;
   const done = isProgressComplete(progress);
-  const panel = el('section', 'set-tracker' + (done ? ' complete' : ''));
+  const isHistoricalOnly = activeTracker?.readOnly || !isExerciseActive(ex) || ex.missing;
+  const panel = el('section', 'set-tracker' + (done ? ' complete' : '') + (isHistoricalOnly ? ' historical-only' : ''));
   panel.style.setProperty('--tracker-color', GROUPS[ex.group]?.color || 'var(--accent-green)');
 
   const main = el('div', 'set-tracker-main');
   const info = el('div', 'set-tracker-info');
   const startMeta = el('div', 'set-tracker-start-meta');
+  if (ex.deletedAt || ex.missing) {
+    startMeta.appendChild(elText('div', 'set-tracker-kicker set-tracker-deleted-kicker', ex.missing ? 'Missing exercise log' : 'Deleted exercise log'));
+  }
   startMeta.appendChild(elText('div', 'set-tracker-kicker', trackerStartedLabel(progress)));
   const sessionDayLabel = trackerSessionDayLabel(progress, dateStr);
   if (sessionDayLabel) {
@@ -1381,7 +1497,9 @@ function renderSetTracker() {
   info.appendChild(elText('div', 'set-tracker-meta', `${progress.completedSets}/${progress.targetSets} sets | ${ex.reps} reps${ex.resistance ? ` | ${ex.resistance}` : ''}`));
   main.appendChild(info);
   const utility = el('div', 'set-tracker-utility');
-  utility.appendChild(elText('div', 'set-tracker-help', 'Arrow keys adjust sets | Pause & Close saves partial progress'));
+  utility.appendChild(elText('div', 'set-tracker-help', isHistoricalOnly
+    ? 'Historical log details'
+    : 'Arrow keys adjust sets | Pause & Close saves partial progress'));
   const clear = elText('button', 'set-action set-action-danger', 'Clear');
   clear.addEventListener('click', clearActiveProgress);
   utility.appendChild(clear);
@@ -1391,10 +1509,10 @@ function renderSetTracker() {
   const actions = el('div', 'set-tracker-actions');
   const mainActions = el('div', 'set-tracker-main-actions');
   const completeSet = elText('button', 'set-action set-action-primary', 'Complete Set');
-  completeSet.disabled = done || progress.timerCapped;
+  completeSet.disabled = done || progress.timerCapped || isHistoricalOnly;
   completeSet.title = 'Right arrow';
   completeSet.addEventListener('click', logSet);
-  const doneBtn = elText('button', 'set-action set-action-finish', 'Pause & Close');
+  const doneBtn = elText('button', 'set-action set-action-finish', isHistoricalOnly ? 'Close' : 'Pause & Close');
   doneBtn.addEventListener('click', pauseAndCloseTracker);
   mainActions.appendChild(completeSet);
   mainActions.appendChild(doneBtn);
@@ -1414,9 +1532,183 @@ function renderSetTracker() {
   const setTimeline = buildCompletedSetTimeline(progress);
   if (setTimeline) timer.appendChild(setTimeline);
   panel.appendChild(timer);
+  panel.appendChild(buildLogEditControls(ex, dateStr, progress));
   panel.appendChild(actions);
 
   root.appendChild(panel);
+}
+
+function buildLogEditControls(ex, dateStr, progress) {
+  const isOpen = Boolean(activeTracker?.detailsOpen);
+  const wrap = el('div', 'set-log-edit' + (isOpen ? ' open' : ''));
+  const summary = el('button', 'set-log-summary');
+  summary.type = 'button';
+  summary.setAttribute('aria-expanded', String(isOpen));
+  summary.addEventListener('click', toggleLogDetails);
+  summary.appendChild(elText('span', 'set-log-summary-title', 'Log details'));
+  summary.appendChild(elText('span', 'set-log-summary-meta', logDetailsSummary(progress, dateStr)));
+  summary.appendChild(elText('span', 'set-log-summary-action', isOpen ? 'Hide' : 'Edit'));
+  wrap.appendChild(summary);
+  if (!isOpen) return wrap;
+
+  const timing = el('div', 'set-log-edit-grid');
+  timing.appendChild(buildDateTimeField('Actual start', 'log-start-date', 'log-start-time', progress.startedAt));
+  timing.appendChild(buildDateTimeField('Completed', 'log-completed-date', 'log-completed-time', progress.completedAt, !isProgressComplete(progress)));
+
+  const sessionField = el('label', 'set-log-field');
+  sessionField.appendChild(elText('span', '', 'Session day'));
+  const sessionInput = document.createElement('input');
+  sessionInput.type = 'date';
+  sessionInput.id = 'log-session-date';
+  sessionInput.value = dateStr;
+  sessionField.appendChild(sessionInput);
+  timing.appendChild(sessionField);
+
+  wrap.appendChild(timing);
+
+  const noteField = el('label', 'set-log-field set-log-annotation');
+  noteField.appendChild(elText('span', '', 'Exercise note'));
+  const textarea = document.createElement('textarea');
+  textarea.id = 'log-annotation';
+  textarea.placeholder = 'Optional note attached to this exercise log';
+  textarea.value = progress.annotation || '';
+  noteField.appendChild(textarea);
+  wrap.appendChild(noteField);
+
+  const help = ex.deletedAt || ex.missing
+    ? 'Historical log for an exercise that is no longer active. Moving changes calendar placement only.'
+    : 'Moving changes calendar placement only. Actual start time controls timeline placement.';
+  wrap.appendChild(elText('div', 'set-log-edit-help', help));
+
+  const actions = el('div', 'set-log-edit-actions');
+  const save = elText('button', 'set-action set-action-secondary set-log-save', 'Save / Move Log');
+  save.type = 'button';
+  save.addEventListener('click', saveActiveLogDetails);
+  actions.appendChild(save);
+  wrap.appendChild(actions);
+  return wrap;
+}
+
+function toggleLogDetails() {
+  if (!activeTracker) return;
+  activeTracker.detailsOpen = !activeTracker.detailsOpen;
+  renderSetTracker();
+}
+
+function logDetailsSummary(progress, dateStr) {
+  const parts = [];
+  const started = trackerStartedLabel(progress).replace(/^Started /, '');
+  if (started && started !== '--:--') parts.push(started);
+  const sessionDay = trackerSessionDayLabel(progress, dateStr);
+  if (sessionDay) parts.push(sessionDay);
+  if (progress.annotation) parts.push('has note');
+  return parts.join(' | ') || 'Actual time and session day';
+}
+
+function buildDateTimeField(label, dateId, timeId, iso, disabled = false) {
+  const field = el('div', 'set-log-datetime');
+  field.appendChild(elText('span', 'set-log-datetime-label', label));
+
+  const dateInput = document.createElement('input');
+  dateInput.type = 'date';
+  dateInput.id = dateId;
+  dateInput.disabled = disabled;
+
+  const timeInput = document.createElement('input');
+  timeInput.type = 'time';
+  timeInput.id = timeId;
+  timeInput.disabled = disabled;
+
+  const date = dateFromIso(iso);
+  if (date) {
+    dateInput.value = toDateStr(date);
+    timeInput.value = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  }
+
+  field.appendChild(dateInput);
+  field.appendChild(timeInput);
+  return field;
+}
+
+function saveActiveLogDetails() {
+  const current = getActiveTrackerParts();
+  if (!current) return;
+  const { ex, dateStr, session, progress } = current;
+
+  const startedAt = isoFromLocalInputs('log-start-date', 'log-start-time');
+  if (!startedAt) {
+    alert('Actual start date and time are required.');
+    return;
+  }
+
+  const targetDate = document.getElementById('log-session-date')?.value || dateStr;
+  if (!isValidDateStr(targetDate)) {
+    alert('Session day must be a valid date.');
+    return;
+  }
+  if (targetDate !== dateStr && sessions[targetDate]?.setProgress?.[ex.id]) {
+    alert(`${ex.name} already has a log on ${targetDate}. Move blocked.`);
+    return;
+  }
+
+  progress.startedAt = startedAt;
+  if (isProgressComplete(progress)) {
+    const completedAt = isoFromLocalInputs('log-completed-date', 'log-completed-time');
+    if (!completedAt) {
+      alert('Completed date and time are required for a completed log.');
+      return;
+    }
+    if (new Date(completedAt).getTime() < new Date(startedAt).getTime()) {
+      alert('Completed time cannot be before actual start time.');
+      return;
+    }
+    progress.completedAt = completedAt;
+    if (progress.completedSets > 0) progress.setCompletedAt[progress.completedSets - 1] = completedAt;
+  }
+  progress.annotation = document.getElementById('log-annotation')?.value.trim() || '';
+  progress.exerciseSnapshot = progress.exerciseSnapshot || exerciseSnapshot(ex);
+  progress.updatedAt = new Date().toISOString();
+  session.setProgress[ex.id] = progress;
+
+  if (targetDate !== dateStr) {
+    moveExerciseLog(ex.id, dateStr, targetDate, progress);
+    activeTracker = {
+      ...activeTracker,
+      dateStr: targetDate,
+      readOnly: activeTracker?.readOnly,
+      detailsOpen: true,
+    };
+    currentWeekStart = getMonday(dateFromStr(targetDate));
+  } else {
+    saveSession(dateStr, session);
+  }
+
+  showToast('Exercise log saved.');
+  render();
+}
+
+function isoFromLocalInputs(dateId, timeId) {
+  const dateStr = document.getElementById(dateId)?.value;
+  const timeStr = document.getElementById(timeId)?.value;
+  if (!isValidDateStr(dateStr) || !isValidTime(timeStr)) return null;
+  const date = dateFromStr(dateStr);
+  const [hour, minute] = timeStr.split(':').map(Number);
+  date.setHours(hour, minute, 0, 0);
+  return date.toISOString();
+}
+
+function moveExerciseLog(exId, fromDate, toDate, progress) {
+  const fromSession = getSessionForEdit(fromDate);
+  const toSession = getSessionForEdit(toDate);
+  if (fromDate === toDate || toSession.setProgress[exId]) return false;
+
+  toSession.setProgress[exId] = progress;
+  setCompletion(toDate, exId, isProgressComplete(progress));
+  delete fromSession.setProgress[exId];
+  if (fromSession.activeExerciseId === exId) delete fromSession.activeExerciseId;
+  setCompletion(fromDate, exId, false);
+  persistSessions();
+  return true;
 }
 
 function buildCompletedSetTimeline(progress) {
@@ -1568,7 +1860,7 @@ function playToneSequence(notes) {
 function openEditModal(exId) {
   editingExId = exId;
   const ex = exercises.find(e => e.id === exId);
-  if (!ex) return;
+  if (!ex || ex.deletedAt) return;
 
   document.getElementById('modal-title').textContent = 'Edit Exercise';
   document.getElementById('field-name').value = ex.name;
@@ -1661,11 +1953,25 @@ function saveExerciseModal() {
 
 function deleteExercise() {
   if (!editingExId) return;
-  if (!confirm('Delete this exercise? This cannot be undone.')) return;
-  exercises = exercises.filter(e => e.id !== editingExId);
+  const ex = exercises.find(item => item.id === editingExId);
+  if (!ex) return;
+  const logCount = countExerciseLogs(editingExId);
+  const historyText = logCount
+    ? ` It has ${logCount} historical ${logCount === 1 ? 'log' : 'logs'} that will stay in the timeline with a deleted marker.`
+    : '';
+  if (!confirm(`Delete ${ex.name}? This hides it from the active calendar but keeps notes and historical exercise logs.${historyText}`)) return;
+  ex.deletedAt = new Date().toISOString();
+  if (activeTracker?.exerciseId === editingExId) activeTracker = null;
   saveExercises(exercises);
   closeModal();
   render();
+}
+
+function countExerciseLogs(exId) {
+  return Object.values(sessions || {}).reduce((count, session) => {
+    const progress = session?.setProgress?.[exId];
+    return count + (progress && Number(progress.completedSets) > 0 ? 1 : 0);
+  }, 0);
 }
 
 // ── Timer ─────────────────────────────────────────────────────────
@@ -1886,8 +2192,14 @@ function buildTimelineMarkdown(timeline) {
     if (groupIndex > 0) lines.push('');
     lines.push(`## ${formatEventDate(group.date)}`);
     lines.push('');
+    let lastSegment = null;
     group.events.forEach(ev => {
+      const segment = timelineDaySegment(ev.time);
+      if (segment === 'late' && lastSegment !== 'late') {
+        lines.push(`_Before ${formatBoundaryTime(getPersonalDayStartTime())} - ${formatShortDate(getWakingDayForEvent(ev.date, ev.time, getPersonalDayStartTime()))} waking day_`);
+      }
       lines.push(formatTimelineEventMarkdown(ev));
+      lastSegment = segment;
     });
   });
 
@@ -1901,6 +2213,13 @@ function formatTimelineEventMarkdown(ev) {
 
 function formatTimelineEventMarkdownBody(ev) {
   if (ev.type === 'note') return formatMarkdownEntryText(ev.text || '');
+  if (ev.type === 'exercise-log') {
+    const parts = [`**${eventTitle(ev)}**`];
+    const detail = eventText(ev);
+    if (detail) parts.push(detail);
+    if (ev.progress?.annotation) parts.push(formatMarkdownEntryText(ev.progress.annotation));
+    return parts.join(': ');
+  }
 
   const parts = [`**${eventTitle(ev)}**`];
   const detail = eventText(ev);
@@ -2094,13 +2413,29 @@ function formatBoundaryTime(timeStr) {
 }
 
 function buildTimelineItem(ev) {
-  const item = el('article', 'timeline-row timeline-' + ev.type);
+  const item = el('article', 'timeline-row timeline-' + ev.type + (ev.deleted || ev.missing ? ' timeline-exercise-deleted' : ''));
   const content = el('div', 'timeline-row-content');
   content.appendChild(elText('span', 'timeline-time', formatEventTime(ev.time)));
 
   if (ev.type === 'note') {
     content.appendChild(elText('span', 'timeline-separator', '-'));
     content.appendChild(elText('span', 'timeline-note-text', ev.text || ''));
+  } else if (ev.type === 'exercise-log') {
+    content.appendChild(elText('span', 'timeline-separator', '-'));
+    if (ev.deleted || ev.missing) content.appendChild(elText('span', 'timeline-broken-link', 'Deleted'));
+    content.appendChild(elText('span', 'timeline-event-title', eventTitle(ev)));
+    const detail = eventText(ev);
+    if (detail) content.appendChild(elText('span', 'timeline-event-detail', detail));
+    if (ev.progress?.annotation) content.appendChild(elText('span', 'timeline-event-annotation', ev.progress.annotation));
+    item.title = ev.deleted || ev.missing ? 'Open historical exercise log' : 'Open exercise log';
+    item.setAttribute('role', 'button');
+    item.setAttribute('tabindex', '0');
+    item.addEventListener('click', () => openExerciseLogFromTimeline(ev));
+    item.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      openExerciseLogFromTimeline(ev);
+    });
   } else {
     content.appendChild(elText('span', 'timeline-separator', '-'));
     content.appendChild(elText('span', 'timeline-event-title', eventTitle(ev)));
@@ -2110,6 +2445,7 @@ function buildTimelineItem(ev) {
   }
 
   item.appendChild(content);
+  if (ev.type === 'exercise-log') return item;
   const editBtn = el('button', 'timeline-edit');
   editBtn.type = 'button';
   editBtn.title = 'Edit timeline item';
@@ -2118,6 +2454,19 @@ function buildTimelineItem(ev) {
   editBtn.addEventListener('click', () => openEventModal(ev.id));
   item.appendChild(editBtn);
   return item;
+}
+
+function openExerciseLogFromTimeline(ev) {
+  if (!ev?.exerciseId || !ev.sessionDate) return;
+  currentWeekStart = getMonday(dateFromStr(ev.sessionDate));
+  openSetTracker(ev.exerciseId, ev.sessionDate, {
+    readOnly: Boolean(ev.deleted || ev.missing),
+    detailsOpen: true,
+    skipScroll: Boolean(ev.deleted || ev.missing),
+  });
+  if (!ev.deleted && !ev.missing) {
+    window.setTimeout(() => scrollActiveCellIntoView(ev.exerciseId, ev.sessionDate), 0);
+  }
 }
 
 function formatEventDateShort(dateStr) {
@@ -2281,10 +2630,24 @@ function buildEventItem(ev) {
 function eventTitle(ev) {
   if (ev.type === 'dose-change') return `Dose change: ${ev.exerciseName || 'Exercise'}`;
   if (ev.type === 'exercise-added') return `Added exercise: ${ev.exerciseName || 'Exercise'}`;
+  if (ev.type === 'exercise-log') {
+    const prefix = ev.deleted || ev.missing ? 'Deleted exercise' : 'Exercise';
+    return `${prefix}: ${ev.exerciseName || ev.exerciseId || 'Exercise'}`;
+  }
   return 'Note';
 }
 
 function eventText(ev) {
+  if (ev.type === 'exercise-log') {
+    const progress = ev.progress || {};
+    const snapshot = ev.snapshot || {};
+    const parts = [`${progress.completedSets || 0}/${progress.targetSets || snapshot.sets || '?'} sets`];
+    if (snapshot.reps) parts.push(`${snapshot.reps} reps`);
+    if (snapshot.resistance) parts.push(snapshot.resistance);
+    if (Number(progress.elapsedSeconds) > 0) parts.push(`${fmtShortDuration(progress.elapsedSeconds)} elapsed`);
+    if (ev.sessionDate && ev.sessionDate !== ev.date) parts.push(`logged to ${formatShortDate(ev.sessionDate)} session day`);
+    return parts.join(' | ');
+  }
   if (ev.type === 'dose-change') {
     return Object.entries(ev.changes || {})
       .map(([field, change]) => `${field}: ${change.from || 'blank'} -> ${change.to || 'blank'}`)
@@ -2392,6 +2755,33 @@ function handleSpeechVolumeInput() {
   settings.setCueSpeechVolume = readSpeechVolumeSlider();
   updateSpeechVolumeLabel(settings.setCueSpeechVolume * 100);
   saveSettings(settings);
+}
+
+function migrateSetProgressSnapshots() {
+  let changed = false;
+  Object.entries(sessions || {}).forEach(([dateStr, session]) => {
+    if (!session?.setProgress || typeof session.setProgress !== 'object') return;
+    Object.entries(session.setProgress).forEach(([exId, progress]) => {
+      const ex = exercises.find(item => item.id === exId);
+      if (!progress?.exerciseSnapshot && ex) {
+        progress.exerciseSnapshot = exerciseSnapshot(ex);
+        changed = true;
+      }
+      if (!Array.isArray(progress.setCompletedAt)) {
+        progress.setCompletedAt = [];
+        changed = true;
+      }
+      if (typeof progress.annotation !== 'string' && progress.annotation !== undefined) {
+        progress.annotation = String(progress.annotation || '');
+        changed = true;
+      }
+    });
+    if (!Array.isArray(session.completedExercises)) {
+      session.completedExercises = [];
+      changed = true;
+    }
+  });
+  if (changed) persistSessions();
 }
 
 function renderBlockSettings() {
