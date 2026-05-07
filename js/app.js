@@ -1178,7 +1178,6 @@ function normalizeSetProgress(progress, ex) {
     elapsedSeconds: Math.max(0, Number(progress?.elapsedSeconds) || 0),
     timerStoppedAt: progress?.timerStoppedAt || null,
     timerCapped: Boolean(progress?.timerCapped),
-    annotation: typeof progress?.annotation === 'string' ? progress.annotation : '',
     exerciseSnapshot: progress?.exerciseSnapshot || (ex ? exerciseSnapshot(ex) : null),
   };
 }
@@ -1246,7 +1245,6 @@ function openSetTracker(exId, dateStr, options = {}) {
       elapsedSeconds: 0,
       timerStoppedAt: wasComplete ? now : null,
       timerCapped: false,
-      annotation: '',
       exerciseSnapshot: exerciseSnapshot(ex),
     };
   } else {
@@ -1447,7 +1445,6 @@ function getActiveTrackerParts() {
       finishedEarly: false,
       setDurations: [],
       setCompletedAt: [],
-      annotation: '',
       exerciseSnapshot: exerciseSnapshot(ex),
     };
   }
@@ -1566,21 +1563,12 @@ function buildLogEditControls(ex, dateStr, progress) {
 
   wrap.appendChild(timing);
 
-  const noteField = el('label', 'set-log-field set-log-annotation');
-  noteField.appendChild(elText('span', '', 'Exercise note'));
-  const textarea = document.createElement('textarea');
-  textarea.id = 'log-annotation';
-  textarea.placeholder = 'Optional note attached to this exercise log';
-  textarea.value = progress.annotation || '';
-  noteField.appendChild(textarea);
-  wrap.appendChild(noteField);
-
   const help = ex.deletedAt || ex.missing
     ? 'Historical log for an exercise that is no longer active. Moving changes calendar placement only.'
     : 'Moving changes calendar placement only. Actual start time controls timeline placement.';
-  wrap.appendChild(elText('div', 'set-log-edit-help', help));
 
   const actions = el('div', 'set-log-edit-actions');
+  actions.appendChild(elText('div', 'set-log-edit-help', help));
   const save = elText('button', 'set-action set-action-secondary set-log-save', 'Save / Move Log');
   save.type = 'button';
   save.addEventListener('click', saveActiveLogDetails);
@@ -1601,7 +1589,6 @@ function logDetailsSummary(progress, dateStr) {
   if (started && started !== '--:--') parts.push(started);
   const sessionDay = trackerSessionDayLabel(progress, dateStr);
   if (sessionDay) parts.push(sessionDay);
-  if (progress.annotation) parts.push('has note');
   return parts.join(' | ') || 'Actual time and session day';
 }
 
@@ -1665,7 +1652,6 @@ function saveActiveLogDetails() {
     progress.completedAt = completedAt;
     if (progress.completedSets > 0) progress.setCompletedAt[progress.completedSets - 1] = completedAt;
   }
-  progress.annotation = document.getElementById('log-annotation')?.value.trim() || '';
   progress.exerciseSnapshot = progress.exerciseSnapshot || exerciseSnapshot(ex);
   progress.updatedAt = new Date().toISOString();
   session.setProgress[ex.id] = progress;
@@ -1996,6 +1982,7 @@ function syncRealtimeFields() {
   }
   lastTodayStr = nowToday;
   syncQuickNoteDateTime();
+  if (isEditingLogDetails()) return;
   renderSetTracker();
 }
 
@@ -2009,7 +1996,13 @@ function syncSetTrackerTimer() {
     session.setProgress[ex.id] = progress;
     saveSession(dateStr, session);
   }
+  if (isEditingLogDetails()) return;
   renderSetTracker();
+}
+
+function isEditingLogDetails() {
+  const active = document.activeElement;
+  return Boolean(active?.closest?.('.set-log-edit.open'));
 }
 
 function syncQuickNoteDateTime() {
@@ -2217,7 +2210,6 @@ function formatTimelineEventMarkdownBody(ev) {
     const parts = [`**${eventTitle(ev)}**`];
     const detail = eventText(ev);
     if (detail) parts.push(detail);
-    if (ev.progress?.annotation) parts.push(formatMarkdownEntryText(ev.progress.annotation));
     return parts.join(': ');
   }
 
@@ -2426,7 +2418,6 @@ function buildTimelineItem(ev) {
     content.appendChild(elText('span', 'timeline-event-title', eventTitle(ev)));
     const detail = eventText(ev);
     if (detail) content.appendChild(elText('span', 'timeline-event-detail', detail));
-    if (ev.progress?.annotation) content.appendChild(elText('span', 'timeline-event-annotation', ev.progress.annotation));
     item.title = ev.deleted || ev.missing ? 'Open historical exercise log' : 'Open exercise log';
     item.setAttribute('role', 'button');
     item.setAttribute('tabindex', '0');
@@ -2769,10 +2760,6 @@ function migrateSetProgressSnapshots() {
       }
       if (!Array.isArray(progress.setCompletedAt)) {
         progress.setCompletedAt = [];
-        changed = true;
-      }
-      if (typeof progress.annotation !== 'string' && progress.annotation !== undefined) {
-        progress.annotation = String(progress.annotation || '');
         changed = true;
       }
     });

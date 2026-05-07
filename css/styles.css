@@ -2454,8 +2454,7 @@ body.dense-mode .dose-marker {
 }
 
 .set-log-datetime input,
-.set-log-field input,
-.set-log-field textarea {
+.set-log-field input {
   min-width: 0;
   width: 100%;
   border: 1px solid rgba(148, 163, 184, .28);
@@ -2467,25 +2466,19 @@ body.dense-mode .dose-marker {
   padding: 7px 8px;
 }
 
-.set-log-field textarea {
-  min-height: 46px;
-  resize: vertical;
-}
-
-.set-log-annotation {
-  grid-template-columns: 1fr;
-}
-
 .set-log-edit-help {
   color: var(--text-dim);
   font-size: 11px;
   font-weight: 650;
   line-height: 1.35;
+  min-width: 0;
 }
 
 .set-log-edit-actions {
-  display: flex;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
 }
 
 .set-log-save {
