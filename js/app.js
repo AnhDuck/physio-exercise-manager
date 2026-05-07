@@ -1363,7 +1363,13 @@ function renderSetTracker() {
 
   const main = el('div', 'set-tracker-main');
   const info = el('div', 'set-tracker-info');
-  info.appendChild(elText('div', 'set-tracker-kicker', `${dateStr} | Started ${trackerStartedTime(progress)}`));
+  const startMeta = el('div', 'set-tracker-start-meta');
+  startMeta.appendChild(elText('div', 'set-tracker-kicker', trackerStartedLabel(progress)));
+  const sessionDayLabel = trackerSessionDayLabel(progress, dateStr);
+  if (sessionDayLabel) {
+    startMeta.appendChild(elText('div', 'set-tracker-session-day', sessionDayLabel));
+  }
+  info.appendChild(startMeta);
   const titleRow = el('div', 'set-tracker-title-row');
   titleRow.appendChild(elText('div', 'set-tracker-name', ex.name));
   const progressWrap = el('div', 'set-tracker-progress');
@@ -1447,6 +1453,19 @@ function trackerStartedTime(progress) {
   return formatClockTime(progress.startedAt);
 }
 
+function trackerStartedLabel(progress) {
+  const startedAt = dateFromIso(progress.startedAt);
+  if (!startedAt) return 'Started --:--';
+  return `Started ${formatEventDate(toDateStr(startedAt))} at ${formatClockTime(startedAt.toISOString())}`;
+}
+
+function trackerSessionDayLabel(progress, dateStr) {
+  const startedAt = dateFromIso(progress.startedAt);
+  if (!startedAt || !isValidDateStr(dateStr)) return '';
+  if (toDateStr(startedAt) === dateStr) return '';
+  return `Logged to ${formatShortDate(dateStr)} session day`;
+}
+
 function trackerCurrentSetTimeValue(progress) {
   return fmtShortDuration(currentSetElapsedSeconds(progress));
 }
@@ -1490,6 +1509,12 @@ function formatClockTime(iso) {
     minute: '2-digit',
     hour12: true,
   });
+}
+
+function dateFromIso(iso) {
+  if (!iso) return null;
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function playSetCue(setNumber) {
