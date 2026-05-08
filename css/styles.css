@@ -2548,6 +2548,7 @@ body.dense-mode .dose-marker {
 }
 
 .set-log-edit-heading,
+.set-log-section-title,
 .set-log-datetime-label,
 .set-log-field span {
   color: var(--text-dim);
@@ -2582,9 +2583,9 @@ body.dense-mode .dose-marker {
   position: relative;
   z-index: 1;
   display: grid;
-  gap: 12px;
+  gap: 8px;
   width: min(760px, calc(100% - 36px));
-  padding: 16px;
+  padding: 12px;
   border: 1px solid rgba(148, 163, 184, .28);
   border-radius: 8px;
   background: #202126;
@@ -2599,9 +2600,48 @@ body.dense-mode .dose-marker {
   line-height: 1.15;
 }
 
+.set-log-edit-sections {
+  display: grid;
+  grid-template-columns: minmax(190px, .72fr) minmax(0, 1.28fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.set-log-section {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(148, 163, 184, .24);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, .24);
+}
+
+.set-log-calendar-section {
+  border-color: rgba(94, 234, 212, .32);
+  background: rgba(20, 83, 45, .13);
+}
+
+.set-log-time-section {
+  background: rgba(15, 23, 42, .32);
+}
+
+.set-log-section-title {
+  margin: 0;
+}
+
+.set-log-section-help {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
 .set-log-edit-grid {
   display: grid;
-  grid-template-columns: minmax(210px, 1.25fr) minmax(210px, 1.25fr) minmax(160px, .8fr);
+  grid-template-columns: minmax(190px, 1fr) minmax(190px, 1fr);
   gap: 10px;
 }
 
@@ -2620,6 +2660,14 @@ body.dense-mode .dose-marker {
   grid-column: 1 / -1;
 }
 
+.set-log-datetime.secondary {
+  opacity: .82;
+}
+
+.set-log-datetime.secondary:focus-within {
+  opacity: 1;
+}
+
 .set-log-datetime input,
 .set-log-field input {
   min-width: 0;
@@ -2630,7 +2678,12 @@ body.dense-mode .dose-marker {
   color: var(--text);
   font: inherit;
   font-size: 12px;
-  padding: 7px 8px;
+  padding: 6px 8px;
+}
+
+.set-log-calendar-section input {
+  border-color: rgba(94, 234, 212, .34);
+  background: rgba(6, 78, 59, .22);
 }
 
 .set-log-edit-help {
@@ -2643,9 +2696,10 @@ body.dense-mode .dose-marker {
 
 .set-log-edit-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: auto auto;
   gap: 8px;
   align-items: center;
+  justify-content: end;
 }
 
 .set-log-save,
@@ -2915,6 +2969,7 @@ body.dense-mode .dose-marker {
     border-left: none;
   }
 
+  .set-log-edit-sections,
   .set-log-edit-grid {
     grid-template-columns: 1fr;
   }

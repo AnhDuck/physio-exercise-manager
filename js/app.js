@@ -1592,27 +1592,32 @@ function buildLogEditModal(ex, dateStr, progress) {
   modal.setAttribute('aria-labelledby', 'set-log-modal-title');
   modal.appendChild(elText('h3', 'set-log-modal-title', 'Edit log'));
 
-  const timing = el('div', 'set-log-edit-grid');
-  timing.appendChild(buildDateTimeField('Actual start', 'log-start-date', 'log-start-time', progress.startedAt));
-  timing.appendChild(buildDateTimeField('Completed', 'log-completed-date', 'log-completed-time', progress.completedAt, !isProgressComplete(progress)));
-
+  const sections = el('div', 'set-log-edit-sections');
+  const calendarSection = el('section', 'set-log-section set-log-calendar-section');
+  calendarSection.appendChild(elText('h4', 'set-log-section-title', 'Calendar placement'));
   const sessionField = el('label', 'set-log-field');
-  sessionField.appendChild(elText('span', '', 'Session day'));
+  sessionField.appendChild(elText('span', '', 'Calendar day'));
   const sessionInput = document.createElement('input');
   sessionInput.type = 'date';
   sessionInput.id = 'log-session-date';
   sessionInput.value = dateStr;
   sessionField.appendChild(sessionInput);
-  timing.appendChild(sessionField);
+  calendarSection.appendChild(sessionField);
+  calendarSection.appendChild(elText('p', 'set-log-section-help', 'Controls where this log appears on the calendar.'));
+  sections.appendChild(calendarSection);
 
-  modal.appendChild(timing);
+  const timingSection = el('section', 'set-log-section set-log-time-section');
+  timingSection.appendChild(elText('h4', 'set-log-section-title', 'Actual exercise time'));
+  const timing = el('div', 'set-log-edit-grid');
+  timing.appendChild(buildDateTimeField('Started at', 'log-start-date', 'log-start-time', progress.startedAt));
+  timing.appendChild(buildDateTimeField('Finished at', 'log-completed-date', 'log-completed-time', progress.completedAt, !isProgressComplete(progress), 'secondary'));
+  timingSection.appendChild(timing);
+  timingSection.appendChild(elText('p', 'set-log-section-help', 'Started at controls timeline/notes placement. Finished at is when the final set was logged.'));
+  sections.appendChild(timingSection);
 
-  const help = ex.deletedAt || ex.missing
-    ? 'Historical log for an exercise that is no longer active. Moving changes calendar placement only.'
-    : 'Moving changes calendar placement only. Actual start time controls timeline placement.';
+  modal.appendChild(sections);
 
   const actions = el('div', 'set-log-edit-actions');
-  actions.appendChild(elText('div', 'set-log-edit-help', help));
   const cancel = elText('button', 'set-action set-action-secondary set-log-cancel', 'Cancel');
   cancel.type = 'button';
   cancel.addEventListener('click', closeLogDetails);
@@ -1638,8 +1643,8 @@ function closeLogDetails() {
   renderSetTracker();
 }
 
-function buildDateTimeField(label, dateId, timeId, iso, disabled = false) {
-  const field = el('div', 'set-log-datetime');
+function buildDateTimeField(label, dateId, timeId, iso, disabled = false, variant = '') {
+  const field = el('div', `set-log-datetime${variant ? ` ${variant}` : ''}`);
   field.appendChild(elText('span', 'set-log-datetime-label', label));
 
   const dateInput = document.createElement('input');
@@ -1670,13 +1675,13 @@ function saveActiveLogDetails() {
 
   const startedAt = isoFromLocalInputs('log-start-date', 'log-start-time');
   if (!startedAt) {
-    alert('Actual start date and time are required.');
+    alert('Started at date and time are required.');
     return;
   }
 
   const targetDate = document.getElementById('log-session-date')?.value || dateStr;
   if (!isValidDateStr(targetDate)) {
-    alert('Session day must be a valid date.');
+    alert('Calendar day must be a valid date.');
     return;
   }
   if (targetDate !== dateStr && sessions[targetDate]?.setProgress?.[ex.id]) {
@@ -1688,11 +1693,11 @@ function saveActiveLogDetails() {
   if (isProgressComplete(progress)) {
     const completedAt = isoFromLocalInputs('log-completed-date', 'log-completed-time');
     if (!completedAt) {
-      alert('Completed date and time are required for a completed log.');
+      alert('Finished at date and time are required for a completed log.');
       return;
     }
     if (new Date(completedAt).getTime() < new Date(startedAt).getTime()) {
-      alert('Completed time cannot be before actual start time.');
+      alert('Finished at cannot be before Started at.');
       return;
     }
     progress.completedAt = completedAt;
