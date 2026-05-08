@@ -194,6 +194,7 @@ function weekDates(monday) {
 
 const DAY_NAMES  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const GROUP_ORDER = ['arm-day1', 'arm-day2', 'legs'];
 const SET_TIMER_CAP_SECONDS = 60 * 60;
 const DEFAULT_PERSONAL_DAY_START_TIME = '07:00';
@@ -207,9 +208,7 @@ function render(options = {}) {
   if (!options.preserveCompletedActionMenu) completedActionMenu = null;
   const dates = weekDates(currentWeekStart);
   const todayS = todayStr();
-
-  const months = [...new Set(dates.map(d => MONTH_ABBR[d.getMonth()]))];
-  const monthLabel = months.join(' / ');
+  const monthLabel = `${MONTH_NAMES[currentWeekStart.getMonth()]} ${currentWeekStart.getFullYear()}`;
 
   const app = document.getElementById('app');
   app.innerHTML = '';
@@ -287,28 +286,32 @@ function buildColHeaders(dates, todayS, monthLabel) {
 function buildWeekNav(monthLabel) {
   const nav = el('nav', 'week-nav');
 
-  const prev = elText('button', '', '\u2190 Week');
-  prev.id = 'btn-prev-week';
-  prev.type = 'button';
-  prev.addEventListener('click', prevWeek);
-
-  const label = elText('span', 'week-label', monthLabel);
-  label.id = 'week-label';
-
-  const next = elText('button', '', 'Week \u2192');
-  next.id = 'btn-next-week';
-  next.type = 'button';
-  next.addEventListener('click', nextWeek);
-
-  const today = elText('button', 'today-btn', 'TODAY');
+  const today = elText('button', 'today-btn', 'Today');
   today.id = 'btn-today';
   today.type = 'button';
   today.addEventListener('click', goToToday);
 
-  nav.appendChild(prev);
-  nav.appendChild(label);
-  nav.appendChild(next);
+  const prev = elText('button', 'nav-arrow-btn', '\u2039');
+  prev.id = 'btn-prev-week';
+  prev.type = 'button';
+  prev.setAttribute('aria-label', 'Previous week');
+  prev.title = 'Previous week';
+  prev.addEventListener('click', prevWeek);
+  
+  const next = elText('button', 'nav-arrow-btn', '\u203A');
+  next.id = 'btn-next-week';
+  next.type = 'button';
+  next.setAttribute('aria-label', 'Next week');
+  next.title = 'Next week';
+  next.addEventListener('click', nextWeek);
+
+  const label = elText('span', 'week-label', monthLabel);
+  label.id = 'week-label';
+
   nav.appendChild(today);
+  nav.appendChild(prev);
+  nav.appendChild(next);
+  nav.appendChild(label);
   return nav;
 }
 

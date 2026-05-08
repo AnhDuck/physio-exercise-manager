@@ -173,7 +173,6 @@ body {
   color: var(--text-dim);
 }
 
-.week-nav button,
 .header-actions button {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -185,7 +184,6 @@ body {
   transition: background .15s;
 }
 
-.week-nav button:hover,
 .header-actions button:hover { background: var(--bg-hover); }
 
 .header-quote::before {
@@ -193,18 +191,62 @@ body {
   margin: 0;
 }
 
-.week-nav .today-btn {
-  background: #2b4a7a;
-  border-color: var(--c-day1);
-  font-weight: 600;
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
 }
 
-.week-label {
-  font-size: 18px;
+.week-nav button {
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+
+.week-nav .today-btn {
+  background: transparent;
+  border: 1px solid #5f6368;
+  color: #e8eaed;
+  min-height: 34px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 14px;
   font-weight: 600;
-  min-width: 60px;
-  text-align: center;
-  color: var(--text-muted);
+  line-height: 1;
+}
+
+.week-nav .today-btn:hover {
+  background: #2a2c2f;
+  border-color: #7a7f84;
+}
+
+.week-nav .nav-arrow-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #d7dbe0;
+  font-size: 22px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.week-nav .nav-arrow-btn:hover {
+  background: #2a2c2f;
+  color: #f1f3f4;
+}
+
+.week-nav .week-label {
+  font-size: clamp(20px, 2.4vw, 28px);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #e8eaed;
+  padding-left: 8px;
 }
 
 .header-actions {
@@ -687,17 +729,39 @@ body.notes-open .grid-table {
 }
 
 .col-header-row .week-nav {
-  display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
   flex: 0 1 auto;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
+  flex-wrap: nowrap;
 }
 
 .col-header-row .week-label {
   flex: 0 0 auto;
+  min-width: 0;
+}
+
+.col-header-row.compact .week-nav {
+  gap: 4px;
+}
+
+.col-header-row.compact .week-nav .today-btn {
+  min-height: 28px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.col-header-row.compact .week-nav .nav-arrow-btn {
+  width: 24px;
+  height: 24px;
+  font-size: 18px;
+}
+
+.col-header-row.compact .week-nav .week-label {
+  font-size: clamp(18px, 2vw, 24px);
+  padding-left: 6px;
 }
 
 .day-header {
