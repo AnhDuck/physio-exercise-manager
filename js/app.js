@@ -1590,11 +1590,20 @@ function buildLogEditModal(ex, dateStr, progress) {
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
   modal.setAttribute('aria-labelledby', 'set-log-modal-title');
-  modal.appendChild(elText('h3', 'set-log-modal-title', 'Edit log'));
+  const header = el('div', 'set-log-modal-header');
+  header.appendChild(elText('h3', 'set-log-modal-title', 'Edit log'));
+  const close = elText('button', 'set-log-modal-close', '');
+  close.type = 'button';
+  close.setAttribute('aria-label', 'Close log editor');
+  close.appendChild(buildIconSvg('x'));
+  close.addEventListener('click', closeLogDetails);
+  header.appendChild(close);
+  modal.appendChild(header);
 
   const sections = el('div', 'set-log-edit-sections');
+  const calendarGroup = el('div', 'set-log-section-group set-log-calendar-group');
+  calendarGroup.appendChild(elText('h4', 'set-log-section-title', 'Calendar placement'));
   const calendarSection = el('section', 'set-log-section set-log-calendar-section');
-  calendarSection.appendChild(elText('h4', 'set-log-section-title', 'Calendar placement'));
   const sessionField = el('label', 'set-log-field');
   sessionField.appendChild(elText('span', '', 'Calendar day'));
   const sessionInput = document.createElement('input');
@@ -1604,25 +1613,24 @@ function buildLogEditModal(ex, dateStr, progress) {
   sessionField.appendChild(sessionInput);
   calendarSection.appendChild(sessionField);
   calendarSection.appendChild(elText('p', 'set-log-section-help', 'Controls where this log appears on the calendar.'));
-  sections.appendChild(calendarSection);
+  calendarGroup.appendChild(calendarSection);
+  sections.appendChild(calendarGroup);
 
+  const timingGroup = el('div', 'set-log-section-group set-log-time-group');
+  timingGroup.appendChild(elText('h4', 'set-log-section-title', 'Actual exercise time'));
   const timingSection = el('section', 'set-log-section set-log-time-section');
-  timingSection.appendChild(elText('h4', 'set-log-section-title', 'Actual exercise time'));
   const timing = el('div', 'set-log-edit-grid');
   timing.appendChild(buildDateTimeField('Started at', 'log-start-date', 'log-start-time', progress.startedAt));
   timing.appendChild(buildDateTimeField('Finished at', 'log-completed-date', 'log-completed-time', progress.completedAt, !isProgressComplete(progress), 'secondary'));
   timingSection.appendChild(timing);
   timingSection.appendChild(elText('p', 'set-log-section-help', 'Started at controls timeline/notes placement. Finished at is when the final set was logged.'));
-  sections.appendChild(timingSection);
+  timingGroup.appendChild(timingSection);
+  sections.appendChild(timingGroup);
 
   modal.appendChild(sections);
 
   const actions = el('div', 'set-log-edit-actions');
-  const cancel = elText('button', 'set-action set-action-secondary set-log-cancel', 'Cancel');
-  cancel.type = 'button';
-  cancel.addEventListener('click', closeLogDetails);
-  actions.appendChild(cancel);
-  const save = elText('button', 'set-action set-action-secondary set-log-save', 'Save / Move Log');
+  const save = elText('button', 'set-action set-action-primary set-log-save', 'Save / Move Log');
   save.type = 'button';
   save.addEventListener('click', saveActiveLogDetails);
   actions.appendChild(save);

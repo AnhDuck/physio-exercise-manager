@@ -2548,7 +2548,6 @@ body.dense-mode .dose-marker {
 }
 
 .set-log-edit-heading,
-.set-log-section-title,
 .set-log-datetime-label,
 .set-log-field span {
   color: var(--text-dim);
@@ -2561,58 +2560,106 @@ body.dense-mode .dose-marker {
 
 .set-log-modal-layer {
   position: absolute;
-  inset: 0;
+  right: -2px;
+  bottom: calc(100% + 12px);
   z-index: 4;
-  display: grid;
-  place-items: center;
-  padding: 18px;
-  border-radius: 8px;
-  overflow: hidden;
+  display: block;
+  width: min(980px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  padding: 0;
+  overflow: visible;
+  pointer-events: none;
 }
 
 .set-log-modal-backdrop {
-  position: absolute;
+  position: fixed;
   inset: 0;
   border: none;
-  background: rgba(10, 12, 16, .64);
+  background: rgba(10, 12, 16, .56);
   cursor: default;
   padding: 0;
+  pointer-events: auto;
 }
 
 .set-log-modal {
   position: relative;
   z-index: 1;
   display: grid;
-  gap: 8px;
-  width: min(760px, calc(100% - 36px));
-  padding: 12px;
+  gap: 12px;
+  width: 100%;
+  margin-left: auto;
+  padding: 16px;
   border: 1px solid rgba(148, 163, 184, .28);
   border-radius: 8px;
   background: #202126;
   box-shadow: 0 18px 38px rgba(0,0,0,.44);
+  pointer-events: auto;
+}
+
+.set-log-modal-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
 }
 
 .set-log-modal-title {
   margin: 0;
   color: var(--text);
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 900;
   line-height: 1.15;
 }
 
+.set-log-modal-close {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(148, 163, 184, .34);
+  border-radius: 6px;
+  background: rgba(15, 23, 42, .45);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+}
+
+.set-log-modal-close svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.set-log-modal-close:hover,
+.set-log-modal-close:focus-visible {
+  border-color: rgba(248, 113, 113, .72);
+  background: rgba(127, 29, 29, .32);
+  color: #fecaca;
+}
+
 .set-log-edit-sections {
   display: grid;
-  grid-template-columns: minmax(190px, .72fr) minmax(0, 1.28fr);
-  gap: 12px;
-  align-items: stretch;
+  grid-template-columns: minmax(260px, .62fr) minmax(580px, 1.38fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.set-log-section-group {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
 }
 
 .set-log-section {
   display: grid;
   align-content: start;
-  gap: 7px;
+  gap: 9px;
   min-width: 0;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid rgba(148, 163, 184, .24);
   border-radius: 8px;
   background: rgba(15, 23, 42, .24);
@@ -2629,6 +2676,12 @@ body.dense-mode .dose-marker {
 
 .set-log-section-title {
   margin: 0;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: .035em;
+  line-height: 1.2;
+  text-transform: uppercase;
 }
 
 .set-log-section-help {
@@ -2641,8 +2694,8 @@ body.dense-mode .dose-marker {
 
 .set-log-edit-grid {
   display: grid;
-  grid-template-columns: minmax(190px, 1fr) minmax(190px, 1fr);
-  gap: 10px;
+  grid-template-columns: minmax(270px, 1fr) minmax(270px, 1fr);
+  gap: 12px;
 }
 
 .set-log-datetime,
@@ -2653,7 +2706,7 @@ body.dense-mode .dose-marker {
 }
 
 .set-log-datetime {
-  grid-template-columns: minmax(118px, 1fr) minmax(96px, 112px);
+  grid-template-columns: minmax(150px, 1fr) minmax(124px, 136px);
 }
 
 .set-log-datetime-label {
@@ -2696,16 +2749,15 @@ body.dense-mode .dose-marker {
 
 .set-log-edit-actions {
   display: grid;
-  grid-template-columns: auto auto;
+  grid-template-columns: auto;
   gap: 8px;
   align-items: center;
   justify-content: end;
 }
 
-.set-log-save,
-.set-log-cancel {
-  min-height: 30px;
-  padding: 0 12px;
+.set-log-save {
+  min-height: 36px;
+  padding: 0 16px;
 }
 
 .set-tracker-deleted-kicker {
@@ -2969,6 +3021,21 @@ body.dense-mode .dose-marker {
     border-left: none;
   }
 
+  .set-log-modal-layer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-width: none;
+    padding: 12px;
+  }
+
+  .set-log-modal {
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+  }
+
   .set-log-edit-sections,
   .set-log-edit-grid {
     grid-template-columns: 1fr;
@@ -2978,8 +3045,7 @@ body.dense-mode .dose-marker {
     grid-template-columns: 1fr;
   }
 
-  .set-log-save,
-  .set-log-cancel {
+  .set-log-save {
     width: 100%;
   }
 }
