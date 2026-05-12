@@ -1431,6 +1431,7 @@ body.dense-mode .ex-number {
   width: 18px;
   height: 18px;
   font-size: 10px;
+  position: relative;
 }
 
 body.dense-mode .ex-number.has-instructions {
@@ -1442,6 +1443,18 @@ body.dense-mode .ex-number.has-instructions:hover,
 body.dense-mode .ex-number.has-instructions.active {
   background: #385b8f;
   color: #ffffff;
+}
+
+body.dense-mode .ex-number.changed-since-physio::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 9px;
+  height: 9px;
+  border-top: 3px solid rgba(245, 158, 11, .9);
+  border-right: 3px solid rgba(245, 158, 11, .9);
+  border-top-right-radius: 7px;
 }
 
 body.dense-mode .ex-name {
@@ -1469,15 +1482,6 @@ body.dense-mode .dense-edit-glyph {
   opacity: 0;
   transform: translateX(-2px);
   transition: opacity .12s, transform .12s, color .12s;
-}
-
-body.dense-mode .dense-changed-marker {
-  width: 9px;
-  height: 9px;
-  flex: 0 0 9px;
-  border-radius: 999px;
-  background: #f59e0b;
-  box-shadow: 0 0 0 2px rgba(245, 158, 11, .22), 0 0 8px rgba(245, 158, 11, .4);
 }
 
 body.dense-mode .ex-actions {

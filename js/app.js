@@ -777,7 +777,12 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber, blockInfo =
     info.appendChild(buildBlockHeader(blockInfo));
   }
   const nameRow = el('div', 'ex-name-row');
-  const number = elText('span', 'ex-number' + (ex.instructions && isDenseMode ? ' has-instructions' : ''), String(exerciseNumber));
+  const numberClasses = [
+    'ex-number',
+    ex.instructions && isDenseMode ? 'has-instructions' : '',
+    ex.changedSinceLastPhysioVisit && isDenseMode ? 'changed-since-physio' : '',
+  ].filter(Boolean).join(' ');
+  const number = elText('span', numberClasses, String(exerciseNumber));
   if (ex.instructions && isDenseMode) {
     number.title = 'Show instructions';
     number.setAttribute('role', 'button');
@@ -787,12 +792,6 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber, blockInfo =
   const nameText = el('span', 'ex-name');
   nameText.appendChild(elText('span', 'ex-name-text', ex.name));
   if (isDenseMode) {
-    if (ex.changedSinceLastPhysioVisit) {
-      const changedMarker = el('span', 'dense-changed-marker');
-      changedMarker.title = 'Changed since last physio visit. Click to edit.';
-      changedMarker.setAttribute('aria-label', 'Changed since last physio visit. Click to edit.');
-      nameText.appendChild(changedMarker);
-    }
     nameText.appendChild(elText('span', 'dense-edit-glyph', String.fromCharCode(9998)));
   }
   nameRow.appendChild(nameText);
