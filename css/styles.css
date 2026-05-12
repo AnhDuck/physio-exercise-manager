@@ -1471,6 +1471,15 @@ body.dense-mode .dense-edit-glyph {
   transition: opacity .12s, transform .12s, color .12s;
 }
 
+body.dense-mode .dense-changed-marker {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 999px;
+  background: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, .22), 0 0 8px rgba(245, 158, 11, .4);
+}
+
 body.dense-mode .ex-actions {
   display: none;
 }
@@ -1762,6 +1771,21 @@ body.dense-mode .dose-marker {
 .form-field textarea { resize: vertical; min-height: 80px; }
 
 .form-field select option { background: #242424; }
+
+.physio-review-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.physio-review-check input {
+  accent-color: #f59e0b;
+}
 
 .form-help {
   margin-top: 8px;
@@ -2281,7 +2305,8 @@ body.dense-mode .dose-marker {
 
 .block-settings-add,
 .block-settings-move,
-.block-settings-delete {
+.block-settings-delete,
+.settings-clear-review {
   border: 1px solid var(--border);
   border-radius: 5px;
   background: var(--bg-card);
@@ -2297,10 +2322,20 @@ body.dense-mode .dose-marker {
   padding: 0 8px;
 }
 
+.settings-clear-review {
+  padding: 0 10px;
+}
+
 .block-settings-add:hover,
 .block-settings-move:hover:not(:disabled),
-.block-settings-delete:hover {
+.block-settings-delete:hover,
+.settings-clear-review:hover:not(:disabled) {
   background: var(--bg-hover);
+}
+
+.settings-clear-review:disabled {
+  cursor: default;
+  opacity: .45;
 }
 
 .block-settings-list {

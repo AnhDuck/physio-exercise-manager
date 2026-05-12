@@ -118,6 +118,10 @@ function runMigrations() {
   migrateSetProgressSnapshots();
 
   exercises.forEach(ex => {
+    if (!('changedSinceLastPhysioVisit' in ex)) {
+      ex.changedSinceLastPhysioVisit = false;
+      exercisesChanged = true;
+    }
     if (ex.blockTitle && normalizedBlockId(ex)) {
       ensureBlockDefinition(ex.group, normalizedBlockId(ex), ex.blockTitle);
       delete ex.blockTitle;
@@ -783,6 +787,12 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber, blockInfo =
   const nameText = el('span', 'ex-name');
   nameText.appendChild(elText('span', 'ex-name-text', ex.name));
   if (isDenseMode) {
+    if (ex.changedSinceLastPhysioVisit) {
+      const changedMarker = el('span', 'dense-changed-marker');
+      changedMarker.title = 'Changed since last physio visit. Click to edit.';
+      changedMarker.setAttribute('aria-label', 'Changed since last physio visit. Click to edit.');
+      nameText.appendChild(changedMarker);
+    }
     nameText.appendChild(elText('span', 'dense-edit-glyph', String.fromCharCode(9998)));
   }
   nameRow.appendChild(nameText);
@@ -1916,6 +1926,7 @@ function openEditModal(exId) {
   document.getElementById('field-frequency').value = ex.frequency || '';
   document.getElementById('field-instructions').value = ex.instructions || '';
   document.getElementById('field-group').value = ex.group;
+  document.getElementById('field-changed-since-physio').checked = Boolean(ex.changedSinceLastPhysioVisit);
 
   document.getElementById('delete-btn').style.display = 'inline-block';
   showModal();
@@ -1931,6 +1942,7 @@ function openAddModal(group) {
   document.getElementById('field-frequency').value = '3x/week';
   document.getElementById('field-instructions').value = '';
   document.getElementById('field-group').value = group;
+  document.getElementById('field-changed-since-physio').checked = false;
   document.getElementById('delete-btn').style.display = 'none';
   showModal();
 }
@@ -1964,6 +1976,7 @@ function saveExerciseModal() {
     frequency:    document.getElementById('field-frequency').value.trim(),
     instructions: document.getElementById('field-instructions').value.trim(),
     group:        document.getElementById('field-group').value,
+    changedSinceLastPhysioVisit: document.getElementById('field-changed-since-physio').checked,
   };
 
   if (editingExId) {
@@ -2754,6 +2767,7 @@ function openSettingsModal() {
   document.getElementById('setting-cue-speech').checked = Boolean(settings.setCueSpeech);
   syncSpeechVolumeControl();
   renderBlockSettings();
+  updateClearReviewButton();
   document.getElementById('settings-modal').classList.remove('hidden');
 }
 
@@ -2789,6 +2803,26 @@ function saveSettingsModal() {
   saveSettings(settings);
   saveExercises(exercises);
   closeSettingsModal(false);
+  render();
+}
+
+function updateClearReviewButton() {
+  const btn = document.getElementById('settings-clear-review');
+  if (!btn) return;
+  btn.disabled = !exercises.some(ex => ex.changedSinceLastPhysioVisit);
+}
+
+function clearChangedSincePhysioMarkers() {
+  if (!exercises.some(ex => ex.changedSinceLastPhysioVisit)) {
+    updateClearReviewButton();
+    return;
+  }
+  if (!confirm('Clear changed markers from all exercises?')) return;
+  exercises.forEach(ex => {
+    ex.changedSinceLastPhysioVisit = false;
+  });
+  saveExercises(exercises);
+  updateClearReviewButton();
   render();
 }
 
@@ -3275,6 +3309,7 @@ function bindStaticEvents() {
   document.getElementById('btn-settings').addEventListener('click', openSettingsModal);
   document.getElementById('settings-cancel').addEventListener('click', closeSettingsModal);
   document.getElementById('settings-save').addEventListener('click', saveSettingsModal);
+  document.getElementById('settings-clear-review').addEventListener('click', clearChangedSincePhysioMarkers);
   document.getElementById('setting-cue-speech-volume').addEventListener('input', handleSpeechVolumeInput);
   document.getElementById('setting-cue-speech').addEventListener('change', syncSpeechVolumeControl);
   document.getElementById('settings-modal').addEventListener('click', (e) => {
