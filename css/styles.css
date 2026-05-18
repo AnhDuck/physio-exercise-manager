@@ -2310,7 +2310,8 @@ body.dense-mode .dose-marker {
 .block-settings-add,
 .block-settings-move,
 .block-settings-delete,
-.settings-clear-review {
+.settings-clear-review,
+.settings-backup-btn {
   border: 1px solid var(--border);
   border-radius: 5px;
   background: var(--bg-card);
@@ -2330,10 +2331,21 @@ body.dense-mode .dose-marker {
   padding: 0 10px;
 }
 
+.settings-backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.settings-backup-btn {
+  padding: 0 10px;
+}
+
 .block-settings-add:hover,
 .block-settings-move:hover:not(:disabled),
 .block-settings-delete:hover,
-.settings-clear-review:hover:not(:disabled) {
+.settings-clear-review:hover:not(:disabled),
+.settings-backup-btn:hover {
   background: var(--bg-hover);
 }
 
