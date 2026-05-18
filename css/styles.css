@@ -2338,7 +2338,50 @@ body.dense-mode .dose-marker {
 }
 
 .settings-backup-btn {
+  position: relative;
   padding: 0 10px;
+}
+
+.settings-backup-btn::after {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 8px);
+  z-index: 220;
+  width: max-content;
+  max-width: 260px;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #111;
+  color: var(--text);
+  box-shadow: 0 8px 18px rgba(0,0,0,.32);
+  content: attr(data-tooltip);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  opacity: 0;
+  pointer-events: none;
+  text-align: left;
+  text-transform: none;
+  transform: translate(-50%, -4px);
+  transition: opacity .12s ease, transform .12s ease;
+  white-space: normal;
+}
+
+.settings-backup-btn:hover::after,
+.settings-backup-btn:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.settings-backup-btn:first-child::after {
+  left: 0;
+  transform: translate(0, -4px);
+}
+
+.settings-backup-btn:first-child:hover::after,
+.settings-backup-btn:first-child:focus-visible::after {
+  transform: translate(0, 0);
 }
 
 .block-settings-add:hover,

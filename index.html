@@ -201,9 +201,9 @@
           <h3>Data backup</h3>
         </div>
         <div class="settings-backup-actions">
-          <button class="settings-backup-btn" id="settings-export-json" type="button">Export JSON</button>
-          <button class="settings-backup-btn" id="settings-import-json" type="button">Import JSON</button>
-          <input class="hidden" id="settings-import-file" type="file" accept="application/json,.json" />
+          <button class="settings-backup-btn" id="settings-export-json" type="button" data-tooltip="Download a full backup of exercises, sessions, settings, timeline items, and saved images.">Export JSON</button>
+          <button class="settings-backup-btn" id="settings-import-json" type="button" data-tooltip="Choose a backup file and replace this browser's saved app data after confirmation.">Import JSON</button>
+          <input id="settings-import-file" type="file" accept="application/json,.json" hidden />
         </div>
       </div>
 
