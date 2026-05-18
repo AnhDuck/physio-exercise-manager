@@ -281,10 +281,22 @@
   <input type="file" id="image-upload-input" accept="image/*" />
   <div id="set-tracker-root"></div>
 
-  <!-- Scripts - order matters: data -> storage -> app -->
+  <!-- Scripts - order matters: data/storage, shared helpers, features, then bootstrap -->
   <script src="js/data.js"></script>
   <script src="js/storage.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/constants.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/dates.js"></script>
+  <script src="js/dom.js"></script>
+  <script src="js/sessions.js"></script>
+  <script src="js/exercises.js"></script>
+  <script src="js/grid.js"></script>
+  <script src="js/tracker.js"></script>
+  <script src="js/timeline.js"></script>
+  <script src="js/backup.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/images.js"></script>
+  <script src="js/main.js"></script>
 
 </body>
 </html>

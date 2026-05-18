@@ -16,12 +16,25 @@ physio-exercise-manager/
 |-- js/
 |   |-- data.js         DEFAULT_EXERCISES and GROUPS config
 |   |-- storage.js      localStorage helpers and local date helpers
-|   `-- app.js          Rendering, events, set tracking, notes, modals, image import
+|   |-- constants.js    Shared constants, labels, and quote text
+|   |-- state.js        Shared mutable app state and startup helpers
+|   |-- dates.js        Calendar, week, and schedule helpers
+|   |-- dom.js          DOM construction helpers and toast feedback
+|   |-- sessions.js     Session, completion, and set-progress helpers
+|   |-- exercises.js    Exercise ordering, blocks, drag/drop, and edit modal logic
+|   |-- grid.js         Calendar grid rendering, dense mode, and week navigation
+|   |-- tracker.js      Set tracker, timer UI, log editing, cues, and shortcuts
+|   |-- timeline.js     Notes panel, timeline events, Markdown copy, and event editing
+|   |-- backup.js       JSON export/import helpers
+|   |-- settings.js     Settings modal, cue settings, review markers, and block settings
+|   |-- images.js       Exercise image upload and URL import
+|   |-- main.js         Bootstrap and static event bindings
+|   `-- app.js          Pointer only; app logic was split into feature files
 `-- assets/
     `-- physio-icon.svg App icon
 ```
 
-Required script order in `index.html`: `js/data.js`, then `js/storage.js`, then `js/app.js`.
+Required script order in `index.html`: `js/data.js`, `js/storage.js`, shared helpers, feature files, then `js/main.js`. Do not load `js/main.js` before the feature files it binds.
 
 ## Exercise Groups
 
@@ -43,7 +56,7 @@ Arm Day 1 and Arm Day 2 are calendar-based, not completion-count-based.
 - Anchor group: `arm-day1`.
 - Scheduled arm days are Monday, Wednesday, and Friday.
 - Each scheduled arm day after the anchor flips between `arm-day1` and `arm-day2`.
-- The logic lives in `getArmDayForDate(dateStr)` in `js/app.js`.
+- The logic lives in `getArmDayForDate(dateStr)` in `js/dates.js`.
 
 Do not reintroduce `armSessionCount`; it is stale and not part of the current rotation model.
 
@@ -161,7 +174,7 @@ Dense mode is a spreadsheet-like scan view. Keep it compact:
 ```powershell
 node --check js\data.js
 node --check js\storage.js
-node --check js\app.js
+Get-ChildItem -Path js -Filter *.js | Sort-Object Name | ForEach-Object { node --check $_.FullName }
 ```
 
 For browser verification, open `index.html`, check console errors, and test normal view, dense view, notes, settings, set tracking, and image modal entry points.
