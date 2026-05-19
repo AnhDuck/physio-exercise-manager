@@ -120,7 +120,6 @@ Defaults live in `DEFAULT_EXERCISES` in `js/data.js` and only seed new installs 
   notesOpen: boolean | undefined,
   denseMode: boolean | undefined,
   collapsedGroups: string[] | undefined,
-  legsDays: number[] | undefined,
   personalDayStartTime: string,
   setCueSound: boolean,
   setCueVibrate: boolean,

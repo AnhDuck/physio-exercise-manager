@@ -71,10 +71,6 @@ function handleSettingsTabKeydown(e) {
 }
 
 function syncSettingsControls() {
-  const legsDays = settings.legsDays !== undefined ? settings.legsDays : [1, 3, 5];
-  document.querySelectorAll('#settings-modal input[data-dow]').forEach(cb => {
-    cb.checked = legsDays.includes(Number(cb.dataset.dow));
-  });
   document.getElementById('setting-personal-day-start').value = getPersonalDayStartTime();
   document.getElementById('setting-cue-sound').checked = settings.setCueSound !== false;
   document.getElementById('setting-cue-vibrate').checked = settings.setCueVibrate !== false;
@@ -84,12 +80,6 @@ function syncSettingsControls() {
 }
 
 function autosaveGeneralSettings() {
-  const legsDays = [];
-  document.querySelectorAll('#settings-modal input[data-dow]:checked').forEach(cb => {
-    legsDays.push(Number(cb.dataset.dow));
-  });
-  settings.legsDays = legsDays;
-
   const personalDayStartTime = document.getElementById('setting-personal-day-start').value;
   settings.personalDayStartTime = isValidTime(personalDayStartTime)
     ? personalDayStartTime

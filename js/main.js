@@ -79,9 +79,6 @@ function bindStaticEvents() {
     e.target.value = '';
   });
   document.getElementById('setting-personal-day-start').addEventListener('change', autosaveGeneralSettings);
-  document.querySelectorAll('#settings-modal input[data-dow]').forEach(cb => {
-    cb.addEventListener('change', autosaveGeneralSettings);
-  });
   document.getElementById('setting-cue-sound').addEventListener('change', autosaveGeneralSettings);
   document.getElementById('setting-cue-vibrate').addEventListener('change', autosaveGeneralSettings);
   document.getElementById('setting-cue-speech-volume').addEventListener('input', handleSpeechVolumeInput);

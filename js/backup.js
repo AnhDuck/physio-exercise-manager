@@ -20,7 +20,7 @@ function buildFullBackup() {
   const data = {
     exercises: deepClone(exercises),
     sessions: deepClone(sessions),
-    settings: deepClone(settings),
+    settings: deepClone(sanitizeLegacySettings(settings)),
     events: deepClone(events),
   };
 
@@ -113,7 +113,7 @@ function importBackupJson(jsonText) {
 
   localStorage.setItem(KEYS.EXERCISES, JSON.stringify(backup.data.exercises));
   localStorage.setItem(KEYS.SESSIONS, JSON.stringify(backup.data.sessions));
-  localStorage.setItem(KEYS.SETTINGS, JSON.stringify(backup.data.settings));
+  localStorage.setItem(KEYS.SETTINGS, JSON.stringify(sanitizeLegacySettings(backup.data.settings)));
   localStorage.setItem(KEYS.EVENTS, JSON.stringify(backup.data.events));
   window.location.reload();
 }

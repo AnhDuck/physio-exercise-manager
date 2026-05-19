@@ -44,27 +44,19 @@ function buildColHeaders(dates, todayS, monthLabel) {
 
     const dow = date.getDay();
     const isArmDay  = dow === 1 || dow === 3 || dow === 5;
-    const legsDays  = settings.legsDays !== undefined ? settings.legsDays : [1, 3, 5];
-    const isLegsDay = legsDays.includes(dow);
     const dayTags = [];
 
     cell.appendChild(elText('div', 'day-name', DAY_NAMES[i]));
     cell.appendChild(elText('div', 'day-date', String(date.getDate())));
 
-    if (isArmDay || isLegsDay) {
+    if (isArmDay) {
       const pillRow = el('div', 'day-pill-row');
-      if (isArmDay) {
-        const armDay = getArmDayForDate(dateS);
-        dayTags.push(armDay);
-        if (armDay === 'arm-day1') {
-          pillRow.appendChild(elText('span', 'day-pill pill-d1', 'Day 1'));
-        } else {
-          pillRow.appendChild(elText('span', 'day-pill pill-d2', 'Day 2'));
-        }
-      }
-      if (isLegsDay) {
-        dayTags.push('legs');
-        pillRow.appendChild(elText('span', 'day-pill pill-leg', 'Legs'));
+      const armDay = getArmDayForDate(dateS);
+      dayTags.push(armDay);
+      if (armDay === 'arm-day1') {
+        pillRow.appendChild(elText('span', 'day-pill pill-d1', 'Day 1'));
+      } else {
+        pillRow.appendChild(elText('span', 'day-pill pill-d2', 'Day 2'));
       }
       cell.appendChild(pillRow);
     }

@@ -89,7 +89,7 @@ function loadSettings() {
     saveSettings(defaults);
     return defaults;
   }
-  const loaded = {
+  const loaded = sanitizeLegacySettings({
     setCueSound: true,
     setCueVibrate: true,
     setCueSpeech: false,
@@ -97,19 +97,26 @@ function loadSettings() {
     personalDayStartTime: '07:00',
     autoBackup: defaultAutoBackupSettings(),
     ...JSON.parse(raw),
-  };
+  });
   loaded.setCueSpeechVolume = clampSetCueSpeechVolume(loaded.setCueSpeechVolume);
   loaded.autoBackup = normalizeAutoBackupSettings(loaded.autoBackup);
   return loaded;
 }
 
 function saveSettings(settings) {
+  const cleanSettings = sanitizeLegacySettings(settings);
   const nextSettings = {
-    ...settings,
-    setCueSpeechVolume: clampSetCueSpeechVolume(settings.setCueSpeechVolume),
-    autoBackup: normalizeAutoBackupSettings(settings.autoBackup),
+    ...cleanSettings,
+    setCueSpeechVolume: clampSetCueSpeechVolume(cleanSettings.setCueSpeechVolume),
+    autoBackup: normalizeAutoBackupSettings(cleanSettings.autoBackup),
   };
   localStorage.setItem(KEYS.SETTINGS, JSON.stringify(nextSettings));
+}
+
+function sanitizeLegacySettings(value) {
+  const settings = { ...(value || {}) };
+  delete settings.legsDays;
+  return settings;
 }
 
 function clampSetCueSpeechVolume(value) {
