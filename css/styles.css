@@ -2311,7 +2311,8 @@ body.dense-mode .dose-marker {
 .block-settings-move,
 .block-settings-delete,
 .settings-clear-review,
-.settings-backup-btn {
+.settings-backup-btn,
+.auto-backup-history-toggle {
   border: 1px solid var(--border);
   border-radius: 5px;
   background: var(--bg-card);
@@ -2339,6 +2340,11 @@ body.dense-mode .dose-marker {
 
 .settings-backup-btn {
   position: relative;
+  padding: 0 10px;
+}
+
+.auto-backup-history-toggle {
+  justify-self: start;
   padding: 0 10px;
 }
 
@@ -2393,7 +2399,8 @@ body.dense-mode .dose-marker {
 .block-settings-move:hover:not(:disabled),
 .block-settings-delete:hover,
 .settings-clear-review:hover:not(:disabled),
-.settings-backup-btn:hover {
+.settings-backup-btn:hover,
+.auto-backup-history-toggle:hover {
   background: var(--bg-hover);
 }
 
@@ -2435,9 +2442,26 @@ body.dense-mode .dose-marker {
   line-height: 1.35;
 }
 
+.auto-backup-note {
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.auto-backup-history-summary {
+  display: grid;
+  gap: 6px;
+}
+
 .auto-backup-history {
   display: grid;
   gap: 6px;
+}
+
+.auto-backup-history[hidden],
+.auto-backup-history-toggle[hidden] {
+  display: none;
 }
 
 .auto-backup-history-empty {
@@ -2465,8 +2489,7 @@ body.dense-mode .dose-marker {
   font-weight: 800;
 }
 
-.auto-backup-history-files,
-.auto-backup-history-message {
+.auto-backup-history-detail {
   color: var(--text-muted);
   font-size: 11px;
   font-weight: 650;

@@ -24,6 +24,7 @@ let autoBackupDirectoryHandle = null;
 let autoBackupHandleLoaded = false;
 let autoBackupTimer = null;
 let autoBackupRunning = false;
+let autoBackupHistoryExpanded = false;
 function setHeaderQuote() {
   const quote = document.getElementById('header-quote');
   if (!quote) return;

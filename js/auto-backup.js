@@ -300,7 +300,7 @@ function recordAutoBackupFailure(type, err, details = {}) {
 
 function pushAutoBackupHistory(entry) {
   const auto = getAutoBackupSettings();
-  auto.history = [entry, ...(auto.history || [])].slice(0, AUTO_BACKUP_HISTORY_LIMIT);
+  auto.history = normalizeAutoBackupHistory([entry, ...(auto.history || [])]).slice(0, AUTO_BACKUP_HISTORY_LIMIT);
 }
 
 function markAutoBackupNeedsReconnect(message) {
@@ -322,12 +322,15 @@ function renderAutoBackupSettings() {
   const folderBtn = document.getElementById('settings-auto-backup-folder');
   const backupNowBtn = document.getElementById('settings-auto-backup-now');
   const status = document.getElementById('settings-auto-backup-status');
+  const summary = document.getElementById('settings-auto-backup-summary');
+  const toggle = document.getElementById('settings-auto-backup-history-toggle');
   const history = document.getElementById('settings-auto-backup-history');
-  if (!folderBtn || !backupNowBtn || !status || !history) return;
+  if (!folderBtn || !backupNowBtn || !status || !summary || !toggle || !history) return;
 
   const auto = getAutoBackupSettings();
   const supported = isFolderAutoBackupSupported();
   const folderReady = supported && Boolean(auto.folderName) && !auto.needsReconnect && Boolean(autoBackupDirectoryHandle);
+  const normalizedHistory = normalizeAutoBackupHistory(auto.history || []);
 
   folderBtn.disabled = !supported || autoBackupRunning;
   folderBtn.textContent = auto.needsReconnect
@@ -339,34 +342,117 @@ function renderAutoBackupSettings() {
   backupNowBtn.textContent = autoBackupRunning ? 'Backing up...' : 'Backup now';
 
   status.textContent = autoBackupStatusText(auto, supported);
-  renderAutoBackupHistory(history, auto.history || []);
+  renderAutoBackupSummary(summary, normalizedHistory);
+  toggle.hidden = normalizedHistory.length <= 1;
+  toggle.textContent = autoBackupHistoryExpanded ? 'Hide history' : 'Show history';
+  history.hidden = !autoBackupHistoryExpanded || normalizedHistory.length <= 1;
+  renderAutoBackupHistory(history, normalizedHistory);
+}
+
+function toggleAutoBackupHistory() {
+  autoBackupHistoryExpanded = !autoBackupHistoryExpanded;
+  renderAutoBackupSettings();
+}
+
+function normalizeAutoBackupHistory(history) {
+  const output = [];
+  const manualSuccessByDate = new Map();
+
+  history.forEach(raw => {
+    const item = normalizeAutoBackupHistoryEntry(raw);
+    if (!item) return;
+
+    const dateKey = autoBackupHistoryDateKey(item.at);
+    if (item.type === 'manual' && item.status === 'success' && dateKey) {
+      const existing = manualSuccessByDate.get(dateKey);
+      if (existing) {
+        existing.count += item.count || 1;
+        if (new Date(item.at).getTime() > new Date(existing.at).getTime()) {
+          existing.at = item.at;
+          existing.id = item.id;
+        }
+        return;
+      }
+      const grouped = { ...item, count: item.count || 1 };
+      manualSuccessByDate.set(dateKey, grouped);
+      output.push(grouped);
+      return;
+    }
+
+    output.push(item);
+  });
+
+  return output
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+    .slice(0, AUTO_BACKUP_HISTORY_LIMIT);
+}
+
+function normalizeAutoBackupHistoryEntry(entry) {
+  if (!entry || typeof entry !== 'object') return null;
+  const at = typeof entry.at === 'string' && !Number.isNaN(new Date(entry.at).getTime())
+    ? entry.at
+    : new Date().toISOString();
+  return {
+    id: entry.id || `${new Date(at).getTime()}-${entry.type || 'backup'}`,
+    type: entry.type === 'auto' ? 'auto' : 'manual',
+    status: entry.status === 'error' ? 'error' : 'success',
+    at,
+    count: Math.max(1, Number(entry.count) || 1),
+    message: typeof entry.message === 'string' ? entry.message : '',
+  };
+}
+
+function autoBackupHistoryDateKey(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return toDateStr(date);
+}
+
+function renderAutoBackupSummary(root, history) {
+  root.innerHTML = '';
+  const latest = history[0];
+  if (!latest) {
+    root.appendChild(elText('div', 'auto-backup-history-empty', 'No folder backups yet.'));
+    return;
+  }
+  root.appendChild(buildAutoBackupHistoryItem(latest));
 }
 
 function renderAutoBackupHistory(root, history) {
   root.innerHTML = '';
-  const items = history.slice(0, 5);
+  const items = history.slice(1, 6);
   if (!items.length) {
-    root.appendChild(elText('div', 'auto-backup-history-empty', 'No folder backups yet.'));
+    root.appendChild(elText('div', 'auto-backup-history-empty', 'No older backup history yet.'));
     return;
   }
 
   items.forEach(item => {
-    const row = el('div', `auto-backup-history-item ${item.status === 'error' ? 'is-error' : 'is-success'}`);
-    const main = elText(
-      'div',
-      'auto-backup-history-main',
-      `${item.type === 'auto' ? 'Auto' : 'Manual'} ${item.status === 'error' ? 'failed' : 'saved'} - ${formatAutoBackupDateTime(item.at)}`
-    );
-    const files = Array.isArray(item.files) && item.files.length
-      ? `${item.folderName || 'Backup folder'}: ${item.files.join(', ')}`
-      : item.message || '';
-    row.appendChild(main);
-    row.appendChild(elText('div', 'auto-backup-history-files', files));
-    if (item.message && item.status === 'error') {
-      row.appendChild(elText('div', 'auto-backup-history-message', item.message));
-    }
-    root.appendChild(row);
+    root.appendChild(buildAutoBackupHistoryItem(item));
   });
+}
+
+function buildAutoBackupHistoryItem(item) {
+  const row = el('div', `auto-backup-history-item ${item.status === 'error' ? 'is-error' : 'is-success'}`);
+  row.appendChild(elText('div', 'auto-backup-history-main', autoBackupHistoryTitle(item)));
+  const detail = autoBackupHistoryDetail(item);
+  if (detail) row.appendChild(elText('div', 'auto-backup-history-detail', detail));
+  return row;
+}
+
+function autoBackupHistoryTitle(item) {
+  if (item.status === 'error') {
+    return `Backup failed - ${formatAutoBackupDateTime(item.at)}`;
+  }
+  const label = item.type === 'auto' ? 'Auto backup saved' : 'Manual backup saved';
+  return `${label} - ${formatAutoBackupDateTime(item.at)}`;
+}
+
+function autoBackupHistoryDetail(item) {
+  if (item.status === 'error') return item.message || 'Backup did not complete.';
+  if (item.type === 'manual' && item.count > 1) {
+    return `${formatNumber(item.count)} manual runs today`;
+  }
+  return '';
 }
 
 function autoBackupStatusText(auto, supported) {

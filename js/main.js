@@ -68,6 +68,7 @@ function bindStaticEvents() {
   document.getElementById('settings-import-json').addEventListener('click', openBackupImportPicker);
   document.getElementById('settings-auto-backup-folder').addEventListener('click', chooseAutoBackupFolder);
   document.getElementById('settings-auto-backup-now').addEventListener('click', runManualFolderBackup);
+  document.getElementById('settings-auto-backup-history-toggle').addEventListener('click', toggleAutoBackupHistory);
   document.getElementById('settings-import-file').addEventListener('change', (e) => {
     handleBackupImportFile(e.target.files[0]);
     e.target.value = '';
