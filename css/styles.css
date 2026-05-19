@@ -1701,6 +1701,10 @@ body.dense-mode .dose-marker {
 
 .modal-overlay.hidden { display: none; }
 
+body:has(#settings-modal:not(.hidden)) {
+  overflow: hidden;
+}
+
 .modal {
   background: #242424;
   border: 1px solid var(--border);
@@ -1725,6 +1729,7 @@ body.dense-mode .dose-marker {
 
 #settings-modal {
   padding: 8px;
+  overscroll-behavior: contain;
 }
 
 .modal h2 {
@@ -2406,6 +2411,7 @@ body.dense-mode .dose-marker {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 24px var(--settings-panel-pad) 28px;
 }
 
