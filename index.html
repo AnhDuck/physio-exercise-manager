@@ -201,9 +201,19 @@
           <h3>Data backup</h3>
         </div>
         <div class="settings-backup-actions">
-          <button class="settings-backup-btn" id="settings-export-json" type="button" data-tooltip="Download a full backup of exercises, sessions, settings, timeline items, and saved images.">Export JSON</button>
+          <button class="settings-backup-btn" id="settings-export-json" type="button" data-tooltip="One-off full backup downloaded through the browser, usually to Downloads.">Download JSON</button>
           <button class="settings-backup-btn" id="settings-import-json" type="button" data-tooltip="Choose a backup file and replace this browser's saved app data after confirmation.">Import JSON</button>
+          <button class="settings-backup-btn" id="settings-auto-backup-folder" type="button" data-tooltip="Choose the folder where rolling backups should be saved.">Choose folder</button>
+          <button class="settings-backup-btn" id="settings-auto-backup-now" type="button" data-tooltip="Run the folder backup routine now: write today's file, update latest, and clean old rolling backups.">Backup now</button>
           <input id="settings-import-file" type="file" accept="application/json,.json" hidden />
+        </div>
+        <div class="auto-backup-settings">
+          <label class="auto-backup-time" for="setting-auto-backup-time">
+            <span>Auto-backup time</span>
+            <input type="time" id="setting-auto-backup-time" />
+          </label>
+          <div class="auto-backup-status" id="settings-auto-backup-status"></div>
+          <div class="auto-backup-history" id="settings-auto-backup-history"></div>
         </div>
       </div>
 
@@ -294,6 +304,7 @@
   <script src="js/tracker.js"></script>
   <script src="js/timeline.js"></script>
   <script src="js/backup.js"></script>
+  <script src="js/auto-backup.js"></script>
   <script src="js/settings.js"></script>
   <script src="js/images.js"></script>
   <script src="js/main.js"></script>

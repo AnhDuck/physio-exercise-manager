@@ -14,8 +14,10 @@ function openSettingsModal() {
   document.getElementById('setting-cue-sound').checked = settings.setCueSound !== false;
   document.getElementById('setting-cue-vibrate').checked = settings.setCueVibrate !== false;
   document.getElementById('setting-cue-speech').checked = Boolean(settings.setCueSpeech);
+  document.getElementById('setting-auto-backup-time').value = getAutoBackupSettings().time;
   syncSpeechVolumeControl();
   renderBlockSettings();
+  renderAutoBackupSettings();
   updateClearReviewButton();
   document.getElementById('settings-modal').classList.remove('hidden');
 }
@@ -23,8 +25,19 @@ function openSettingsModal() {
 function closeSettingsModal(restore = true) {
   if (restore && settingsModalSnapshot) {
     const savedSpeechVolume = settings.setCueSpeechVolume;
+    const currentAutoBackup = JSON.parse(JSON.stringify(getAutoBackupSettings()));
     settings = JSON.parse(JSON.stringify(settingsModalSnapshot.settings));
     settings.setCueSpeechVolume = clampSetCueSpeechVolume(savedSpeechVolume);
+    settings.autoBackup = normalizeAutoBackupSettings({
+      ...settings.autoBackup,
+      folderName: currentAutoBackup.folderName,
+      lastScheduledBackupDate: currentAutoBackup.lastScheduledBackupDate,
+      lastSuccessAt: currentAutoBackup.lastSuccessAt,
+      lastErrorAt: currentAutoBackup.lastErrorAt,
+      lastError: currentAutoBackup.lastError,
+      needsReconnect: currentAutoBackup.needsReconnect,
+      history: currentAutoBackup.history,
+    });
     settingsModalSnapshot.exerciseBlocks.forEach(saved => {
       const ex = exercises.find(item => item.id === saved.id);
       if (ex) ex.blockId = saved.blockId;
@@ -48,10 +61,17 @@ function saveSettingsModal() {
   settings.setCueVibrate = document.getElementById('setting-cue-vibrate').checked;
   settings.setCueSpeech = document.getElementById('setting-cue-speech').checked;
   settings.setCueSpeechVolume = readSpeechVolumeSlider();
+  settings.autoBackup = normalizeAutoBackupSettings(settings.autoBackup);
+  const autoBackupTime = document.getElementById('setting-auto-backup-time').value;
+  settings.autoBackup.time = isValidTime(autoBackupTime)
+    ? autoBackupTime
+    : defaultAutoBackupSettings().time;
   readBlockSettingsForm();
   saveSettings(settings);
   saveExercises(exercises);
   closeSettingsModal(false);
+  scheduleAutoBackupChecks();
+  maybeRunAutoBackup('settings');
   render();
 }
 

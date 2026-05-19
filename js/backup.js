@@ -13,7 +13,7 @@ function exportFullBackup() {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-  showToast(`Exported ${formatNumber(backup.summary.exerciseCount)} exercises, ${formatNumber(backup.summary.sessionDateCount)} session days, and ${formatNumber(backup.summary.timelineEventCount)} timeline items.`);
+  showToast(`Downloaded JSON with ${formatNumber(backup.summary.exerciseCount)} exercises, ${formatNumber(backup.summary.sessionDateCount)} session days, and ${formatNumber(backup.summary.timelineEventCount)} timeline items.`);
 }
 
 function buildFullBackup() {
@@ -103,7 +103,7 @@ function importBackupJson(jsonText) {
     `Timeline items: ${formatNumber(summary.timelineEventCount || 0)}`,
   ].join('\n');
 
-  if (confirm('Export current data before replacing it?')) {
+  if (confirm('Download current data before replacing it?')) {
     exportFullBackup();
   }
 

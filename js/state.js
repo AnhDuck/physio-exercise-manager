@@ -20,6 +20,10 @@ let settingsModalSnapshot = null;
 let toastTimer = null;
 let lastBlockDropWarningAt = 0;
 let draggedExerciseId = null;
+let autoBackupDirectoryHandle = null;
+let autoBackupHandleLoaded = false;
+let autoBackupTimer = null;
+let autoBackupRunning = false;
 function setHeaderQuote() {
   const quote = document.getElementById('header-quote');
   if (!quote) return;

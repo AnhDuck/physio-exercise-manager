@@ -5,6 +5,50 @@ const KEYS = {
   EVENTS:    'pem_events',
 };
 
+function defaultAutoBackupSettings() {
+  return {
+    time: '06:00',
+    folderName: '',
+    lastScheduledBackupDate: '',
+    lastSuccessAt: '',
+    lastErrorAt: '',
+    lastError: '',
+    needsReconnect: false,
+    history: [],
+  };
+}
+
+function normalizeAutoBackupSettings(value = {}) {
+  const defaults = defaultAutoBackupSettings();
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const time = isValidStoredTime(source.time) ? source.time : defaults.time;
+  const history = Array.isArray(source.history)
+    ? source.history.filter(item => item && typeof item === 'object').slice(0, 20)
+    : defaults.history;
+
+  return {
+    ...defaults,
+    ...source,
+    time,
+    folderName: typeof source.folderName === 'string' ? source.folderName : defaults.folderName,
+    lastScheduledBackupDate: typeof source.lastScheduledBackupDate === 'string' ? source.lastScheduledBackupDate : defaults.lastScheduledBackupDate,
+    lastSuccessAt: typeof source.lastSuccessAt === 'string' ? source.lastSuccessAt : defaults.lastSuccessAt,
+    lastErrorAt: typeof source.lastErrorAt === 'string' ? source.lastErrorAt : defaults.lastErrorAt,
+    lastError: typeof source.lastError === 'string' ? source.lastError : defaults.lastError,
+    needsReconnect: Boolean(source.needsReconnect),
+    history,
+  };
+}
+
+function isValidStoredTime(timeStr) {
+  if (typeof timeStr !== 'string') return false;
+  const match = /^(\d{2}):(\d{2})$/.exec(timeStr);
+  if (!match) return false;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
+}
+
 function loadExercises() {
   const raw = localStorage.getItem(KEYS.EXERCISES);
   if (!raw) {
@@ -40,6 +84,7 @@ function loadSettings() {
       setCueSpeech: false,
       setCueSpeechVolume: 1,
       personalDayStartTime: '07:00',
+      autoBackup: defaultAutoBackupSettings(),
     };
     saveSettings(defaults);
     return defaults;
@@ -50,9 +95,11 @@ function loadSettings() {
     setCueSpeech: false,
     setCueSpeechVolume: 1,
     personalDayStartTime: '07:00',
+    autoBackup: defaultAutoBackupSettings(),
     ...JSON.parse(raw),
   };
   loaded.setCueSpeechVolume = clampSetCueSpeechVolume(loaded.setCueSpeechVolume);
+  loaded.autoBackup = normalizeAutoBackupSettings(loaded.autoBackup);
   return loaded;
 }
 
@@ -60,6 +107,7 @@ function saveSettings(settings) {
   const nextSettings = {
     ...settings,
     setCueSpeechVolume: clampSetCueSpeechVolume(settings.setCueSpeechVolume),
+    autoBackup: normalizeAutoBackupSettings(settings.autoBackup),
   };
   localStorage.setItem(KEYS.SETTINGS, JSON.stringify(nextSettings));
 }
