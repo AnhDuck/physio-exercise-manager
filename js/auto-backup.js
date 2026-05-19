@@ -379,13 +379,14 @@ function renderAutoBackupSettings() {
   const normalizedHistory = normalizeAutoBackupHistory(auto.history || []);
 
   folderBtn.disabled = !supported || autoBackupRunning;
-  folderBtn.textContent = auto.needsReconnect
-    ? '↻ Reconnect'
+  const folderButtonLabel = auto.needsReconnect
+    ? 'Reconnect'
     : auto.folderName
-      ? '… Change'
-      : '… Browse';
+      ? 'Change'
+      : 'Browse';
+  setSettingsButtonContent(folderBtn, folderButtonLabel, auto.needsReconnect ? 'reconnect' : 'folder');
   backupNowBtn.disabled = !folderReady || autoBackupRunning;
-  backupNowBtn.textContent = autoBackupRunning ? 'Backing up...' : '↓ Backup now';
+  setSettingsButtonContent(backupNowBtn, autoBackupRunning ? 'Backing up...' : 'Backup now', 'backup-now');
 
   folderName.textContent = autoBackupFolderNameText(auto, supported);
   folderState.textContent = autoBackupFolderStateText(auto, supported, folderReady);

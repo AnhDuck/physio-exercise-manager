@@ -145,26 +145,45 @@
         <button class="settings-close" id="settings-close" type="button" aria-label="Close settings" title="Close">×</button>
       </div>
 
-      <div class="settings-tabs" role="tablist" aria-label="Settings sections">
-        <button class="settings-tab is-active" id="settings-tab-general" type="button" role="tab" aria-selected="true" aria-controls="settings-panel-general" data-settings-tab="general">
-          <span aria-hidden="true">⚙</span>
-          <span>General</span>
-        </button>
-        <button class="settings-tab" id="settings-tab-blocks" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-blocks" data-settings-tab="blocks">
-          <span aria-hidden="true">▦</span>
-          <span>Blocks</span>
-        </button>
-        <button class="settings-tab" id="settings-tab-backup" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-backup" data-settings-tab="backup">
-          <span aria-hidden="true">↓</span>
-          <span>Backup</span>
-        </button>
-      </div>
+      <div class="settings-layout">
+        <div class="settings-tabs" role="tablist" aria-label="Settings sections">
+          <button class="settings-tab is-active" id="settings-tab-general" type="button" role="tab" aria-selected="true" aria-controls="settings-panel-general" data-settings-tab="general">
+            <span class="settings-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"></path>
+                <path d="M19 12a7 7 0 0 0-.1-1.1l2-1.5-2-3.4-2.4 1a7 7 0 0 0-1.9-1.1L14.3 3h-4.6l-.4 2.9A7 7 0 0 0 7.5 7l-2.4-1-2 3.4 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.1l-2 1.5 2 3.4 2.4-1a7 7 0 0 0 1.9 1.1l.4 2.9h4.6l.4-2.9a7 7 0 0 0 1.9-1.1l2.4 1 2-3.4-2-1.5c.1-.3.1-.7.1-1.1z"></path>
+              </svg>
+            </span>
+            <span>General</span>
+          </button>
+          <button class="settings-tab" id="settings-tab-blocks" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-blocks" data-settings-tab="blocks">
+            <span class="settings-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M4 5h7v6H4z"></path>
+                <path d="M13 5h7v6h-7z"></path>
+                <path d="M4 13h7v6H4z"></path>
+                <path d="M13 13h7v6h-7z"></path>
+              </svg>
+            </span>
+            <span>Blocks</span>
+          </button>
+          <button class="settings-tab" id="settings-tab-backup" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-backup" data-settings-tab="backup">
+            <span class="settings-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M5.5 6h13v12.5h-13z"></path>
+                <path d="M8.5 6V3.5h7V6"></path>
+                <path d="M8.5 12.4l2.1 2.1 4.9-5"></path>
+              </svg>
+            </span>
+            <span>Backup</span>
+          </button>
+        </div>
 
-      <div class="settings-content">
+        <div class="settings-content">
         <section class="settings-panel is-active" id="settings-panel-general" role="tabpanel" aria-labelledby="settings-tab-general" data-settings-panel="general">
           <div class="settings-section is-first">
             <div class="settings-section-header">
-              <h3>General</h3>
+              <h3>Schedule</h3>
             </div>
             <div class="settings-grid">
               <div class="form-field">
@@ -188,39 +207,57 @@
 
           <div class="settings-section">
             <div class="settings-section-header">
-              <h3>Set tracker cues</h3>
+              <h3>Cues &amp; review</h3>
             </div>
-            <div class="cue-check-row">
-              <label class="cue-check-label"><input type="checkbox" id="setting-cue-sound" /><span>✓</span><strong>Sound</strong></label>
-              <label class="cue-check-label"><input type="checkbox" id="setting-cue-vibrate" /><span>✓</span><strong>Vibrate</strong></label>
-              <label class="cue-check-label"><input type="checkbox" id="setting-cue-speech" /><span>✓</span><strong>Speech</strong></label>
-            </div>
-            <label class="cue-volume-label" for="setting-cue-speech-volume">
-              <span class="cue-volume-heading">
-                <span id="setting-cue-speech-volume-label">Speech volume: 100%</span>
-                <span class="settings-tooltip" tabindex="0" aria-label="Speech volume saves automatically." data-tooltip="Speech volume saves automatically.">?</span>
-              </span>
-              <input type="range" id="setting-cue-speech-volume" min="0" max="100" step="5" />
-            </label>
-          </div>
-
-          <div class="settings-section">
-            <div class="settings-inline-row">
-              <div>
-                <h3>Physio review</h3>
+            <div class="settings-row-group">
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <strong>Set tracker cues</strong>
+                  <span>Choose which cues fire when a set is logged.</span>
+                </div>
+                <div class="cue-check-row">
+                  <label class="cue-check-label"><input type="checkbox" id="setting-cue-sound" /><strong>Sound</strong></label>
+                  <label class="cue-check-label"><input type="checkbox" id="setting-cue-vibrate" /><strong>Vibrate</strong></label>
+                  <label class="cue-check-label"><input type="checkbox" id="setting-cue-speech" /><strong>Speech</strong></label>
+                </div>
               </div>
-              <button class="settings-clear-review" id="settings-clear-review" type="button">Clear changed markers</button>
+              <label class="settings-action-row cue-volume-label" for="setting-cue-speech-volume">
+                <span class="settings-action-label">
+                  <strong id="setting-cue-speech-volume-label">Speech volume: 100%</strong>
+                  <span>Speech cue volume saves automatically.</span>
+                </span>
+                <input type="range" id="setting-cue-speech-volume" min="0" max="100" step="5" />
+              </label>
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <strong>Physio review</strong>
+                  <span>Clear markers for exercises changed since review.</span>
+                </div>
+                <button class="settings-clear-review" id="settings-clear-review" type="button">Clear changed markers</button>
+              </div>
             </div>
           </div>
         </section>
 
         <section class="settings-panel" id="settings-panel-blocks" role="tabpanel" aria-labelledby="settings-tab-blocks" data-settings-panel="blocks" hidden>
           <div class="settings-section is-first">
-            <div class="settings-section-header settings-section-header-with-actions">
+            <div class="settings-section-header">
               <h3>Blocks</h3>
-              <div class="settings-draft-actions">
+            </div>
+            <div class="settings-draft-actions" id="settings-blocks-draft-actions" hidden>
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <strong>Apply block changes</strong>
+                  <span>Save block order, titles, and exercise assignments.</span>
+                </div>
+                <button class="settings-draft-btn settings-apply-btn" id="settings-blocks-apply" type="button">Apply changes</button>
+              </div>
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <strong>Discard block edits</strong>
+                  <span>Return blocks to the last saved layout.</span>
+                </div>
                 <button class="settings-draft-btn" id="settings-blocks-discard" type="button">Discard changes</button>
-                <button class="settings-draft-btn" id="settings-blocks-apply" type="button">Apply changes</button>
               </div>
             </div>
             <div class="block-settings" id="settings-blocks"></div>
@@ -232,12 +269,14 @@
             <div class="settings-section-header">
               <h3>Manual JSON</h3>
             </div>
-            <div class="settings-backup-row">
-              <div class="settings-backup-label">
-                <strong>Download full backup</strong>
-                <span>Exercises, sessions, settings, and timeline.</span>
+            <div class="settings-row-group">
+              <div class="settings-backup-row">
+                <div class="settings-action-label">
+                  <strong>Download full backup</strong>
+                  <span>Exercises, sessions, settings, and timeline.</span>
+                </div>
+                <button class="settings-backup-btn" id="settings-export-json" type="button" data-settings-icon="backup-download">Download JSON</button>
               </div>
-              <button class="settings-backup-btn" id="settings-export-json" type="button">↓ Download JSON</button>
             </div>
           </div>
 
@@ -245,19 +284,21 @@
             <div class="settings-section-header">
               <h3>Folder backup</h3>
             </div>
-            <div class="settings-backup-row settings-folder-row">
-              <div class="settings-folder-field" aria-live="polite">
-                <span class="settings-folder-icon" aria-hidden="true">▣</span>
-                <span class="settings-folder-name" id="settings-auto-backup-folder-name">No folder selected</span>
+            <div class="settings-row-group">
+              <div class="settings-backup-row settings-folder-row">
+                <div class="settings-folder-field" aria-live="polite">
+                  <span class="settings-folder-icon" aria-hidden="true">▣</span>
+                  <span class="settings-folder-name" id="settings-auto-backup-folder-name">No folder selected</span>
+                </div>
+                <button class="settings-backup-btn" id="settings-auto-backup-folder" type="button" data-settings-icon="folder">Browse</button>
               </div>
-              <button class="settings-backup-btn" id="settings-auto-backup-folder" type="button">… Browse</button>
-            </div>
-            <div class="settings-backup-row">
-              <div class="settings-backup-label">
-                <strong id="settings-auto-backup-folder-state">Not selected</strong>
-                <span>Writes today's dated file and updates latest.</span>
+              <div class="settings-backup-row">
+                <div class="settings-action-label">
+                  <strong id="settings-auto-backup-folder-state">Not selected</strong>
+                  <span>Writes today's dated file and updates latest.</span>
+                </div>
+                <button class="settings-backup-btn" id="settings-auto-backup-now" type="button" data-settings-icon="backup-now">Backup now</button>
               </div>
-              <button class="settings-backup-btn" id="settings-auto-backup-now" type="button">↓ Backup now</button>
             </div>
           </div>
 
@@ -288,23 +329,36 @@
           <div class="settings-section">
             <div class="settings-section-header">
               <h3>Latest result</h3>
-              <button class="auto-backup-history-toggle" id="settings-auto-backup-history-toggle" type="button">Show history</button>
             </div>
-            <div class="auto-backup-history-summary" id="settings-auto-backup-summary"></div>
-            <div class="auto-backup-history" id="settings-auto-backup-history"></div>
+            <div class="settings-row-group">
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <strong>Backup history</strong>
+                  <span>Review the latest folder backup result and older runs.</span>
+                </div>
+                <button class="auto-backup-history-toggle" id="settings-auto-backup-history-toggle" type="button">Show history</button>
+              </div>
+              <div class="settings-history-row">
+                <div class="auto-backup-history-summary" id="settings-auto-backup-summary"></div>
+                <div class="auto-backup-history" id="settings-auto-backup-history"></div>
+              </div>
+            </div>
           </div>
 
           <div class="settings-section settings-restore-section">
-            <div class="settings-backup-row">
-              <div class="settings-backup-label">
-                <strong>Restore from JSON</strong>
-                <span>Replaces this browser's saved app data after confirmation.</span>
+            <div class="settings-row-group">
+              <div class="settings-backup-row">
+                <div class="settings-action-label">
+                  <strong>Restore from JSON</strong>
+                  <span>Replaces this browser's saved app data after confirmation.</span>
+                </div>
+                <button class="settings-backup-btn settings-import-btn" id="settings-import-json" type="button" data-settings-icon="backup-import">Import JSON</button>
+                <input id="settings-import-file" type="file" accept="application/json,.json" hidden />
               </div>
-              <button class="settings-backup-btn settings-import-btn" id="settings-import-json" type="button">↑ Import JSON</button>
-              <input id="settings-import-file" type="file" accept="application/json,.json" hidden />
             </div>
           </div>
         </section>
+        </div>
       </div>
     </div>
   </div>

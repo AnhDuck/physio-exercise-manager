@@ -8,6 +8,7 @@ function openSettingsModal() {
   beginBlockDraft();
   syncSettingsControls();
   renderBlockSettings();
+  hydrateSettingsIconButtons(document.getElementById('settings-modal'));
   renderAutoBackupSettings();
   updateClearReviewButton();
   setSettingsTab(settingsActiveTab, false);
@@ -53,7 +54,7 @@ function setSettingsTab(tabName, focusTab = false) {
 }
 
 function handleSettingsTabKeydown(e) {
-  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+  if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return;
   e.preventDefault();
 
   const tabs = Array.from(document.querySelectorAll('#settings-modal [data-settings-tab]'));
@@ -63,8 +64,8 @@ function handleSettingsTabKeydown(e) {
   let nextIndex = index;
   if (e.key === 'Home') nextIndex = 0;
   if (e.key === 'End') nextIndex = tabs.length - 1;
-  if (e.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
-  if (e.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') nextIndex = (index - 1 + tabs.length) % tabs.length;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextIndex = (index + 1) % tabs.length;
 
   setSettingsTab(tabs[nextIndex].dataset.settingsTab, true);
 }
@@ -238,6 +239,8 @@ function updateBlockDraftActions() {
   const dirty = isBlockDraftDirty();
   const apply = document.getElementById('settings-blocks-apply');
   const discard = document.getElementById('settings-blocks-discard');
+  const actions = document.getElementById('settings-blocks-draft-actions');
+  if (actions) actions.hidden = !dirty;
   if (apply) apply.disabled = !dirty;
   if (discard) discard.disabled = !dirty;
 }
