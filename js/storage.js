@@ -116,6 +116,8 @@ function saveSettings(settings) {
 function sanitizeLegacySettings(value) {
   const settings = { ...(value || {}) };
   delete settings.legsDays;
+  delete settings.denseMode;
+  delete settings.collapsedGroups;
   return settings;
 }
 

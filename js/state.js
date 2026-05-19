@@ -8,7 +8,6 @@ let events    = [];
 let currentWeekStart = null; // Monday of displayed week (Date)
 let editingExId = null;      // exercise id being edited in modal
 let uploadTargetId = null;   // exercise id awaiting image upload
-let isDenseMode = false;     // compact scan view, persisted in settings
 let imageImportPending = false;
 let editingEventId = null;
 let lastTodayStr = null;

@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
   exercises = loadExercises();
   sessions  = loadSessions();
   settings  = loadSettings();
-  isDenseMode = Boolean(settings.denseMode);
   events    = loadEvents();
   runMigrations();
   currentWeekStart = getMonday(new Date());

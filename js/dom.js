@@ -12,11 +12,7 @@ function elText(tag, className, text) {
   return e;
 }
 
-function buildDoseMetaChip(className, label, value, normalText) {
-  if (!isDenseMode) {
-    return elText('span', `ex-meta-item ex-meta-chip ${className}`, normalText);
-  }
-
+function buildDoseMetaChip(className, label, value) {
   const chip = el('span', `ex-meta-item ex-meta-chip ${className}`);
   chip.appendChild(elText('span', 'ex-meta-chip-label', label));
   chip.appendChild(elText('span', 'ex-meta-chip-value', String(value)));

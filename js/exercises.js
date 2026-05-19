@@ -1,16 +1,5 @@
 // Exercise ordering, blocks, drag/drop, and exercise editing.
 
-function toggleGroupCollapse(group) {
-  if (isDenseMode) return;
-  const collapsed = settings.collapsedGroups || [];
-  const idx = collapsed.indexOf(group);
-  if (idx === -1) collapsed.push(group);
-  else            collapsed.splice(idx, 1);
-  settings.collapsedGroups = collapsed;
-  saveSettings(settings);
-  render();
-}
-
 // ── Exercise row ──────────────────────────────────────────────────
 function sortedExercisesInGroup(group) {
   return exercises

@@ -12,7 +12,7 @@ All user data is stored in browser `localStorage`.
 physio-exercise-manager/
 |-- index.html          App shell; loads CSS and JavaScript in order
 |-- css/
-|   `-- styles.css      Dark theme, grid layout, modals, dense mode, tracker UI
+|   `-- styles.css      Dark theme, compact grid layout, modals, tracker UI
 |-- js/
 |   |-- data.js         DEFAULT_EXERCISES and GROUPS config
 |   |-- storage.js      localStorage helpers and local date helpers
@@ -22,7 +22,7 @@ physio-exercise-manager/
 |   |-- dom.js          DOM construction helpers and toast feedback
 |   |-- sessions.js     Session, completion, and set-progress helpers
 |   |-- exercises.js    Exercise ordering, blocks, drag/drop, and edit modal logic
-|   |-- grid.js         Calendar grid rendering, dense mode, and week navigation
+|   |-- grid.js         Calendar grid rendering and week navigation
 |   |-- tracker.js      Set tracker, timer UI, log editing, cues, and shortcuts
 |   |-- timeline.js     Notes panel, timeline events, Markdown copy, and event editing
 |   |-- backup.js       JSON export/import helpers
@@ -118,8 +118,6 @@ Defaults live in `DEFAULT_EXERCISES` in `js/data.js` and only seed new installs 
 {
   createdAt: string,
   notesOpen: boolean | undefined,
-  denseMode: boolean | undefined,
-  collapsedGroups: string[] | undefined,
   personalDayStartTime: string,
   setCueSound: boolean,
   setCueVibrate: boolean,
@@ -155,13 +153,13 @@ The real-time set timer must not recreate the tracker or log-edit modal DOM ever
 
 `Clear` and completed-cell `Clear Log` must confirm before deleting progress.
 
-## Dense Mode
+## Compact Grid
 
-Dense mode is a spreadsheet-like scan view. Keep it compact:
+The app uses one spreadsheet-like compact grid view. There is no alternate view toggle and groups stay open:
 
-- Do not add extra full-width rows for dense-only actions.
+- Do not add extra full-width action rows.
 - Add exercise controls belong in the group header.
-- Group header add buttons must stop propagation so they do not collapse groups.
+- Group header add buttons must stop propagation so header drag/drop behavior is not affected.
 
 ## Editing Guidance
 
@@ -176,4 +174,4 @@ node --check js\storage.js
 Get-ChildItem -Path js -Filter *.js | Sort-Object Name | ForEach-Object { node --check $_.FullName }
 ```
 
-For browser verification, open `index.html`, check console errors, and test normal view, dense view, notes, settings, set tracking, and image modal entry points.
+For browser verification, open `index.html`, check console errors, and test the compact grid, notes, settings, set tracking, and image modal entry points.
