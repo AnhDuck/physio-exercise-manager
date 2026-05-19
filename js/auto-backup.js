@@ -11,10 +11,51 @@ const AUTO_BACKUP_KEEP_DAYS = 31;
 const AUTO_BACKUP_HISTORY_LIMIT = 20;
 const AUTO_BACKUP_TIMER_MS = 60 * 1000;
 const AUTO_BACKUP_DATED_FILE_RE = /^physio-exercise-auto-backup-(\d{4}-\d{2}-\d{2})\.json$/;
+const AUTO_BACKUP_DEFAULT_SETTINGS = {
+  time: '06:00',
+  folderName: '',
+  lastScheduledBackupDate: '',
+  lastSuccessAt: '',
+  lastErrorAt: '',
+  lastError: '',
+  needsReconnect: false,
+  history: [],
+};
 
 function getAutoBackupSettings() {
-  settings.autoBackup = normalizeAutoBackupSettings(settings.autoBackup);
+  settings.autoBackup = normalizeRuntimeAutoBackupSettings(settings.autoBackup);
   return settings.autoBackup;
+}
+
+function normalizeRuntimeAutoBackupSettings(value = {}) {
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const time = normalizeAutoBackupTime(source.time) || AUTO_BACKUP_DEFAULT_SETTINGS.time;
+  const history = Array.isArray(source.history)
+    ? source.history.filter(item => item && typeof item === 'object').slice(0, AUTO_BACKUP_HISTORY_LIMIT)
+    : AUTO_BACKUP_DEFAULT_SETTINGS.history;
+
+  return {
+    ...AUTO_BACKUP_DEFAULT_SETTINGS,
+    ...source,
+    time,
+    folderName: typeof source.folderName === 'string' ? source.folderName : AUTO_BACKUP_DEFAULT_SETTINGS.folderName,
+    lastScheduledBackupDate: typeof source.lastScheduledBackupDate === 'string' ? source.lastScheduledBackupDate : AUTO_BACKUP_DEFAULT_SETTINGS.lastScheduledBackupDate,
+    lastSuccessAt: typeof source.lastSuccessAt === 'string' ? source.lastSuccessAt : AUTO_BACKUP_DEFAULT_SETTINGS.lastSuccessAt,
+    lastErrorAt: typeof source.lastErrorAt === 'string' ? source.lastErrorAt : AUTO_BACKUP_DEFAULT_SETTINGS.lastErrorAt,
+    lastError: typeof source.lastError === 'string' ? source.lastError : AUTO_BACKUP_DEFAULT_SETTINGS.lastError,
+    needsReconnect: Boolean(source.needsReconnect),
+    history,
+  };
+}
+
+function normalizeAutoBackupTime(timeStr) {
+  if (typeof timeStr !== 'string') return '';
+  const match = /^(\d{1,2}):(\d{2})$/.exec(timeStr.trim());
+  if (!match) return '';
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return '';
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 }
 
 function isFolderAutoBackupSupported() {
@@ -321,11 +362,16 @@ function isAtOrAfterAutoBackupTime(date, timeStr) {
 function renderAutoBackupSettings() {
   const folderBtn = document.getElementById('settings-auto-backup-folder');
   const backupNowBtn = document.getElementById('settings-auto-backup-now');
-  const status = document.getElementById('settings-auto-backup-status');
+  const folderName = document.getElementById('settings-auto-backup-folder-name');
+  const folderState = document.getElementById('settings-auto-backup-folder-state');
+  const last = document.getElementById('settings-auto-backup-last');
+  const next = document.getElementById('settings-auto-backup-next');
+  const issue = document.getElementById('settings-auto-backup-issue');
+  const issueText = document.getElementById('settings-auto-backup-issue-text');
   const summary = document.getElementById('settings-auto-backup-summary');
   const toggle = document.getElementById('settings-auto-backup-history-toggle');
   const history = document.getElementById('settings-auto-backup-history');
-  if (!folderBtn || !backupNowBtn || !status || !summary || !toggle || !history) return;
+  if (!folderBtn || !backupNowBtn || !folderName || !folderState || !last || !next || !issue || !issueText || !summary || !toggle || !history) return;
 
   const auto = getAutoBackupSettings();
   const supported = isFolderAutoBackupSupported();
@@ -334,19 +380,37 @@ function renderAutoBackupSettings() {
 
   folderBtn.disabled = !supported || autoBackupRunning;
   folderBtn.textContent = auto.needsReconnect
-    ? 'Reconnect folder'
+    ? '↻ Reconnect'
     : auto.folderName
-      ? 'Change folder'
-      : 'Choose folder';
+      ? '… Change'
+      : '… Browse';
   backupNowBtn.disabled = !folderReady || autoBackupRunning;
-  backupNowBtn.textContent = autoBackupRunning ? 'Backing up...' : 'Backup now';
+  backupNowBtn.textContent = autoBackupRunning ? 'Backing up...' : '↓ Backup now';
 
-  status.textContent = autoBackupStatusText(auto, supported);
+  folderName.textContent = autoBackupFolderNameText(auto, supported);
+  folderState.textContent = autoBackupFolderStateText(auto, supported, folderReady);
+  last.textContent = auto.lastSuccessAt ? formatAutoBackupDateTime(auto.lastSuccessAt) : 'Never';
+  next.textContent = supported ? nextAutoBackupDueText(auto) : 'Unavailable';
+  issue.hidden = !auto.lastError;
+  issueText.textContent = auto.lastError || '';
   renderAutoBackupSummary(summary, normalizedHistory);
   toggle.hidden = normalizedHistory.length <= 1;
   toggle.textContent = autoBackupHistoryExpanded ? 'Hide history' : 'Show history';
   history.hidden = !autoBackupHistoryExpanded || normalizedHistory.length <= 1;
   renderAutoBackupHistory(history, normalizedHistory);
+}
+
+function autoBackupFolderNameText(auto, supported) {
+  if (!supported) return 'Folder backup unavailable';
+  return auto.folderName || 'No folder selected';
+}
+
+function autoBackupFolderStateText(auto, supported, folderReady) {
+  if (!supported) return 'Chrome or Edge desktop file access unavailable.';
+  if (!auto.folderName) return 'Not selected';
+  if (auto.needsReconnect) return 'Reconnect required';
+  if (folderReady) return 'Connected';
+  return 'Checking permission';
 }
 
 function toggleAutoBackupHistory() {
@@ -453,18 +517,6 @@ function autoBackupHistoryDetail(item) {
     return `${formatNumber(item.count)} manual runs today`;
   }
   return '';
-}
-
-function autoBackupStatusText(auto, supported) {
-  if (!supported) {
-    return 'Folder backup unavailable in this browser. Download JSON still works.';
-  }
-
-  const folder = auto.folderName || 'Not selected';
-  const last = auto.lastSuccessAt ? formatAutoBackupDateTime(auto.lastSuccessAt) : 'Never';
-  const next = nextAutoBackupDueText(auto);
-  const error = auto.lastError ? ` Last issue: ${auto.lastError}` : '';
-  return `Folder: ${folder} | Last: ${last} | Next: ${next}.${error}`;
 }
 
 function nextAutoBackupDueText(auto, now = new Date()) {

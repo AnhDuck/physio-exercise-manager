@@ -139,90 +139,172 @@
 
   <!-- Settings modal -->
   <div class="modal-overlay hidden" id="settings-modal">
-    <div class="modal">
-      <h2>Settings</h2>
-
-      <div class="form-row full">
-        <div class="form-field">
-          <label for="setting-personal-day-start">Personal day starts at</label>
-          <input type="time" id="setting-personal-day-start" />
-        </div>
+    <div class="modal settings-preferences" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="settings-titlebar">
+        <h2 id="settings-title">Settings</h2>
+        <button class="settings-close" id="settings-close" type="button" aria-label="Close settings" title="Close">×</button>
       </div>
 
-      <div class="form-row full">
-        <div class="form-field">
-          <label>Legs days</label>
-          <div class="day-check-row">
-            <label class="day-check-label"><span>Mon</span><input type="checkbox" data-dow="1" /></label>
-            <label class="day-check-label"><span>Tue</span><input type="checkbox" data-dow="2" /></label>
-            <label class="day-check-label"><span>Wed</span><input type="checkbox" data-dow="3" /></label>
-            <label class="day-check-label"><span>Thu</span><input type="checkbox" data-dow="4" /></label>
-            <label class="day-check-label"><span>Fri</span><input type="checkbox" data-dow="5" /></label>
-            <label class="day-check-label"><span>Sat</span><input type="checkbox" data-dow="6" /></label>
-            <label class="day-check-label"><span>Sun</span><input type="checkbox" data-dow="0" /></label>
+      <div class="settings-tabs" role="tablist" aria-label="Settings sections">
+        <button class="settings-tab is-active" id="settings-tab-general" type="button" role="tab" aria-selected="true" aria-controls="settings-panel-general" data-settings-tab="general">
+          <span aria-hidden="true">⚙</span>
+          <span>General</span>
+        </button>
+        <button class="settings-tab" id="settings-tab-blocks" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-blocks" data-settings-tab="blocks">
+          <span aria-hidden="true">▦</span>
+          <span>Blocks</span>
+        </button>
+        <button class="settings-tab" id="settings-tab-backup" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-backup" data-settings-tab="backup">
+          <span aria-hidden="true">↓</span>
+          <span>Backup</span>
+        </button>
+      </div>
+
+      <div class="settings-content">
+        <section class="settings-panel is-active" id="settings-panel-general" role="tabpanel" aria-labelledby="settings-tab-general" data-settings-panel="general">
+          <div class="settings-section is-first">
+            <div class="settings-section-header">
+              <h3>General</h3>
+            </div>
+            <div class="settings-grid">
+              <div class="form-field">
+                <label for="setting-personal-day-start">Personal day starts at</label>
+                <input type="time" id="setting-personal-day-start" />
+              </div>
+              <div class="form-field">
+                <label>Legs days</label>
+                <div class="day-check-row">
+                  <label class="day-check-label"><span>Mon</span><input type="checkbox" data-dow="1" /></label>
+                  <label class="day-check-label"><span>Tue</span><input type="checkbox" data-dow="2" /></label>
+                  <label class="day-check-label"><span>Wed</span><input type="checkbox" data-dow="3" /></label>
+                  <label class="day-check-label"><span>Thu</span><input type="checkbox" data-dow="4" /></label>
+                  <label class="day-check-label"><span>Fri</span><input type="checkbox" data-dow="5" /></label>
+                  <label class="day-check-label"><span>Sat</span><input type="checkbox" data-dow="6" /></label>
+                  <label class="day-check-label"><span>Sun</span><input type="checkbox" data-dow="0" /></label>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <div class="form-row full">
-        <div class="form-field">
-          <label>Set tracker cues</label>
-          <div class="cue-check-row">
-            <label class="cue-check-label"><input type="checkbox" id="setting-cue-sound" /><span>Sound</span></label>
-            <label class="cue-check-label"><input type="checkbox" id="setting-cue-vibrate" /><span>Vibrate</span></label>
-            <label class="cue-check-label"><input type="checkbox" id="setting-cue-speech" /><span>Speech</span></label>
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h3>Set tracker cues</h3>
+            </div>
+            <div class="cue-check-row">
+              <label class="cue-check-label"><input type="checkbox" id="setting-cue-sound" /><span>✓</span><strong>Sound</strong></label>
+              <label class="cue-check-label"><input type="checkbox" id="setting-cue-vibrate" /><span>✓</span><strong>Vibrate</strong></label>
+              <label class="cue-check-label"><input type="checkbox" id="setting-cue-speech" /><span>✓</span><strong>Speech</strong></label>
+            </div>
+            <label class="cue-volume-label" for="setting-cue-speech-volume">
+              <span class="cue-volume-heading">
+                <span id="setting-cue-speech-volume-label">Speech volume: 100%</span>
+                <span class="settings-tooltip" tabindex="0" aria-label="Speech volume saves automatically." data-tooltip="Speech volume saves automatically.">?</span>
+              </span>
+              <input type="range" id="setting-cue-speech-volume" min="0" max="100" step="5" />
+            </label>
           </div>
-          <label class="cue-volume-label" for="setting-cue-speech-volume">
-            <span class="cue-volume-heading">
-              <span id="setting-cue-speech-volume-label">Speech volume: 100%</span>
-              <span class="settings-tooltip" tabindex="0" aria-label="Speech volume saves automatically." data-tooltip="Speech volume saves automatically.">?</span>
-            </span>
-            <input type="range" id="setting-cue-speech-volume" min="0" max="100" step="5" />
-          </label>
-        </div>
-      </div>
 
-      <div class="settings-section">
-        <div class="settings-section-header">
-          <h3>Blocks</h3>
-        </div>
-        <div class="block-settings" id="settings-blocks"></div>
-      </div>
+          <div class="settings-section">
+            <div class="settings-inline-row">
+              <div>
+                <h3>Physio review</h3>
+              </div>
+              <button class="settings-clear-review" id="settings-clear-review" type="button">Clear changed markers</button>
+            </div>
+          </div>
+        </section>
 
-      <div class="settings-section">
-        <div class="settings-section-header">
-          <h3>Physio review</h3>
-          <button class="settings-clear-review" id="settings-clear-review" type="button">Clear changed markers</button>
-        </div>
-      </div>
+        <section class="settings-panel" id="settings-panel-blocks" role="tabpanel" aria-labelledby="settings-tab-blocks" data-settings-panel="blocks" hidden>
+          <div class="settings-section is-first">
+            <div class="settings-section-header settings-section-header-with-actions">
+              <h3>Blocks</h3>
+              <div class="settings-draft-actions">
+                <button class="settings-draft-btn" id="settings-blocks-discard" type="button">Discard changes</button>
+                <button class="settings-draft-btn" id="settings-blocks-apply" type="button">Apply changes</button>
+              </div>
+            </div>
+            <div class="block-settings" id="settings-blocks"></div>
+          </div>
+        </section>
 
-      <div class="settings-section">
-        <div class="settings-section-header">
-          <h3>Data backup</h3>
-        </div>
-        <div class="settings-backup-actions">
-          <button class="settings-backup-btn" id="settings-export-json" type="button" data-tooltip="One-off full backup downloaded through the browser, usually to Downloads.">Download JSON</button>
-          <button class="settings-backup-btn" id="settings-import-json" type="button" data-tooltip="Choose a backup file and replace this browser's saved app data after confirmation.">Import JSON</button>
-          <button class="settings-backup-btn" id="settings-auto-backup-folder" type="button" data-tooltip="Choose the folder where rolling backups should be saved.">Choose folder</button>
-          <button class="settings-backup-btn" id="settings-auto-backup-now" type="button" data-tooltip="Run the folder backup routine now: write today's file, update latest, and clean old rolling backups.">Backup now</button>
-          <input id="settings-import-file" type="file" accept="application/json,.json" hidden />
-        </div>
-        <div class="auto-backup-settings">
-          <label class="auto-backup-time" for="setting-auto-backup-time">
-            <span>Auto-backup time</span>
-            <input type="time" id="setting-auto-backup-time" />
-          </label>
-          <div class="auto-backup-status" id="settings-auto-backup-status"></div>
-          <div class="auto-backup-note">Each backup saves today's dated file and updates latest.</div>
-          <div class="auto-backup-history-summary" id="settings-auto-backup-summary"></div>
-          <button class="auto-backup-history-toggle" id="settings-auto-backup-history-toggle" type="button">Show history</button>
-          <div class="auto-backup-history" id="settings-auto-backup-history"></div>
-        </div>
-      </div>
+        <section class="settings-panel" id="settings-panel-backup" role="tabpanel" aria-labelledby="settings-tab-backup" data-settings-panel="backup" hidden>
+          <div class="settings-section is-first">
+            <div class="settings-section-header">
+              <h3>Manual JSON</h3>
+            </div>
+            <div class="settings-backup-row">
+              <div class="settings-backup-label">
+                <strong>Download full backup</strong>
+                <span>Exercises, sessions, settings, and timeline.</span>
+              </div>
+              <button class="settings-backup-btn" id="settings-export-json" type="button">↓ Download JSON</button>
+            </div>
+          </div>
 
-      <div class="modal-actions">
-        <button class="btn-secondary" id="settings-cancel">Cancel</button>
-        <button class="btn-primary" id="settings-save">Save</button>
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h3>Folder backup</h3>
+            </div>
+            <div class="settings-backup-row settings-folder-row">
+              <div class="settings-folder-field" aria-live="polite">
+                <span class="settings-folder-icon" aria-hidden="true">▣</span>
+                <span class="settings-folder-name" id="settings-auto-backup-folder-name">No folder selected</span>
+              </div>
+              <button class="settings-backup-btn" id="settings-auto-backup-folder" type="button">… Browse</button>
+            </div>
+            <div class="settings-backup-row">
+              <div class="settings-backup-label">
+                <strong id="settings-auto-backup-folder-state">Not selected</strong>
+                <span>Writes today's dated file and updates latest.</span>
+              </div>
+              <button class="settings-backup-btn" id="settings-auto-backup-now" type="button">↓ Backup now</button>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h3>Schedule</h3>
+            </div>
+            <div class="settings-status-grid">
+              <label class="settings-status-item" for="setting-auto-backup-time">
+                <span>Auto-backup time</span>
+                <input type="time" id="setting-auto-backup-time" />
+              </label>
+              <div class="settings-status-item">
+                <span>Last backup</span>
+                <strong id="settings-auto-backup-last">Never</strong>
+              </div>
+              <div class="settings-status-item">
+                <span>Next backup</span>
+                <strong id="settings-auto-backup-next">Choose a folder</strong>
+              </div>
+              <div class="settings-status-item settings-status-issue" id="settings-auto-backup-issue" hidden>
+                <span>Issue</span>
+                <strong id="settings-auto-backup-issue-text"></strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h3>Latest result</h3>
+              <button class="auto-backup-history-toggle" id="settings-auto-backup-history-toggle" type="button">Show history</button>
+            </div>
+            <div class="auto-backup-history-summary" id="settings-auto-backup-summary"></div>
+            <div class="auto-backup-history" id="settings-auto-backup-history"></div>
+          </div>
+
+          <div class="settings-section settings-restore-section">
+            <div class="settings-backup-row">
+              <div class="settings-backup-label">
+                <strong>Restore from JSON</strong>
+                <span>Replaces this browser's saved app data after confirmation.</span>
+              </div>
+              <button class="settings-backup-btn settings-import-btn" id="settings-import-json" type="button">↑ Import JSON</button>
+              <input id="settings-import-file" type="file" accept="application/json,.json" hidden />
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   </div>

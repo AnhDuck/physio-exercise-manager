@@ -1,11 +1,75 @@
 // Settings modal, review markers, cue settings, and block settings UI.
 
+const SETTINGS_TABS = ['general', 'blocks', 'backup'];
+
 function openSettingsModal() {
   ensureBlockSettings();
-  settingsModalSnapshot = {
-    settings: JSON.parse(JSON.stringify(settings)),
-    exerciseBlocks: exercises.map(ex => ({ id: ex.id, blockId: ex.blockId || '' })),
-  };
+  settingsActiveTab = 'general';
+  beginBlockDraft();
+  syncSettingsControls();
+  renderBlockSettings();
+  renderAutoBackupSettings();
+  updateClearReviewButton();
+  setSettingsTab(settingsActiveTab, false);
+  document.getElementById('settings-modal').classList.remove('hidden');
+}
+
+function closeSettingsModal() {
+  const modal = document.getElementById('settings-modal');
+  if (!modal || modal.classList.contains('hidden')) return;
+  if (hasPendingBlockDraft() && !confirm('Discard unapplied block changes?')) return;
+  settingsBlockDraft = null;
+  modal.classList.add('hidden');
+}
+
+function handleSettingsKeydown(e) {
+  const modal = document.getElementById('settings-modal');
+  if (!modal || modal.classList.contains('hidden')) return;
+  if (e.key !== 'Escape') return;
+  e.preventDefault();
+  closeSettingsModal();
+}
+
+function setSettingsTab(tabName, focusTab = false) {
+  const nextTab = SETTINGS_TABS.includes(tabName) ? tabName : 'general';
+  settingsActiveTab = nextTab;
+
+  document.querySelectorAll('#settings-modal [data-settings-tab]').forEach(tab => {
+    const active = tab.dataset.settingsTab === nextTab;
+    tab.classList.toggle('is-active', active);
+    tab.setAttribute('aria-selected', active ? 'true' : 'false');
+    tab.tabIndex = active ? 0 : -1;
+    if (active && focusTab) tab.focus();
+  });
+
+  document.querySelectorAll('#settings-modal [data-settings-panel]').forEach(panel => {
+    const active = panel.dataset.settingsPanel === nextTab;
+    panel.classList.toggle('is-active', active);
+    panel.hidden = !active;
+  });
+
+  const content = document.querySelector('#settings-modal .settings-content');
+  if (content) content.scrollTop = 0;
+}
+
+function handleSettingsTabKeydown(e) {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+  e.preventDefault();
+
+  const tabs = Array.from(document.querySelectorAll('#settings-modal [data-settings-tab]'));
+  const index = tabs.indexOf(e.currentTarget);
+  if (index === -1) return;
+
+  let nextIndex = index;
+  if (e.key === 'Home') nextIndex = 0;
+  if (e.key === 'End') nextIndex = tabs.length - 1;
+  if (e.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
+  if (e.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+
+  setSettingsTab(tabs[nextIndex].dataset.settingsTab, true);
+}
+
+function syncSettingsControls() {
   const legsDays = settings.legsDays !== undefined ? settings.legsDays : [1, 3, 5];
   document.querySelectorAll('#settings-modal input[data-dow]').forEach(cb => {
     cb.checked = legsDays.includes(Number(cb.dataset.dow));
@@ -16,43 +80,15 @@ function openSettingsModal() {
   document.getElementById('setting-cue-speech').checked = Boolean(settings.setCueSpeech);
   document.getElementById('setting-auto-backup-time').value = getAutoBackupSettings().time;
   syncSpeechVolumeControl();
-  renderBlockSettings();
-  renderAutoBackupSettings();
-  updateClearReviewButton();
-  document.getElementById('settings-modal').classList.remove('hidden');
 }
 
-function closeSettingsModal(restore = true) {
-  if (restore && settingsModalSnapshot) {
-    const savedSpeechVolume = settings.setCueSpeechVolume;
-    const currentAutoBackup = JSON.parse(JSON.stringify(getAutoBackupSettings()));
-    settings = JSON.parse(JSON.stringify(settingsModalSnapshot.settings));
-    settings.setCueSpeechVolume = clampSetCueSpeechVolume(savedSpeechVolume);
-    settings.autoBackup = normalizeAutoBackupSettings({
-      ...settings.autoBackup,
-      folderName: currentAutoBackup.folderName,
-      lastScheduledBackupDate: currentAutoBackup.lastScheduledBackupDate,
-      lastSuccessAt: currentAutoBackup.lastSuccessAt,
-      lastErrorAt: currentAutoBackup.lastErrorAt,
-      lastError: currentAutoBackup.lastError,
-      needsReconnect: currentAutoBackup.needsReconnect,
-      history: currentAutoBackup.history,
-    });
-    settingsModalSnapshot.exerciseBlocks.forEach(saved => {
-      const ex = exercises.find(item => item.id === saved.id);
-      if (ex) ex.blockId = saved.blockId;
-    });
-  }
-  settingsModalSnapshot = null;
-  document.getElementById('settings-modal').classList.add('hidden');
-}
-
-function saveSettingsModal() {
+function autosaveGeneralSettings() {
   const legsDays = [];
   document.querySelectorAll('#settings-modal input[data-dow]:checked').forEach(cb => {
     legsDays.push(Number(cb.dataset.dow));
   });
   settings.legsDays = legsDays;
+
   const personalDayStartTime = document.getElementById('setting-personal-day-start').value;
   settings.personalDayStartTime = isValidTime(personalDayStartTime)
     ? personalDayStartTime
@@ -61,18 +97,24 @@ function saveSettingsModal() {
   settings.setCueVibrate = document.getElementById('setting-cue-vibrate').checked;
   settings.setCueSpeech = document.getElementById('setting-cue-speech').checked;
   settings.setCueSpeechVolume = readSpeechVolumeSlider();
-  settings.autoBackup = normalizeAutoBackupSettings(settings.autoBackup);
-  const autoBackupTime = document.getElementById('setting-auto-backup-time').value;
-  settings.autoBackup.time = isValidTime(autoBackupTime)
-    ? autoBackupTime
-    : defaultAutoBackupSettings().time;
-  readBlockSettingsForm();
+
   saveSettings(settings);
-  saveExercises(exercises);
-  closeSettingsModal(false);
+  syncSpeechVolumeControl();
+  render();
+  renderNotesPanel();
+}
+
+function autosaveAutoBackupTime() {
+  const auto = getAutoBackupSettings();
+  const input = document.getElementById('setting-auto-backup-time');
+  auto.time = isValidTime(input.value)
+    ? input.value
+    : AUTO_BACKUP_DEFAULT_SETTINGS.time;
+  input.value = auto.time;
+  saveSettings(settings);
+  renderAutoBackupSettings();
   scheduleAutoBackupChecks();
   maybeRunAutoBackup('settings');
-  render();
 }
 
 function updateClearReviewButton() {
@@ -122,11 +164,115 @@ function handleSpeechVolumeInput() {
   updateSpeechVolumeLabel(settings.setCueSpeechVolume * 100);
   saveSettings(settings);
 }
+
+function beginBlockDraft() {
+  settingsBlockDraft = {
+    blocks: cloneBlockSettings(settings.blocks),
+    exerciseBlocks: exercises.reduce((map, ex) => {
+      map[ex.id] = normalizedBlockId(ex);
+      return map;
+    }, {}),
+    baseline: '',
+  };
+  settingsBlockDraft.baseline = serializeBlockDraft();
+}
+
+function cloneBlockSettings(blocks) {
+  const output = {};
+  GROUP_ORDER.forEach(group => {
+    output[group] = Array.isArray(blocks?.[group])
+      ? blocks[group].map(block => ({
+          id: normalizeBlockInput(block.id),
+          title: String(block.title || '').trim(),
+          order: Number(block.order) || 0,
+        })).filter(block => block.id)
+      : [];
+    normalizeDraftBlockOrders(group, output);
+  });
+  return output;
+}
+
+function normalizeDraftBlockOrders(group, draftBlocks = settingsBlockDraft?.blocks) {
+  if (!draftBlocks) return;
+  if (!Array.isArray(draftBlocks[group])) draftBlocks[group] = [];
+  draftBlocks[group]
+    .sort((a, b) => (Number(a.order) || 0) - (Number(b.order) || 0))
+    .forEach((block, index) => {
+      block.id = normalizeBlockInput(block.id);
+      block.title = String(block.title || '').trim();
+      block.order = index + 1;
+    });
+  draftBlocks[group] = draftBlocks[group].filter(block => block.id);
+}
+
+function serializeBlockDraft() {
+  if (!settingsBlockDraft) return '';
+  const blocks = {};
+  GROUP_ORDER.forEach(group => {
+    blocks[group] = draftBlockDefinitionsForGroup(group).map(block => ({
+      id: block.id,
+      title: block.title,
+      order: block.order,
+    }));
+  });
+
+  const exerciseBlocks = {};
+  exercises.forEach(ex => {
+    exerciseBlocks[ex.id] = settingsBlockDraft.exerciseBlocks[ex.id] || '';
+  });
+
+  return JSON.stringify({ blocks, exerciseBlocks });
+}
+
+function isBlockDraftDirty() {
+  return Boolean(settingsBlockDraft && serializeBlockDraft() !== settingsBlockDraft.baseline);
+}
+
+function hasPendingBlockDraft() {
+  if (!settingsBlockDraft) return false;
+  readBlockSettingsForm({ updateActions: false });
+  return isBlockDraftDirty();
+}
+
+function updateBlockDraftActions() {
+  const dirty = isBlockDraftDirty();
+  const apply = document.getElementById('settings-blocks-apply');
+  const discard = document.getElementById('settings-blocks-discard');
+  if (apply) apply.disabled = !dirty;
+  if (discard) discard.disabled = !dirty;
+}
+
+function applyBlockDraft() {
+  if (!settingsBlockDraft) return;
+  readBlockSettingsForm({ updateActions: false });
+
+  settings.blocks = cloneBlockSettings(settingsBlockDraft.blocks);
+  GROUP_ORDER.forEach(group => normalizeBlockDefinitionOrders(group));
+  exercises.forEach(ex => {
+    ex.blockId = settingsBlockDraft.exerciseBlocks[ex.id] || '';
+  });
+
+  saveSettings(settings);
+  saveExercises(exercises);
+  beginBlockDraft();
+  renderBlockSettings();
+  render();
+  showToast('Block changes applied.');
+}
+
+function discardBlockDraft() {
+  if (!settingsBlockDraft) return;
+  beginBlockDraft();
+  renderBlockSettings();
+}
+
 function renderBlockSettings() {
   const root = document.getElementById('settings-blocks');
   if (!root) return;
+  if (!settingsBlockDraft) beginBlockDraft();
   root.innerHTML = '';
   GROUP_ORDER.forEach(group => root.appendChild(buildBlockSettingsGroup(group)));
+  updateBlockDraftActions();
 }
 
 function refreshOpenBlockSettings() {
@@ -146,18 +292,18 @@ function buildBlockSettingsGroup(group) {
   const addBtn = elText('button', 'block-settings-add', '+ Add block');
   addBtn.type = 'button';
   addBtn.addEventListener('click', () => {
-    readBlockSettingsForm();
-    const block = addBlockDefinition(group);
+    readBlockSettingsForm({ updateActions: false });
+    const block = addDraftBlockDefinition(group);
     renderBlockSettings();
     window.setTimeout(() => {
-      const escapeIdent = window.CSS?.escape || ((value) => String(value).replace(/"/g, '\\"'));
+      const escapeIdent = window.CSS?.escape || (value => String(value).replace(/"/g, '\\"'));
       document.querySelector(`#settings-blocks input[data-block-title="${escapeIdent(`${group}:${block.id}`)}"]`)?.focus();
     }, 0);
   });
   header.appendChild(addBtn);
   panel.appendChild(header);
 
-  const blocks = blockDefinitionsForGroup(group);
+  const blocks = draftBlockDefinitionsForGroup(group);
   const blockList = el('div', 'block-settings-list');
   if (!blocks.length) {
     blockList.appendChild(elText('div', 'block-settings-empty', 'No blocks yet.'));
@@ -186,6 +332,7 @@ function buildBlockSettingsRow(group, block, index, count) {
   input.placeholder = blockTitleFromId(block.id);
   input.dataset.blockTitle = `${group}:${block.id}`;
   input.setAttribute('aria-label', `Title for ${blockTitleFromId(block.id)}`);
+  input.addEventListener('input', () => readBlockSettingsForm());
   row.appendChild(input);
 
   const actions = el('div', 'block-settings-actions');
@@ -194,8 +341,8 @@ function buildBlockSettingsRow(group, block, index, count) {
   up.title = 'Move block up';
   up.disabled = index === 0;
   up.addEventListener('click', () => {
-    readBlockSettingsForm();
-    moveBlockDefinition(group, block.id, -1);
+    readBlockSettingsForm({ updateActions: false });
+    moveDraftBlockDefinition(group, block.id, -1);
     renderBlockSettings();
   });
   actions.appendChild(up);
@@ -205,8 +352,8 @@ function buildBlockSettingsRow(group, block, index, count) {
   down.title = 'Move block down';
   down.disabled = index === count - 1;
   down.addEventListener('click', () => {
-    readBlockSettingsForm();
-    moveBlockDefinition(group, block.id, 1);
+    readBlockSettingsForm({ updateActions: false });
+    moveDraftBlockDefinition(group, block.id, 1);
     renderBlockSettings();
   });
   actions.appendChild(down);
@@ -215,9 +362,9 @@ function buildBlockSettingsRow(group, block, index, count) {
   del.type = 'button';
   del.title = 'Delete block and unassign its exercises';
   del.addEventListener('click', () => {
-    if (!confirm(`Delete ${blockTitleFor(group, block.id)} and unassign its exercises?`)) return;
-    readBlockSettingsForm();
-    deleteBlockDefinition(group, block.id);
+    if (!confirm(`Delete ${draftBlockTitleFor(group, block.id)} and unassign its exercises?`)) return;
+    readBlockSettingsForm({ updateActions: false });
+    deleteDraftBlockDefinition(group, block.id);
     renderBlockSettings();
   });
   actions.appendChild(del);
@@ -235,42 +382,49 @@ function buildBlockExerciseAssignment(group, ex) {
   none.value = '';
   none.textContent = 'No block';
   select.appendChild(none);
-  blockDefinitionsForGroup(group).forEach(block => {
+  draftBlockDefinitionsForGroup(group).forEach(block => {
     const option = document.createElement('option');
     option.value = block.id;
-    option.textContent = blockTitleFor(group, block.id);
+    option.textContent = draftBlockTitleFor(group, block.id);
     select.appendChild(option);
   });
-  select.value = normalizedBlockId(ex);
+  select.value = settingsBlockDraft.exerciseBlocks[ex.id] || '';
+  select.addEventListener('change', () => readBlockSettingsForm());
   row.appendChild(select);
   return row;
 }
 
-function readBlockSettingsForm() {
-  ensureBlockSettings();
+function readBlockSettingsForm(options = {}) {
+  if (!settingsBlockDraft) return;
+  const updateActions = options.updateActions !== false;
   document.querySelectorAll('#settings-blocks input[data-block-title]').forEach(input => {
     const [group, blockId] = input.dataset.blockTitle.split(':');
-    const block = settings.blocks?.[group]?.find(item => item.id === blockId);
+    const block = draftBlockDefinitionsForGroup(group).find(item => item.id === blockId);
     if (block) block.title = input.value.trim();
   });
   document.querySelectorAll('#settings-blocks select[data-exercise-block]').forEach(select => {
-    const ex = exercises.find(item => item.id === select.dataset.exerciseBlock);
-    if (ex) ex.blockId = select.value;
+    settingsBlockDraft.exerciseBlocks[select.dataset.exerciseBlock] = select.value;
   });
+  if (updateActions) updateBlockDraftActions();
 }
 
-function addBlockDefinition(group) {
-  ensureBlocksContainer(group);
-  const id = nextBlockId(group);
-  const block = { id, title: '', order: settings.blocks[group].length + 1 };
-  settings.blocks[group].push(block);
-  normalizeBlockDefinitionOrders(group);
+function draftBlockDefinitionsForGroup(group) {
+  if (!settingsBlockDraft) beginBlockDraft();
+  if (!Array.isArray(settingsBlockDraft.blocks[group])) settingsBlockDraft.blocks[group] = [];
+  normalizeDraftBlockOrders(group);
+  return settingsBlockDraft.blocks[group];
+}
+
+function addDraftBlockDefinition(group) {
+  const id = nextDraftBlockId(group);
+  const block = { id, title: '', order: settingsBlockDraft.blocks[group].length + 1 };
+  settingsBlockDraft.blocks[group].push(block);
+  normalizeDraftBlockOrders(group);
   return block;
 }
 
-function nextBlockId(group) {
-  ensureBlocksContainer(group);
-  const used = new Set(settings.blocks[group].map(block => block.id));
+function nextDraftBlockId(group) {
+  const used = new Set(draftBlockDefinitionsForGroup(group).map(block => block.id));
   for (let i = 0; i < 26; i++) {
     const id = `block-${String.fromCharCode(97 + i)}`;
     if (!used.has(id)) return id;
@@ -280,9 +434,8 @@ function nextBlockId(group) {
   return `block-${n}`;
 }
 
-function moveBlockDefinition(group, blockId, direction) {
-  ensureBlocksContainer(group);
-  const blocks = blockDefinitionsForGroup(group);
+function moveDraftBlockDefinition(group, blockId, direction) {
+  const blocks = draftBlockDefinitionsForGroup(group);
   const index = blocks.findIndex(block => block.id === blockId);
   const target = index + direction;
   if (index === -1 || target < 0 || target >= blocks.length) return;
@@ -290,12 +443,19 @@ function moveBlockDefinition(group, blockId, direction) {
   blocks.forEach((block, i) => { block.order = i + 1; });
 }
 
-function deleteBlockDefinition(group, blockId) {
-  ensureBlocksContainer(group);
-  settings.blocks[group] = settings.blocks[group].filter(block => block.id !== blockId);
-  exercises.forEach(ex => {
-    if (ex.group === group && normalizedBlockId(ex) === blockId) ex.blockId = '';
+function deleteDraftBlockDefinition(group, blockId) {
+  settingsBlockDraft.blocks[group] = draftBlockDefinitionsForGroup(group).filter(block => block.id !== blockId);
+  Object.keys(settingsBlockDraft.exerciseBlocks).forEach(exerciseId => {
+    const ex = exercises.find(item => item.id === exerciseId);
+    if (ex?.group === group && settingsBlockDraft.exerciseBlocks[exerciseId] === blockId) {
+      settingsBlockDraft.exerciseBlocks[exerciseId] = '';
+    }
   });
-  normalizeBlockDefinitionOrders(group);
+  normalizeDraftBlockOrders(group);
 }
 
+function draftBlockTitleFor(group, blockId) {
+  const block = draftBlockDefinitionsForGroup(group).find(item => item.id === blockId);
+  const title = block?.title;
+  return title && String(title).trim() ? title : blockTitleFromId(blockId);
+}

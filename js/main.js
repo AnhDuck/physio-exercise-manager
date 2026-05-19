@@ -61,20 +61,33 @@ function bindStaticEvents() {
   });
 
   document.getElementById('btn-settings').addEventListener('click', openSettingsModal);
-  document.getElementById('settings-cancel').addEventListener('click', closeSettingsModal);
-  document.getElementById('settings-save').addEventListener('click', saveSettingsModal);
+  document.getElementById('settings-close').addEventListener('click', closeSettingsModal);
+  document.querySelectorAll('#settings-modal [data-settings-tab]').forEach(tab => {
+    tab.addEventListener('click', () => setSettingsTab(tab.dataset.settingsTab, true));
+    tab.addEventListener('keydown', handleSettingsTabKeydown);
+  });
   document.getElementById('settings-clear-review').addEventListener('click', clearChangedSincePhysioMarkers);
   document.getElementById('settings-export-json').addEventListener('click', exportFullBackup);
   document.getElementById('settings-import-json').addEventListener('click', openBackupImportPicker);
   document.getElementById('settings-auto-backup-folder').addEventListener('click', chooseAutoBackupFolder);
   document.getElementById('settings-auto-backup-now').addEventListener('click', runManualFolderBackup);
   document.getElementById('settings-auto-backup-history-toggle').addEventListener('click', toggleAutoBackupHistory);
+  document.getElementById('settings-blocks-apply').addEventListener('click', applyBlockDraft);
+  document.getElementById('settings-blocks-discard').addEventListener('click', discardBlockDraft);
   document.getElementById('settings-import-file').addEventListener('change', (e) => {
     handleBackupImportFile(e.target.files[0]);
     e.target.value = '';
   });
+  document.getElementById('setting-personal-day-start').addEventListener('change', autosaveGeneralSettings);
+  document.querySelectorAll('#settings-modal input[data-dow]').forEach(cb => {
+    cb.addEventListener('change', autosaveGeneralSettings);
+  });
+  document.getElementById('setting-cue-sound').addEventListener('change', autosaveGeneralSettings);
+  document.getElementById('setting-cue-vibrate').addEventListener('change', autosaveGeneralSettings);
   document.getElementById('setting-cue-speech-volume').addEventListener('input', handleSpeechVolumeInput);
-  document.getElementById('setting-cue-speech').addEventListener('change', syncSpeechVolumeControl);
+  document.getElementById('setting-cue-speech').addEventListener('change', autosaveGeneralSettings);
+  document.getElementById('setting-auto-backup-time').addEventListener('change', autosaveAutoBackupTime);
+  document.addEventListener('keydown', handleSettingsKeydown);
   document.getElementById('settings-modal').addEventListener('click', (e) => {
     if (e.target === document.getElementById('settings-modal')) closeSettingsModal();
   });
