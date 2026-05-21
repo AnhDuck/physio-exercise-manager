@@ -782,7 +782,7 @@ body.notes-open {
 }
 
 .day-header.today {
-  background: #1e2d3d;
+  background: rgba(255,255,255,.035);
 }
 
 .day-name {
@@ -799,7 +799,7 @@ body.notes-open {
   color: var(--text);
 }
 
-.day-header.today .day-date { color: #63b3ed; }
+.day-header.today .day-date { color: var(--text); }
 
 .day-pill-row {
   display: flex;
@@ -837,16 +837,16 @@ body.notes-open {
 }
 
 .col-header-row.compact .day-header.today {
-  outline: 2px solid #d7ecff;
+  outline: 2px solid rgba(215,236,255,.76);
   outline-offset: -3px;
 }
 
 .col-header-row.compact .day-header.today.tag-arm-day1 {
-  box-shadow: inset 0 4px 0 var(--c-day1), inset 0 -3px 0 rgba(215,236,255,.75);
+  box-shadow: inset 0 4px 0 var(--c-day1), inset 0 -3px 0 rgba(230,236,243,.72);
 }
 
 .col-header-row.compact .day-header.today.tag-arm-day2 {
-  box-shadow: inset 0 4px 0 var(--c-day2), inset 0 -3px 0 rgba(215,236,255,.75);
+  box-shadow: inset 0 4px 0 var(--c-day2), inset 0 -3px 0 rgba(230,236,243,.72);
 }
 
 /* ── Group section header ────────────────────────────────────────── */
@@ -910,7 +910,7 @@ body.notes-open {
   border-left: 1px solid var(--border);
 }
 
-.group-header-cell.today { background: rgba(99,179,237,.06); }
+.group-header-cell.today { background: rgba(255,255,255,.025); }
 
 /* ── Exercise row ────────────────────────────────────────────────── */
 .exercise-row {
@@ -1275,7 +1275,7 @@ body.notes-open {
   min-height: 48px;
 }
 
-.day-cell.today { background: rgba(99,179,237,.04); }
+.day-cell.today { background: rgba(255,255,255,.018); }
 
 .check-btn {
   width: 28px;
