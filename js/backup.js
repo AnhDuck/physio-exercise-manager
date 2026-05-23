@@ -137,7 +137,74 @@ function validateBackup(backup) {
   return errors;
 }
 
+function getDataSafetyReport(data = {}) {
+  const dataExercises = data.exercises ?? exercises;
+  const dataSessions = data.sessions ?? sessions;
+  const dataSettings = data.settings ?? settings;
+  const dataEvents = data.events ?? events;
+  const issues = [];
+
+  if (!Array.isArray(dataExercises)) issues.push('Exercises are not saved as a list.');
+  if (!isPlainObject(dataSessions)) issues.push('Sessions are not saved as an object.');
+  if (!isPlainObject(dataSettings)) issues.push('Settings are not saved as an object.');
+  if (!Array.isArray(dataEvents)) issues.push('Timeline items are not saved as a list.');
+  if (issues.length) return { ok: false, issues };
+
+  const exerciseIds = new Set();
+  dataExercises.forEach((ex, index) => {
+    if (!ex || typeof ex !== 'object' || Array.isArray(ex)) {
+      issues.push(`Exercise ${index + 1} is not a valid object.`);
+      return;
+    }
+    if (typeof ex.id !== 'string' || !ex.id.trim()) {
+      issues.push(`Exercise ${index + 1} is missing an ID.`);
+      return;
+    }
+    if (exerciseIds.has(ex.id)) issues.push(`Exercise ID "${ex.id}" is duplicated.`);
+    exerciseIds.add(ex.id);
+  });
+
+  Object.entries(dataSessions).forEach(([dateStr, session]) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      issues.push(`Session date "${dateStr}" is not YYYY-MM-DD.`);
+    }
+    if (!isPlainObject(session)) {
+      issues.push(`Session "${dateStr}" is not a valid object.`);
+      return;
+    }
+    if (session.completedExercises && !Array.isArray(session.completedExercises)) {
+      issues.push(`Completed exercises for "${dateStr}" are not saved as a list.`);
+    }
+    if (session.setProgress && !isPlainObject(session.setProgress)) {
+      issues.push(`Set progress for "${dateStr}" is not saved as an object.`);
+      return;
+    }
+    Object.entries(session.setProgress || {}).forEach(([exerciseId, progress]) => {
+      if (!exerciseId) issues.push(`Set progress for "${dateStr}" has a blank exercise ID.`);
+      if (!isPlainObject(progress)) {
+        issues.push(`Set progress for "${dateStr}" / "${exerciseId}" is not a valid object.`);
+        return;
+      }
+      ['completedSets', 'targetSets'].forEach(key => {
+        if (progress[key] !== undefined && (!Number.isFinite(Number(progress[key])) || Number(progress[key]) < 0)) {
+          issues.push(`${key} for "${dateStr}" / "${exerciseId}" is not a usable number.`);
+        }
+      });
+    });
+  });
+
+  return { ok: !issues.length, issues };
+}
+
+Object.assign(window, {
+  buildFullBackup,
+  exportFullBackup,
+  getDataSafetyReport,
+  handleBackupImportFile,
+  openBackupImportPicker,
+  validateBackup,
+});
+
 function isPlainObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
-

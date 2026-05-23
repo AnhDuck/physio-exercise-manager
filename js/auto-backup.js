@@ -169,7 +169,6 @@ async function chooseAutoBackupFolder() {
     const granted = await requestAutoBackupPermission(handle);
     if (!granted) throw new Error('Write permission was not granted.');
 
-    await writeAutoBackupDirectoryHandle(handle);
     autoBackupDirectoryHandle = handle;
     autoBackupHandleLoaded = true;
 
@@ -179,6 +178,15 @@ async function chooseAutoBackupFolder() {
     auto.lastError = '';
     auto.lastErrorAt = '';
     saveSettings(settings);
+
+    try {
+      await writeAutoBackupDirectoryHandle(handle);
+    } catch (storeErr) {
+      auto.lastError = `Backup folder connected for this session, but may need reconnect after reload: ${autoBackupErrorMessage(storeErr)}`;
+      auto.lastErrorAt = new Date().toISOString();
+      saveSettings(settings);
+    }
+
     renderAutoBackupSettings();
     showToast(`Backup folder connected: ${auto.folderName}.`);
     maybeRunAutoBackup('folder');
@@ -215,10 +223,11 @@ async function runFolderBackup(type, options = {}) {
     const handle = await getReadyAutoBackupDirectoryHandle(Boolean(options.promptPermission));
     if (!handle) throw new Error('Choose a backup folder before running folder backups.');
 
-    const backup = buildFullBackup();
+    const backup = window.buildFullBackup();
     const json = JSON.stringify(backup, null, 2);
     await writeAutoBackupFile(handle, datedFile, json);
     await writeAutoBackupFile(handle, AUTO_BACKUP_LATEST_FILE, json);
+    await verifyAutoBackupFile(handle, AUTO_BACKUP_LATEST_FILE);
 
     let cleanupMessage = '';
     try {
@@ -281,6 +290,26 @@ async function writeAutoBackupFile(directoryHandle, fileName, contents) {
   const writable = await fileHandle.createWritable();
   await writable.write(contents);
   await writable.close();
+}
+
+async function readAutoBackupFile(directoryHandle, fileName) {
+  const fileHandle = await directoryHandle.getFileHandle(fileName);
+  const file = await fileHandle.getFile();
+  return file.text();
+}
+
+async function verifyAutoBackupFile(directoryHandle, fileName) {
+  let backup;
+  try {
+    backup = JSON.parse(await readAutoBackupFile(directoryHandle, fileName));
+  } catch (err) {
+    throw new Error(`Backup file could not be verified: ${autoBackupErrorMessage(err)}`);
+  }
+
+  const errors = window.validateBackup(backup);
+  if (errors.length) {
+    throw new Error(`Backup file could not be verified: ${errors[0]}`);
+  }
 }
 
 async function cleanupOldAutoBackupFiles(directoryHandle, now = new Date()) {
@@ -496,6 +525,17 @@ function getAutoBackupHealth(now = new Date()) {
     };
   }
 
+  const dataSafety = window.getDataSafetyReport();
+  if (!dataSafety.ok) {
+    return {
+      ok: false,
+      code: 'data-safety',
+      title: 'Saved data needs attention',
+      detail: dataSafety.issues[0] || 'The app found a saved data issue.',
+      action: 'Open Settings',
+    };
+  }
+
   return {
     ok: true,
     code: 'ok',
@@ -508,7 +548,12 @@ function getAutoBackupHealth(now = new Date()) {
 function handleBackupHealthAction() {
   const health = getAutoBackupHealth();
   if (health.code === 'unsupported') {
-    exportFullBackup();
+    window.exportFullBackup();
+    return;
+  }
+  if (health.code === 'data-safety') {
+    openSettingsModal();
+    setSettingsTab('backup', true);
     return;
   }
   if (health.code === 'due' || health.code === 'error') {
@@ -584,6 +629,9 @@ function updateAutoBackupHealthUi(health) {
   const backupTab = document.getElementById('settings-tab-backup');
   const backupPanel = document.getElementById('settings-panel-backup');
   const folderState = document.getElementById('settings-auto-backup-folder-state');
+  const dataSafetyState = document.getElementById('settings-data-safety-state');
+  const dataSafetyDetail = document.getElementById('settings-data-safety-detail');
+  const dataSafety = window.getDataSafetyReport();
 
   const hasIssue = !health.ok;
   document.body.classList.toggle('backup-health-open', hasIssue);
@@ -608,6 +656,15 @@ function updateAutoBackupHealthUi(health) {
 
   if (backupPanel) backupPanel.classList.toggle('has-backup-issue', hasIssue);
   if (folderState) folderState.classList.toggle('is-backup-issue', hasIssue);
+  if (dataSafetyState && dataSafetyDetail) {
+    dataSafetyState.textContent = dataSafety.ok ? 'App data structure looks healthy' : 'App data structure needs attention';
+    dataSafetyDetail.textContent = dataSafety.ok
+      ? auto.lastSuccessAt
+        ? 'Exercises, sessions, settings, and timeline have the expected shape. Latest backup is verified after it is written.'
+        : 'Exercises, sessions, settings, and timeline have the expected shape. No backup file has been verified yet.'
+      : dataSafety.issues.slice(0, 3).join(' ');
+    dataSafetyState.classList.toggle('is-backup-issue', !dataSafety.ok);
+  }
 }
 
 function toggleAutoBackupHistory() {
@@ -818,3 +875,16 @@ async function writeAutoBackupDirectoryHandle(handle) {
     };
   });
 }
+
+Object.assign(window, {
+  AUTO_BACKUP_DEFAULT_SETTINGS,
+  chooseAutoBackupFolder,
+  getAutoBackupSettings,
+  handleBackupHealthAction,
+  initializeAutoBackup,
+  maybeRunAutoBackup,
+  renderAutoBackupSettings,
+  runManualFolderBackup,
+  scheduleAutoBackupChecks,
+  toggleAutoBackupHistory,
+});
