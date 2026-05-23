@@ -347,11 +347,15 @@ async function verifyAutoBackupFile(directoryHandle, fileName) {
   if (errors.length) {
     throw new Error(`Backup file could not be verified: ${errors[0]}`);
   }
+  const safety = getDataSafetyReport(backup.data);
+  if (!safety.ok) {
+    throw new Error(`Backup file could not be verified: ${safety.issues[0]}`);
+  }
 
   return {
     at: new Date().toISOString(),
     file: fileName,
-    summary: buildBackupSummary(backup.data),
+    summary: safety.summary || buildBackupSummary(backup.data),
   };
 }
 
@@ -513,6 +517,20 @@ function getAutoBackupHealth(now = new Date()) {
   const auto = getAutoBackupSettings();
   const supported = isFolderAutoBackupSupported();
   const pending = pendingScheduledAutoBackup(auto, now);
+  const storageIssue = getStorageHealthIssue();
+  const dataSafety = getDataSafetyReport();
+
+  if (storageIssue) return storageIssue;
+
+  if (!dataSafety.ok) {
+    return {
+      ok: false,
+      code: 'data-safety',
+      title: 'Saved data needs attention',
+      detail: dataSafety.issues[0] || 'The app found a saved data issue.',
+      action: 'Open Settings',
+    };
+  }
 
   if (!supported) {
     return {
@@ -574,17 +592,6 @@ function getAutoBackupHealth(now = new Date()) {
     };
   }
 
-  const dataSafety = getDataSafetyReport();
-  if (!dataSafety.ok) {
-    return {
-      ok: false,
-      code: 'data-safety',
-      title: 'Saved data needs attention',
-      detail: dataSafety.issues[0] || 'The app found a saved data issue.',
-      action: 'Open Settings',
-    };
-  }
-
   return {
     ok: true,
     code: 'ok',
@@ -596,8 +603,12 @@ function getAutoBackupHealth(now = new Date()) {
 
 function handleBackupHealthAction() {
   const health = getAutoBackupHealth();
-  if (health.code === 'unsupported') {
-    exportFullBackup();
+  if (health.code === 'unsupported' || health.code === 'storage-failure' || health.code === 'storage-test' || health.code === 'storage-unavailable') {
+    try {
+      exportFullBackup();
+    } catch (err) {
+      alert(`Emergency export failed: ${autoBackupErrorMessage(err)}`);
+    }
     return;
   }
   if (health.code === 'data-safety') {
@@ -649,6 +660,8 @@ function renderAutoBackupSettings() {
   issue.hidden = !auto.folderName || !auto.lastError;
   issueText.textContent = auto.folderName ? (auto.lastError || '') : '';
   updateAutoBackupHealthUi(health);
+  renderStorageSettings(health);
+  renderBrowserStorageEstimate();
   renderAutoBackupSummary(summary, normalizedHistory);
   toggle.hidden = normalizedHistory.length <= 1;
   toggle.textContent = autoBackupHistoryExpanded ? 'Hide history' : 'Show history';
@@ -684,8 +697,12 @@ function updateAutoBackupHealthUi(health) {
   const backupVerifyState = document.getElementById('settings-backup-verify-state');
   const backupVerifyDetail = document.getElementById('settings-backup-verify-detail');
   const backupVerifyPill = document.getElementById('settings-backup-verify-pill');
+  const currentFolderState = document.getElementById('settings-current-folder-state');
+  const currentFolderDetail = document.getElementById('settings-current-folder-detail');
+  const currentFolderPill = document.getElementById('settings-current-folder-pill');
   const auto = getAutoBackupSettings();
   const dataSafety = getDataSafetyReport();
+  const folderIssueCodes = ['unsupported', 'missing-folder', 'reconnect', 'checking', 'due', 'error'];
 
   const hasIssue = !health.ok;
   document.body.classList.toggle('backup-health-open', hasIssue);
@@ -709,7 +726,7 @@ function updateAutoBackupHealthUi(health) {
   }
 
   if (backupPanel) backupPanel.classList.toggle('has-backup-issue', hasIssue);
-  if (folderState) folderState.classList.toggle('is-backup-issue', hasIssue);
+  if (folderState) folderState.classList.toggle('is-backup-issue', folderIssueCodes.includes(health.code));
   if (dataSafetyState && dataSafetyDetail) {
     dataSafetyState.textContent = dataSafety.ok ? 'Saved data is readable' : 'Saved data needs attention';
     dataSafetyDetail.textContent = dataSafety.ok
@@ -732,6 +749,110 @@ function updateAutoBackupHealthUi(health) {
   }
   setStatusPill(backupVerifyPill, auto.lastVerifiedAt ? 'Verified' : 'Not checked', {
     muted: !auto.lastVerifiedAt,
+  });
+  if (currentFolderState && currentFolderDetail) {
+    const supported = isFolderAutoBackupSupported();
+    const folderReady = supported && Boolean(auto.folderName) && !auto.needsReconnect && Boolean(autoBackupDirectoryHandle);
+    currentFolderState.textContent = autoBackupFolderStateText(auto, supported, folderReady);
+    currentFolderDetail.textContent = auto.folderName
+      ? `${autoBackupFolderNameText(auto, supported)}. ${auto.lastSuccessAt ? `Last backup ${formatAutoBackupDateTime(auto.lastSuccessAt)}.` : 'No folder backup has completed yet.'}`
+      : 'Choose a backup folder to enable automatic daily backups.';
+    currentFolderState.classList.toggle('is-backup-issue', folderIssueCodes.includes(health.code));
+  }
+  setStatusPill(currentFolderPill, auto.folderName && !auto.needsReconnect ? 'Connected' : 'Review', {
+    muted: !auto.folderName,
+    issue: folderIssueCodes.includes(health.code),
+  });
+}
+
+function renderStorageSettings(health) {
+  const saveState = document.getElementById('settings-storage-save-state');
+  const saveDetail = document.getElementById('settings-storage-save-detail');
+  const savePill = document.getElementById('settings-storage-save-pill');
+  const totalState = document.getElementById('settings-storage-total-state');
+  const totalDetail = document.getElementById('settings-storage-total-detail');
+  const totalPill = document.getElementById('settings-storage-total-pill');
+  const usageReport = getAppStorageUsageReport();
+  const keyIds = {
+    [KEYS.EXERCISES]: 'settings-storage-exercises',
+    [KEYS.SESSIONS]: 'settings-storage-sessions',
+    [KEYS.SETTINGS]: 'settings-storage-settings',
+    [KEYS.EVENTS]: 'settings-storage-events',
+  };
+
+  if (saveState && saveDetail) {
+    if (storageHealth.lastFailure) {
+      saveState.textContent = 'Last save failed';
+      saveDetail.textContent = `${storageHealth.lastFailure.label} did not save ${formatBytes(storageHealth.lastFailure.size)} at ${formatAutoBackupDateTime(storageHealth.lastFailure.at)}.`;
+    } else if (storageHealth.lastSuccess) {
+      saveState.textContent = 'Last save succeeded';
+      saveDetail.textContent = `${storageHealth.lastSuccess.label} saved ${formatBytes(storageHealth.lastSuccess.size)} at ${formatAutoBackupDateTime(storageHealth.lastSuccess.at)}.`;
+    } else {
+      saveState.textContent = 'No save yet this page load';
+      saveDetail.textContent = 'The next app-data save will update this status.';
+    }
+    saveState.classList.toggle('is-backup-issue', Boolean(storageHealth.lastFailure) || health.code === 'storage-unavailable');
+  }
+  setStatusPill(savePill, storageHealth.lastFailure || health.code === 'storage-unavailable' ? 'Failed' : storageHealth.lastSuccess ? 'Saved' : 'Waiting', {
+    muted: !storageHealth.lastFailure && !storageHealth.lastSuccess && health.code !== 'storage-unavailable',
+    issue: Boolean(storageHealth.lastFailure) || health.code === 'storage-unavailable',
+  });
+
+  if (totalState && totalDetail) {
+    totalState.textContent = usageReport.available
+      ? `App storage ${usageReport.tier.label}`
+      : 'App storage unavailable';
+    totalDetail.textContent = usageReport.available
+      ? `${usageReport.totalText} saved in app localStorage keys. ${usageReport.tier.detail}`
+      : usageReport.tier.detail;
+  }
+  setStatusPill(totalPill, usageReport.tier.label, {
+    issue: usageReport.tier.code === 'watch' || usageReport.tier.code === 'unavailable',
+    muted: usageReport.tier.code === 'ok',
+  });
+
+  usageReport.keys.forEach(item => {
+    const node = document.getElementById(keyIds[item.key]);
+    if (node) node.textContent = item.text;
+  });
+  const storageTotal = document.getElementById('settings-storage-total');
+  const storageTier = document.getElementById('settings-storage-tier');
+  if (storageTotal) storageTotal.textContent = usageReport.totalText;
+  if (storageTier) storageTier.textContent = `${usageReport.tier.label} - ${usageReport.tier.detail}`;
+
+  const testState = document.getElementById('settings-storage-test-state');
+  const testDetail = document.getElementById('settings-storage-test-detail');
+  const dismissBtn = document.getElementById('settings-dismiss-save-warning-test');
+  if (testState && testDetail) {
+    testState.textContent = storageHealth.simulatedFailure ? 'Test warning is showing' : 'No test warning active';
+    testDetail.textContent = storageHealth.simulatedFailure
+      ? 'This simulated warning is non-destructive and can be dismissed here.'
+      : 'Use the test button to verify the persistent save-failure banner without writing test data.';
+  }
+  if (dismissBtn) dismissBtn.disabled = !storageHealth.simulatedFailure;
+}
+
+function renderBrowserStorageEstimate() {
+  const state = document.getElementById('settings-browser-storage-state');
+  const detail = document.getElementById('settings-browser-storage-detail');
+  const pill = document.getElementById('settings-browser-storage-pill');
+  if (!state || !detail) return;
+  const requestId = ++browserStorageEstimateRequestId;
+  state.textContent = 'Checking browser origin storage';
+  detail.textContent = 'This is browser-origin usage, not just localStorage.';
+  setStatusPill(pill, 'Checking', { muted: true });
+
+  getBrowserStorageEstimate().then(estimate => {
+    if (requestId !== browserStorageEstimateRequestId) return;
+    if (!estimate.available) {
+      state.textContent = 'Origin estimate unavailable';
+      detail.textContent = estimate.detail;
+      setStatusPill(pill, 'Unavailable', { muted: true });
+      return;
+    }
+    state.textContent = 'Origin storage estimate';
+    detail.textContent = estimate.detail;
+    setStatusPill(pill, 'Available', { muted: true });
   });
 }
 

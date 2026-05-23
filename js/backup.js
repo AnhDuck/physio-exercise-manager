@@ -120,10 +120,20 @@ function importBackupJson(jsonText) {
     return;
   }
 
-  localStorage.setItem(KEYS.EXERCISES, JSON.stringify(backup.data.exercises));
-  localStorage.setItem(KEYS.SESSIONS, JSON.stringify(backup.data.sessions));
-  localStorage.setItem(KEYS.SETTINGS, JSON.stringify(sanitizeLegacySettings(backup.data.settings)));
-  localStorage.setItem(KEYS.EVENTS, JSON.stringify(backup.data.events));
+  const originalValues = getOriginalAppStorageValues();
+  beginImportStorageTest();
+  try {
+    safeSetLocalStorageItem(KEYS.EXERCISES, JSON.stringify(backup.data.exercises), STORAGE_LABELS[KEYS.EXERCISES]);
+    safeSetLocalStorageItem(KEYS.SESSIONS, JSON.stringify(backup.data.sessions), STORAGE_LABELS[KEYS.SESSIONS]);
+    safeSetLocalStorageItem(KEYS.SETTINGS, JSON.stringify(sanitizeLegacySettings(backup.data.settings)), STORAGE_LABELS[KEYS.SETTINGS]);
+    safeSetLocalStorageItem(KEYS.EVENTS, JSON.stringify(backup.data.events), STORAGE_LABELS[KEYS.EVENTS]);
+  } catch (err) {
+    restoreAppStorageValues(originalValues);
+    alert(`Import failed:\n\n- The backup was valid, but browser storage could not save it.\n- Your previous browser data was restored.\n- ${storageErrorMessage(err)}`);
+    return;
+  } finally {
+    endImportStorageTest();
+  }
   window.location.reload();
 }
 

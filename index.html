@@ -271,15 +271,90 @@
         <section class="settings-panel" id="settings-panel-backup" role="tabpanel" aria-labelledby="settings-tab-backup" data-settings-panel="backup" hidden>
           <div class="settings-section is-first">
             <div class="settings-section-header">
-              <h3>Manual JSON</h3>
+              <h3>Current status</h3>
             </div>
             <div class="settings-row-group">
-              <div class="settings-backup-row">
+              <div class="settings-action-row">
                 <div class="settings-action-label">
-                  <strong>Download full backup</strong>
-                  <span>Exercises, sessions, settings, and timeline.</span>
+                  <strong id="settings-storage-save-state">No save yet this page load</strong>
+                  <span id="settings-storage-save-detail">The next app-data save will update this status.</span>
                 </div>
-                <button class="settings-backup-btn" id="settings-export-json" type="button" data-settings-icon="backup-download">Download JSON</button>
+                <span class="settings-status-pill" id="settings-storage-save-pill">Waiting</span>
+              </div>
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <div class="settings-label-heading">
+                    <strong id="settings-data-safety-state">Checking saved data</strong>
+                    <button class="settings-tooltip settings-tooltip-below" type="button" aria-label="What saved data check means" data-tooltip="Checks the exercises, session logs, settings, and timeline currently saved in this browser. This does not compare against the backup folder.">?</button>
+                  </div>
+                  <span id="settings-data-safety-detail">Checking exercises, session logs, settings, and timeline.</span>
+                </div>
+                <span class="settings-status-pill" id="settings-data-safety-pill">Checking</span>
+              </div>
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <strong id="settings-current-folder-state">Checking backup folder</strong>
+                  <span id="settings-current-folder-detail">Checking folder backup status.</span>
+                </div>
+                <span class="settings-status-pill" id="settings-current-folder-pill">Checking</span>
+              </div>
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <div class="settings-label-heading">
+                    <strong id="settings-backup-verify-state">Latest folder backup</strong>
+                    <button class="settings-tooltip" type="button" aria-label="What backup verification means" data-tooltip="After a folder backup is written, the app reads the latest JSON file back and validates that backup file can be restored.">?</button>
+                  </div>
+                  <span id="settings-backup-verify-detail">No folder backup has been verified yet.</span>
+                </div>
+                <span class="settings-status-pill" id="settings-backup-verify-pill">Not checked</span>
+              </div>
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <strong id="settings-storage-total-state">App storage OK</strong>
+                  <span id="settings-storage-total-detail">Calculating app storage usage.</span>
+                </div>
+                <span class="settings-status-pill" id="settings-storage-total-pill">Checking</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h3>Browser storage</h3>
+            </div>
+            <div class="settings-status-grid">
+              <div class="settings-status-item">
+                <span>Exercises</span>
+                <strong id="settings-storage-exercises">0 B</strong>
+              </div>
+              <div class="settings-status-item">
+                <span>Session logs</span>
+                <strong id="settings-storage-sessions">0 B</strong>
+              </div>
+              <div class="settings-status-item">
+                <span>Settings</span>
+                <strong id="settings-storage-settings">0 B</strong>
+              </div>
+              <div class="settings-status-item">
+                <span>Timeline</span>
+                <strong id="settings-storage-events">0 B</strong>
+              </div>
+              <div class="settings-status-item">
+                <span>Total app data</span>
+                <strong id="settings-storage-total">0 B</strong>
+              </div>
+              <div class="settings-status-item">
+                <span>Storage tier</span>
+                <strong id="settings-storage-tier">Checking</strong>
+              </div>
+            </div>
+            <div class="settings-row-group settings-storage-origin">
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <strong id="settings-browser-storage-state">Checking browser origin storage</strong>
+                  <span id="settings-browser-storage-detail">This is browser-origin usage, not just localStorage.</span>
+                </div>
+                <span class="settings-status-pill" id="settings-browser-storage-pill">Checking</span>
               </div>
             </div>
           </div>
@@ -304,13 +379,7 @@
                 <button class="settings-backup-btn" id="settings-auto-backup-now" type="button" data-settings-icon="backup-now">Backup now</button>
               </div>
             </div>
-          </div>
-
-          <div class="settings-section">
-            <div class="settings-section-header">
-              <h3>Schedule</h3>
-            </div>
-            <div class="settings-status-grid">
+            <div class="settings-status-grid settings-folder-schedule">
               <label class="settings-status-item" for="setting-auto-backup-time">
                 <span>Auto-backup time</span>
                 <input type="time" id="setting-auto-backup-time" />
@@ -328,13 +397,7 @@
                 <strong id="settings-auto-backup-issue-text"></strong>
               </div>
             </div>
-          </div>
-
-          <div class="settings-section">
-            <div class="settings-section-header">
-              <h3>Latest result</h3>
-            </div>
-            <div class="settings-row-group">
+            <div class="settings-row-group settings-folder-history">
               <div class="settings-action-row">
                 <div class="settings-action-label">
                   <strong>Backup history</strong>
@@ -351,34 +414,16 @@
 
           <div class="settings-section">
             <div class="settings-section-header">
-              <h3>Data safety</h3>
+              <h3>JSON backup / restore</h3>
             </div>
             <div class="settings-row-group">
-              <div class="settings-action-row">
+              <div class="settings-backup-row">
                 <div class="settings-action-label">
-                  <div class="settings-label-heading">
-                    <strong id="settings-data-safety-state">Checking saved data</strong>
-                    <button class="settings-tooltip settings-tooltip-below" type="button" aria-label="What saved data check means" data-tooltip="Checks the exercises, session logs, settings, and timeline currently saved in this browser. This does not compare against the backup folder.">?</button>
-                  </div>
-                  <span id="settings-data-safety-detail">Checking exercises, session logs, settings, and timeline.</span>
+                  <strong>Download full backup</strong>
+                  <span>Exercises, sessions, settings, and timeline.</span>
                 </div>
-                <span class="settings-status-pill" id="settings-data-safety-pill">Checking</span>
+                <button class="settings-backup-btn" id="settings-export-json" type="button" data-settings-icon="backup-download">Download JSON</button>
               </div>
-              <div class="settings-action-row">
-                <div class="settings-action-label">
-                  <div class="settings-label-heading">
-                    <strong id="settings-backup-verify-state">Latest folder backup</strong>
-                    <button class="settings-tooltip" type="button" aria-label="What backup verification means" data-tooltip="After a folder backup is written, the app reads the latest JSON file back and validates that backup file can be restored.">?</button>
-                  </div>
-                  <span id="settings-backup-verify-detail">No folder backup has been verified yet.</span>
-                </div>
-                <span class="settings-status-pill" id="settings-backup-verify-pill">Not checked</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="settings-section settings-restore-section">
-            <div class="settings-row-group">
               <div class="settings-backup-row">
                 <div class="settings-action-label">
                   <strong>Restore from JSON</strong>
@@ -386,6 +431,28 @@
                 </div>
                 <button class="settings-backup-btn settings-import-btn" id="settings-import-json" type="button" data-settings-icon="backup-import">Import JSON</button>
                 <input id="settings-import-file" type="file" accept="application/json,.json" hidden />
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h3>Advanced / testing</h3>
+            </div>
+            <div class="settings-row-group">
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <strong id="settings-storage-test-state">No test warning active</strong>
+                  <span id="settings-storage-test-detail">Use the test button to verify the persistent save-failure banner without writing test data.</span>
+                </div>
+                <button class="settings-backup-btn" id="settings-test-save-warning" type="button">Test save warning</button>
+              </div>
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <strong>Dismiss test warning</strong>
+                  <span>Clears only the simulated warning. Real save failures clear after the next real successful save.</span>
+                </div>
+                <button class="settings-backup-btn" id="settings-dismiss-save-warning-test" type="button" disabled>Dismiss test</button>
               </div>
             </div>
           </div>
@@ -464,7 +531,7 @@
 
   <!-- Scripts - order matters: data/storage, shared helpers, features, then bootstrap. -->
   <script>
-    window.PEM_APP_VERSION = '1.0.5';
+    window.PEM_APP_VERSION = '1.0.6';
 
     const appVersionLabel = document.getElementById('app-version');
     if (appVersionLabel) appVersionLabel.textContent = `v${window.PEM_APP_VERSION}`;

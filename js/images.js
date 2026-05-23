@@ -36,7 +36,7 @@ function storeExerciseImage(exId, imageData) {
   const previousImage = exercises[idx].image;
   exercises[idx].image = imageData;
   try {
-    saveExercises(exercises);
+    withStorageWriteContext('image', () => saveExercises(exercises));
   } catch (err) {
     exercises[idx].image = previousImage;
     const msg = err && err.name === 'QuotaExceededError'

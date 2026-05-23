@@ -22,7 +22,7 @@ function getSessionForEdit(dateStr) {
 }
 
 function persistSessions() {
-  localStorage.setItem('pem_sessions', JSON.stringify(sessions));
+  safeSetLocalStorageItem(KEYS.SESSIONS, JSON.stringify(sessions), STORAGE_LABELS[KEYS.SESSIONS]);
 }
 
 function targetSetsForExercise(ex) {
@@ -180,5 +180,11 @@ function migrateSetProgressSnapshots() {
       changed = true;
     }
   });
-  if (changed) persistSessions();
+  if (changed) {
+    try {
+      persistSessions();
+    } catch (err) {
+      console.error('Could not save session progress migration.', err);
+    }
+  }
 }

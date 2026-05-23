@@ -56,6 +56,10 @@ Settings UI: first reuse existing primitives before custom CSS: `settings-sectio
 
 Security/storage: use `textContent` or DOM helpers for user-controlled strings. Exercise images are data URLs inside `pem_exercises`; large images can exceed browser storage.
 
+All app-data writes must go through the safe-save helper; never call `localStorage.setItem` directly for app keys outside storage internals.
+
+The Backup tab is the data control center. Save-failure status outranks data safety and folder-backup health in the shared backup health banner.
+
 ## Checks
 
 After JS edits run:

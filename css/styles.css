@@ -2495,6 +2495,12 @@ body:has(#settings-modal:not(.hidden)) {
   white-space: nowrap;
 }
 
+.settings-storage-origin,
+.settings-folder-schedule,
+.settings-folder-history {
+  margin-top: 10px;
+}
+
 .settings-status-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

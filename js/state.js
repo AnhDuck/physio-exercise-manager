@@ -26,6 +26,13 @@ let autoBackupHandleLoaded = false;
 let autoBackupTimer = null;
 let autoBackupRunning = false;
 let autoBackupHistoryExpanded = false;
+let browserStorageEstimateRequestId = 0;
+let storageHealth = {
+  lastAttempt: null,
+  lastSuccess: null,
+  lastFailure: null,
+  simulatedFailure: false,
+};
 function setHeaderQuote() {
   const quote = document.getElementById('header-quote');
   if (!quote) return;
@@ -47,7 +54,11 @@ function runMigrations() {
 
   if (!settings.defaultBlocksApplied) {
     settings.defaultBlocksApplied = true;
-    saveSettings(settings);
+    try {
+      saveSettings(settings);
+    } catch (err) {
+      console.error('Could not save default block migration.', err);
+    }
   }
 
   ensureBlockSettings();
@@ -74,7 +85,15 @@ function runMigrations() {
   });
 
   if (exercisesChanged) {
-    saveExercises(exercises);
+    try {
+      saveExercises(exercises);
+    } catch (err) {
+      console.error('Could not save exercise migrations.', err);
+    }
   }
-  saveSettings(settings);
+  try {
+    saveSettings(settings);
+  } catch (err) {
+    console.error('Could not save settings migrations.', err);
+  }
 }

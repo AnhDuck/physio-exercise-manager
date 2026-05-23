@@ -8,7 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
   runMigrations();
   currentWeekStart = getMonday(new Date());
   lastTodayStr = todayStr();
-  restoreActiveTracker();
+  try {
+    restoreActiveTracker();
+  } catch (err) {
+    console.error('Could not restore active tracker state.', err);
+  }
   setHeaderQuote();
   render();
   bindStaticEvents();
@@ -68,6 +72,8 @@ function bindStaticEvents() {
   document.getElementById('settings-clear-review').addEventListener('click', clearChangedSincePhysioMarkers);
   document.getElementById('settings-export-json').addEventListener('click', exportFullBackup);
   document.getElementById('settings-import-json').addEventListener('click', openBackupImportPicker);
+  document.getElementById('settings-test-save-warning').addEventListener('click', simulateStorageFailureWarning);
+  document.getElementById('settings-dismiss-save-warning-test').addEventListener('click', dismissSimulatedStorageFailureWarning);
   document.getElementById('backup-health-action').addEventListener('click', handleBackupHealthAction);
   document.getElementById('settings-auto-backup-folder').addEventListener('click', chooseAutoBackupFolder);
   document.getElementById('settings-auto-backup-now').addEventListener('click', runManualFolderBackup);

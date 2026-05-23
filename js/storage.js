@@ -5,6 +5,372 @@ const KEYS = {
   EVENTS:    'pem_events',
 };
 
+const STORAGE_LABELS = {
+  [KEYS.EXERCISES]: 'Exercises',
+  [KEYS.SESSIONS]: 'Session logs',
+  [KEYS.SETTINGS]: 'Settings',
+  [KEYS.EVENTS]: 'Timeline',
+};
+const APP_STORAGE_KEYS = Object.values(KEYS);
+const STORAGE_TIER_GROWING_BYTES = 2 * 1024 * 1024;
+const STORAGE_TIER_WATCH_BYTES = 4 * 1024 * 1024;
+const pemStorageTest = initializePemStorageTestMode();
+const localStorageAvailability = probeLocalStorageAvailability();
+let storageWriteContext = '';
+
+function initializePemStorageTestMode() {
+  const mode = new URLSearchParams(window.location.search).get('pem_test') || '';
+  const allowedModes = new Set(['quota', 'quota_once', 'unavailable', 'import_fail', 'image_quota']);
+  const test = {
+    mode: allowedModes.has(mode) ? mode : '',
+    quotaOnceUsed: false,
+    importActive: false,
+    importWriteCount: 0,
+  };
+  if (test.mode) {
+    console.warn(`[PEM test mode] ${test.mode} is active. Storage behavior is being simulated for testing.`);
+  }
+  return test;
+}
+
+function probeLocalStorageAvailability() {
+  if (pemStorageTest.mode === 'unavailable') {
+    return {
+      available: false,
+      error: 'Simulated unavailable browser storage.',
+    };
+  }
+  try {
+    const probeKey = 'pem_storage_probe';
+    localStorage.setItem(probeKey, '1');
+    localStorage.removeItem(probeKey);
+    return { available: true, error: '' };
+  } catch (err) {
+    return {
+      available: false,
+      error: storageErrorMessage(err),
+    };
+  }
+}
+
+function safeGetLocalStorageItem(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (err) {
+    recordStorageFailure({
+      key,
+      label: STORAGE_LABELS[key] || key,
+      size: 0,
+      error: err,
+    });
+    scheduleStorageHealthRender();
+    return null;
+  }
+}
+
+function safeSetLocalStorageItem(key, jsonString, label = STORAGE_LABELS[key] || key) {
+  if (typeof jsonString !== 'string') {
+    throw new TypeError('safeSetLocalStorageItem expects an already-stringified string.');
+  }
+
+  const size = byteLength(jsonString);
+  recordStorageAttempt({ key, label, size });
+
+  try {
+    const testError = storageTestErrorForWrite(key);
+    if (testError) throw testError;
+    if (!localStorageAvailability.available) {
+      const err = new Error(localStorageAvailability.error || 'Browser storage is unavailable.');
+      err.name = 'SecurityError';
+      throw err;
+    }
+    localStorage.setItem(key, jsonString);
+    recordStorageSuccess({ key, label, size });
+    scheduleStorageHealthRender();
+  } catch (err) {
+    recordStorageFailure({ key, label, size, error: err });
+    scheduleStorageHealthRender();
+    throw err;
+  }
+}
+
+function storageTestErrorForWrite(key) {
+  if (pemStorageTest.mode === 'quota') return createQuotaExceededError();
+  if (pemStorageTest.mode === 'quota_once' && !pemStorageTest.quotaOnceUsed) {
+    pemStorageTest.quotaOnceUsed = true;
+    return createQuotaExceededError();
+  }
+  if (pemStorageTest.mode === 'import_fail' && pemStorageTest.importActive) {
+    pemStorageTest.importWriteCount += 1;
+    if (pemStorageTest.importWriteCount === 3) return createQuotaExceededError();
+  }
+  if (pemStorageTest.mode === 'image_quota' && storageWriteContext === 'image' && key === KEYS.EXERCISES) {
+    return createQuotaExceededError();
+  }
+  return null;
+}
+
+function createQuotaExceededError() {
+  try {
+    return new DOMException('Simulated storage quota exceeded.', 'QuotaExceededError');
+  } catch (_) {
+    const err = new Error('Simulated storage quota exceeded.');
+    err.name = 'QuotaExceededError';
+    return err;
+  }
+}
+
+function withStorageWriteContext(context, callback) {
+  const previous = storageWriteContext;
+  storageWriteContext = context;
+  try {
+    return callback();
+  } finally {
+    storageWriteContext = previous;
+  }
+}
+
+function beginImportStorageTest() {
+  pemStorageTest.importActive = true;
+  pemStorageTest.importWriteCount = 0;
+}
+
+function endImportStorageTest() {
+  pemStorageTest.importActive = false;
+}
+
+function getOriginalAppStorageValues() {
+  return APP_STORAGE_KEYS.reduce((values, key) => {
+    values[key] = safeGetLocalStorageItem(key);
+    return values;
+  }, {});
+}
+
+function restoreAppStorageValues(originalValues) {
+  APP_STORAGE_KEYS.forEach(key => {
+    try {
+      if (originalValues[key] === null || originalValues[key] === undefined) {
+        localStorage.removeItem(key);
+      } else {
+        localStorage.setItem(key, originalValues[key]);
+      }
+    } catch (err) {
+      recordStorageFailure({
+        key,
+        label: STORAGE_LABELS[key] || key,
+        size: byteLength(originalValues[key] || ''),
+        error: err,
+      });
+    }
+  });
+  scheduleStorageHealthRender();
+}
+
+function recordStorageAttempt(attempt) {
+  if (typeof storageHealth !== 'object' || !storageHealth) return;
+  storageHealth.lastAttempt = {
+    at: new Date().toISOString(),
+    key: attempt.key,
+    label: attempt.label,
+    size: attempt.size,
+  };
+}
+
+function recordStorageSuccess(success) {
+  if (typeof storageHealth !== 'object' || !storageHealth) return;
+  storageHealth.lastSuccess = {
+    at: new Date().toISOString(),
+    key: success.key,
+    label: success.label,
+    size: success.size,
+  };
+  storageHealth.lastFailure = null;
+  storageHealth.simulatedFailure = false;
+}
+
+function recordStorageFailure(failure) {
+  if (typeof storageHealth !== 'object' || !storageHealth) return;
+  storageHealth.lastAttempt = {
+    at: new Date().toISOString(),
+    key: failure.key,
+    label: failure.label,
+    size: failure.size,
+  };
+  storageHealth.lastFailure = {
+    at: new Date().toISOString(),
+    key: failure.key,
+    label: failure.label,
+    size: failure.size,
+    error: storageErrorMessage(failure.error),
+    errorName: failure.error?.name || '',
+    quota: isStorageQuotaError(failure.error),
+  };
+}
+
+function scheduleStorageHealthRender() {
+  window.setTimeout(() => {
+    if (typeof renderAutoBackupSettings === 'function') {
+      renderAutoBackupSettings();
+    }
+  }, 0);
+}
+
+function getStorageHealthIssue() {
+  if (typeof storageHealth !== 'object' || !storageHealth) return null;
+  if (!localStorageAvailability.available) {
+    return {
+      ok: false,
+      code: 'storage-unavailable',
+      title: 'Browser storage is unavailable',
+      detail: localStorageAvailability.error || 'This browser is not allowing saved app data right now. Download JSON now to protect the current data.',
+      action: 'Download JSON',
+    };
+  }
+  if (storageHealth.lastFailure) {
+    const failure = storageHealth.lastFailure;
+    return {
+      ok: false,
+      code: 'storage-failure',
+      title: 'Save failed',
+      detail: `${failure.label || 'App data'} did not save (${formatBytes(failure.size)}). ${failure.error || 'Download JSON now to protect the current data.'}`,
+      action: 'Download JSON',
+    };
+  }
+  if (storageHealth.simulatedFailure) {
+    return {
+      ok: false,
+      code: 'storage-test',
+      title: 'Test save warning',
+      detail: 'This is a non-destructive simulated save warning. Use Download JSON to test the emergency export action, or dismiss it in Backup settings.',
+      action: 'Download JSON',
+    };
+  }
+  return null;
+}
+
+function simulateStorageFailureWarning() {
+  if (typeof storageHealth !== 'object' || !storageHealth) return;
+  storageHealth.simulatedFailure = true;
+  if (typeof renderAutoBackupSettings === 'function') renderAutoBackupSettings();
+}
+
+function dismissSimulatedStorageFailureWarning() {
+  if (typeof storageHealth !== 'object' || !storageHealth) return;
+  storageHealth.simulatedFailure = false;
+  if (typeof renderAutoBackupSettings === 'function') renderAutoBackupSettings();
+}
+
+function isStorageQuotaError(err) {
+  return err?.name === 'QuotaExceededError' ||
+    err?.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+    err?.code === 22 ||
+    err?.code === 1014 ||
+    /quota/i.test(storageErrorMessage(err));
+}
+
+function storageErrorMessage(err) {
+  if (!err) return 'Unknown storage error.';
+  return err.message || String(err);
+}
+
+function byteLength(value) {
+  const stringValue = String(value ?? '');
+  if (window.TextEncoder) return new TextEncoder().encode(stringValue).length;
+  return new Blob([stringValue]).size;
+}
+
+function formatBytes(bytes) {
+  const size = Math.max(0, Number(bytes) || 0);
+  if (size < 1024) return `${formatNumber(size)} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(size < 10 * 1024 ? 1 : 0)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function appStorageTier(totalBytes) {
+  const total = Number(totalBytes) || 0;
+  if (total >= STORAGE_TIER_WATCH_BYTES) {
+    return {
+      code: 'watch',
+      label: 'Watch',
+      detail: 'Large browser data. Keep folder or JSON backups current, especially before adding images.',
+    };
+  }
+  if (total >= STORAGE_TIER_GROWING_BYTES) {
+    return {
+      code: 'growing',
+      label: 'Growing',
+      detail: 'Browser data is growing. Images usually account for most storage usage.',
+    };
+  }
+  return {
+    code: 'ok',
+    label: 'OK',
+    detail: 'Browser data is in the normal range.',
+  };
+}
+
+function getAppStorageUsageReport() {
+  const keys = APP_STORAGE_KEYS.map(key => {
+    if (!localStorageAvailability.available) {
+      return {
+        key,
+        label: STORAGE_LABELS[key] || key,
+        bytes: 0,
+        text: 'Unavailable',
+      };
+    }
+    const value = safeGetLocalStorageItem(key);
+    const bytes = value === null ? 0 : byteLength(value);
+    return {
+      key,
+      label: STORAGE_LABELS[key] || key,
+      bytes,
+      text: formatBytes(bytes),
+    };
+  });
+  const totalBytes = keys.reduce((sum, item) => sum + item.bytes, 0);
+  return {
+    available: localStorageAvailability.available,
+    error: localStorageAvailability.error,
+    keys,
+    totalBytes,
+    totalText: formatBytes(totalBytes),
+    tier: localStorageAvailability.available
+      ? appStorageTier(totalBytes)
+      : {
+          code: 'unavailable',
+          label: 'Unavailable',
+          detail: localStorageAvailability.error || 'Browser storage is unavailable.',
+        },
+  };
+}
+
+async function getBrowserStorageEstimate() {
+  if (!navigator.storage || typeof navigator.storage.estimate !== 'function') {
+    return { available: false, detail: 'Browser origin estimate unavailable.' };
+  }
+  try {
+    const estimate = await navigator.storage.estimate();
+    const usage = Number(estimate.usage) || 0;
+    const quota = Number(estimate.quota) || 0;
+    return {
+      available: true,
+      usage,
+      quota,
+      usageText: formatBytes(usage),
+      quotaText: quota ? formatBytes(quota) : 'Unknown',
+      detail: quota
+        ? `${formatBytes(usage)} used of ${formatBytes(quota)} for this browser origin.`
+        : `${formatBytes(usage)} used by this browser origin.`,
+    };
+  } catch (err) {
+    return {
+      available: false,
+      detail: `Browser origin estimate unavailable: ${storageErrorMessage(err)}`,
+    };
+  }
+}
+
 function defaultAutoBackupSettings() {
   return {
     time: '06:00',
@@ -60,32 +426,36 @@ function isValidStoredTime(timeStr) {
 }
 
 function loadExercises() {
-  const raw = localStorage.getItem(KEYS.EXERCISES);
+  const raw = safeGetLocalStorageItem(KEYS.EXERCISES);
   if (!raw) {
     const exercises = DEFAULT_EXERCISES.map(e => ({ ...e }));
-    saveExercises(exercises);
+    try {
+      saveExercises(exercises);
+    } catch (err) {
+      console.error('Could not seed default exercises.', err);
+    }
     return exercises;
   }
   return JSON.parse(raw);
 }
 
 function saveExercises(exercises) {
-  localStorage.setItem(KEYS.EXERCISES, JSON.stringify(exercises));
+  safeSetLocalStorageItem(KEYS.EXERCISES, JSON.stringify(exercises), STORAGE_LABELS[KEYS.EXERCISES]);
 }
 
 function loadSessions() {
-  const raw = localStorage.getItem(KEYS.SESSIONS);
+  const raw = safeGetLocalStorageItem(KEYS.SESSIONS);
   return raw ? JSON.parse(raw) : {};
 }
 
 function saveSession(dateStr, sessionData) {
   const sessions = loadSessions();
   sessions[dateStr] = sessionData;
-  localStorage.setItem(KEYS.SESSIONS, JSON.stringify(sessions));
+  safeSetLocalStorageItem(KEYS.SESSIONS, JSON.stringify(sessions), STORAGE_LABELS[KEYS.SESSIONS]);
 }
 
 function loadSettings() {
-  const raw = localStorage.getItem(KEYS.SETTINGS);
+  const raw = safeGetLocalStorageItem(KEYS.SETTINGS);
   if (!raw) {
     const defaults = {
       createdAt: toDateStr(new Date()),
@@ -96,7 +466,11 @@ function loadSettings() {
       personalDayStartTime: '07:00',
       autoBackup: defaultAutoBackupSettings(),
     };
-    saveSettings(defaults);
+    try {
+      saveSettings(defaults);
+    } catch (err) {
+      console.error('Could not seed default settings.', err);
+    }
     return defaults;
   }
   const loaded = sanitizeLegacySettings({
@@ -120,7 +494,7 @@ function saveSettings(settings) {
     setCueSpeechVolume: clampSetCueSpeechVolume(cleanSettings.setCueSpeechVolume),
     autoBackup: normalizeAutoBackupSettings(cleanSettings.autoBackup),
   };
-  localStorage.setItem(KEYS.SETTINGS, JSON.stringify(nextSettings));
+  safeSetLocalStorageItem(KEYS.SETTINGS, JSON.stringify(nextSettings), STORAGE_LABELS[KEYS.SETTINGS]);
 }
 
 function sanitizeLegacySettings(value) {
@@ -138,12 +512,12 @@ function clampSetCueSpeechVolume(value) {
 }
 
 function loadEvents() {
-  const raw = localStorage.getItem(KEYS.EVENTS);
+  const raw = safeGetLocalStorageItem(KEYS.EVENTS);
   return raw ? JSON.parse(raw) : [];
 }
 
 function saveEvents(events) {
-  localStorage.setItem(KEYS.EVENTS, JSON.stringify(events));
+  safeSetLocalStorageItem(KEYS.EVENTS, JSON.stringify(events), STORAGE_LABELS[KEYS.EVENTS]);
 }
 
 // ISO date string helpers — uses LOCAL time (not UTC) so dates match what the user sees
