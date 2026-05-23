@@ -322,41 +322,57 @@
             <div class="settings-section-header">
               <h3>Browser storage</h3>
             </div>
-            <div class="settings-status-grid">
-              <div class="settings-status-item">
-                <span>Exercises</span>
-                <strong id="settings-storage-exercises">0 B</strong>
-              </div>
-              <div class="settings-status-item">
-                <span>Session logs</span>
-                <strong id="settings-storage-sessions">0 B</strong>
-              </div>
-              <div class="settings-status-item">
-                <span>Settings</span>
-                <strong id="settings-storage-settings">0 B</strong>
-              </div>
-              <div class="settings-status-item">
-                <span>Timeline</span>
-                <strong id="settings-storage-events">0 B</strong>
-              </div>
-              <div class="settings-status-item">
+            <div class="settings-status-grid settings-storage-summary-grid">
+              <div class="settings-status-item settings-storage-total-row">
                 <span>Total app data</span>
-                <strong id="settings-storage-total">0 B</strong>
+                <strong id="settings-storage-summary-total">0 B</strong>
               </div>
               <div class="settings-status-item">
                 <span>Storage tier</span>
-                <strong id="settings-storage-tier">Checking</strong>
+                <strong id="settings-storage-summary-tier">Checking</strong>
               </div>
             </div>
-            <div class="settings-row-group settings-storage-origin">
-              <div class="settings-action-row">
-                <div class="settings-action-label">
-                  <strong id="settings-browser-storage-state">Checking browser origin storage</strong>
-                  <span id="settings-browser-storage-detail">This is browser-origin usage, not just localStorage.</span>
+            <details class="settings-disclosure settings-storage-disclosure">
+              <summary>
+                <span class="settings-disclosure-title">Storage details</span>
+                <span class="settings-disclosure-meta">Per-key app data and browser-reported origin estimate</span>
+              </summary>
+              <div class="settings-status-grid settings-storage-detail-grid">
+                <div class="settings-status-item">
+                  <span>Exercises</span>
+                  <strong id="settings-storage-exercises">0 B</strong>
                 </div>
-                <span class="settings-status-pill" id="settings-browser-storage-pill">Checking</span>
+                <div class="settings-status-item">
+                  <span>Session logs</span>
+                  <strong id="settings-storage-sessions">0 B</strong>
+                </div>
+                <div class="settings-status-item">
+                  <span>Settings</span>
+                  <strong id="settings-storage-settings">0 B</strong>
+                </div>
+                <div class="settings-status-item">
+                  <span>Timeline</span>
+                  <strong id="settings-storage-events">0 B</strong>
+                </div>
+                <div class="settings-status-item settings-storage-total-row">
+                  <span>Total app data</span>
+                  <strong id="settings-storage-total">0 B</strong>
+                </div>
+                <div class="settings-status-item">
+                  <span>Storage tier</span>
+                  <strong id="settings-storage-tier">Checking</strong>
+                </div>
               </div>
-            </div>
+              <div class="settings-row-group settings-storage-origin">
+                <div class="settings-action-row">
+                  <div class="settings-action-label">
+                    <strong id="settings-browser-storage-state">Checking browser origin storage</strong>
+                    <span id="settings-browser-storage-detail">This browser-reported estimate comes from navigator.storage.estimate(). It is not localStorage-specific and may not match the app total.</span>
+                  </div>
+                  <span class="settings-status-pill" id="settings-browser-storage-pill">Checking</span>
+                </div>
+              </div>
+            </details>
           </div>
 
           <div class="settings-section">
@@ -439,22 +455,70 @@
             <div class="settings-section-header">
               <h3>Advanced / testing</h3>
             </div>
-            <div class="settings-row-group">
-              <div class="settings-action-row">
-                <div class="settings-action-label">
-                  <strong id="settings-storage-test-state">No test warning active</strong>
-                  <span id="settings-storage-test-detail">Use the test button to verify the persistent save-failure banner without writing test data.</span>
+            <details class="settings-disclosure settings-test-disclosure">
+              <summary>
+                <span class="settings-disclosure-title">Storage failure tests</span>
+                <span class="settings-disclosure-meta" id="settings-storage-test-summary">No URL test mode active</span>
+              </summary>
+              <div class="settings-row-group">
+                <div class="settings-action-row">
+                  <div class="settings-action-label">
+                    <strong id="settings-storage-test-state">No test warning active</strong>
+                    <span id="settings-storage-test-detail">Use the test button to verify the persistent save-failure banner without writing test data.</span>
+                  </div>
+                  <button class="settings-backup-btn" id="settings-test-save-warning" type="button">Test save warning</button>
                 </div>
-                <button class="settings-backup-btn" id="settings-test-save-warning" type="button">Test save warning</button>
-              </div>
-              <div class="settings-action-row">
-                <div class="settings-action-label">
-                  <strong>Dismiss test warning</strong>
-                  <span>Clears only the simulated warning. Real save failures clear after the next real successful save.</span>
+                <div class="settings-action-row">
+                  <div class="settings-action-label">
+                    <strong>Dismiss test warning</strong>
+                    <span>Clears only the in-memory simulated warning. URL-based test modes stay active until you return to normal mode.</span>
+                  </div>
+                  <button class="settings-backup-btn" id="settings-dismiss-save-warning-test" type="button" disabled>Dismiss test</button>
                 </div>
-                <button class="settings-backup-btn" id="settings-dismiss-save-warning-test" type="button" disabled>Dismiss test</button>
+                <div class="settings-action-row">
+                  <div class="settings-action-label">
+                    <strong>Quota failure</strong>
+                    <span>Reloads in this tab with every safe app-data save throwing QuotaExceededError.</span>
+                  </div>
+                  <button class="settings-backup-btn settings-test-mode-btn" type="button" data-pem-test-mode="quota">Open quota test</button>
+                </div>
+                <div class="settings-action-row">
+                  <div class="settings-action-label">
+                    <strong>Quota once</strong>
+                    <span>Reloads in this tab with the next safe save failing once, then normal saves resume.</span>
+                  </div>
+                  <button class="settings-backup-btn settings-test-mode-btn" type="button" data-pem-test-mode="quota_once">Open quota-once test</button>
+                </div>
+                <div class="settings-action-row">
+                  <div class="settings-action-label">
+                    <strong>Storage unavailable</strong>
+                    <span>Reloads in this tab with the startup storage probe reporting unavailable storage.</span>
+                  </div>
+                  <button class="settings-backup-btn settings-test-mode-btn" type="button" data-pem-test-mode="unavailable">Open unavailable test</button>
+                </div>
+                <div class="settings-action-row">
+                  <div class="settings-action-label">
+                    <strong>Import rollback</strong>
+                    <span>Reloads in this tab so backup import writes two keys, fails on the third, and rolls back.</span>
+                  </div>
+                  <button class="settings-backup-btn settings-test-mode-btn" type="button" data-pem-test-mode="import_fail">Open import test</button>
+                </div>
+                <div class="settings-action-row">
+                  <div class="settings-action-label">
+                    <strong>Image quota</strong>
+                    <span>Reloads in this tab so only image-save writes fail with QuotaExceededError.</span>
+                  </div>
+                  <button class="settings-backup-btn settings-test-mode-btn" type="button" data-pem-test-mode="image_quota">Open image quota test</button>
+                </div>
+                <div class="settings-action-row">
+                  <div class="settings-action-label">
+                    <strong>Back to normal mode</strong>
+                    <span>Removes pem_test from the current URL and reloads this app normally.</span>
+                  </div>
+                  <button class="settings-backup-btn" id="settings-clear-test-mode" type="button">Back to normal mode</button>
+                </div>
               </div>
-            </div>
+            </details>
           </div>
         </section>
         </div>
@@ -531,7 +595,7 @@
 
   <!-- Scripts - order matters: data/storage, shared helpers, features, then bootstrap. -->
   <script>
-    window.PEM_APP_VERSION = '1.0.6';
+    window.PEM_APP_VERSION = '1.0.7';
 
     const appVersionLabel = document.getElementById('app-version');
     if (appVersionLabel) appVersionLabel.textContent = `v${window.PEM_APP_VERSION}`;

@@ -817,12 +817,19 @@ function renderStorageSettings(health) {
   });
   const storageTotal = document.getElementById('settings-storage-total');
   const storageTier = document.getElementById('settings-storage-tier');
+  const storageSummaryTotal = document.getElementById('settings-storage-summary-total');
+  const storageSummaryTier = document.getElementById('settings-storage-summary-tier');
   if (storageTotal) storageTotal.textContent = usageReport.totalText;
   if (storageTier) storageTier.textContent = `${usageReport.tier.label} - ${usageReport.tier.detail}`;
+  if (storageSummaryTotal) storageSummaryTotal.textContent = usageReport.totalText;
+  if (storageSummaryTier) storageSummaryTier.textContent = `${usageReport.tier.label} - ${usageReport.tier.detail}`;
 
   const testState = document.getElementById('settings-storage-test-state');
   const testDetail = document.getElementById('settings-storage-test-detail');
   const dismissBtn = document.getElementById('settings-dismiss-save-warning-test');
+  const clearTestModeBtn = document.getElementById('settings-clear-test-mode');
+  const testSummary = document.getElementById('settings-storage-test-summary');
+  const activeTestMode = getActivePemStorageTestMode();
   if (testState && testDetail) {
     testState.textContent = storageHealth.simulatedFailure ? 'Test warning is showing' : 'No test warning active';
     testDetail.textContent = storageHealth.simulatedFailure
@@ -830,6 +837,12 @@ function renderStorageSettings(health) {
       : 'Use the test button to verify the persistent save-failure banner without writing test data.';
   }
   if (dismissBtn) dismissBtn.disabled = !storageHealth.simulatedFailure;
+  if (clearTestModeBtn) clearTestModeBtn.disabled = !activeTestMode;
+  if (testSummary) {
+    testSummary.textContent = activeTestMode
+      ? `URL mode active: ${pemStorageTestModeLabel(activeTestMode)}`
+      : 'No URL test mode active';
+  }
 }
 
 function renderBrowserStorageEstimate() {
@@ -838,8 +851,8 @@ function renderBrowserStorageEstimate() {
   const pill = document.getElementById('settings-browser-storage-pill');
   if (!state || !detail) return;
   const requestId = ++browserStorageEstimateRequestId;
-  state.textContent = 'Checking browser origin storage';
-  detail.textContent = 'This is browser-origin usage, not just localStorage.';
+  state.textContent = 'Checking browser origin estimate';
+  detail.textContent = 'This browser-reported estimate comes from navigator.storage.estimate(). It is not localStorage-specific and may not match the app total.';
   setStatusPill(pill, 'Checking', { muted: true });
 
   getBrowserStorageEstimate().then(estimate => {
@@ -850,9 +863,9 @@ function renderBrowserStorageEstimate() {
       setStatusPill(pill, 'Unavailable', { muted: true });
       return;
     }
-    state.textContent = 'Origin storage estimate';
-    detail.textContent = estimate.detail;
-    setStatusPill(pill, 'Available', { muted: true });
+    state.textContent = 'Browser origin estimate';
+    detail.textContent = `${estimate.detail} Browser-reported estimate from navigator.storage.estimate(); not localStorage-specific, not exact, and may not match Total app data. Recent Chrome may report an artificial quota around 10 GiB for privacy/predictability.`;
+    setStatusPill(pill, 'Estimate', { muted: true });
   });
 }
 

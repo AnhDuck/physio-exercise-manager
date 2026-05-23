@@ -14,13 +14,20 @@ const STORAGE_LABELS = {
 const APP_STORAGE_KEYS = Object.values(KEYS);
 const STORAGE_TIER_GROWING_BYTES = 2 * 1024 * 1024;
 const STORAGE_TIER_WATCH_BYTES = 4 * 1024 * 1024;
+const PEM_STORAGE_TEST_LABELS = {
+  quota: 'Quota failure',
+  quota_once: 'Quota once',
+  unavailable: 'Storage unavailable',
+  import_fail: 'Import rollback',
+  image_quota: 'Image quota',
+};
 const pemStorageTest = initializePemStorageTestMode();
 const localStorageAvailability = probeLocalStorageAvailability();
 let storageWriteContext = '';
 
 function initializePemStorageTestMode() {
   const mode = new URLSearchParams(window.location.search).get('pem_test') || '';
-  const allowedModes = new Set(['quota', 'quota_once', 'unavailable', 'import_fail', 'image_quota']);
+  const allowedModes = new Set(Object.keys(PEM_STORAGE_TEST_LABELS));
   const test = {
     mode: allowedModes.has(mode) ? mode : '',
     quotaOnceUsed: false,
@@ -31,6 +38,31 @@ function initializePemStorageTestMode() {
     console.warn(`[PEM test mode] ${test.mode} is active. Storage behavior is being simulated for testing.`);
   }
   return test;
+}
+
+function getActivePemStorageTestMode() {
+  return pemStorageTest.mode;
+}
+
+function pemStorageTestModeLabel(mode = pemStorageTest.mode) {
+  return PEM_STORAGE_TEST_LABELS[mode] || '';
+}
+
+function activatePemStorageTestMode(mode) {
+  if (!PEM_STORAGE_TEST_LABELS[mode]) return;
+  const label = pemStorageTestModeLabel(mode);
+  if (!confirm(`Reload this app in the current tab with the "${label}" storage test mode?\n\nThis keeps the same browser origin and saved app data, but adds pem_test=${mode} to the URL until you return to normal mode.`)) return;
+  const url = new URL(window.location.href);
+  url.searchParams.set('pem_test', mode);
+  window.location.href = url.href;
+}
+
+function clearPemStorageTestMode() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has('pem_test')) return;
+  if (!confirm('Reload this app in normal mode?\n\nThis removes pem_test from the current URL.')) return;
+  url.searchParams.delete('pem_test');
+  window.location.href = url.href;
 }
 
 function probeLocalStorageAvailability() {

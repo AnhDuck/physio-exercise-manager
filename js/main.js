@@ -74,6 +74,10 @@ function bindStaticEvents() {
   document.getElementById('settings-import-json').addEventListener('click', openBackupImportPicker);
   document.getElementById('settings-test-save-warning').addEventListener('click', simulateStorageFailureWarning);
   document.getElementById('settings-dismiss-save-warning-test').addEventListener('click', dismissSimulatedStorageFailureWarning);
+  document.querySelectorAll('[data-pem-test-mode]').forEach(btn => {
+    btn.addEventListener('click', () => activatePemStorageTestMode(btn.dataset.pemTestMode));
+  });
+  document.getElementById('settings-clear-test-mode').addEventListener('click', clearPemStorageTestMode);
   document.getElementById('backup-health-action').addEventListener('click', handleBackupHealthAction);
   document.getElementById('settings-auto-backup-folder').addEventListener('click', chooseAutoBackupFolder);
   document.getElementById('settings-auto-backup-now').addEventListener('click', runManualFolderBackup);
