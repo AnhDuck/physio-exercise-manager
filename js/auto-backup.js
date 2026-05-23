@@ -528,7 +528,7 @@ function getAutoBackupHealth(now = new Date()) {
       code: 'data-safety',
       title: 'Saved data needs attention',
       detail: dataSafety.issues[0] || 'The app found a saved data issue.',
-      action: 'Open Settings',
+      action: 'Open Data Health',
     };
   }
 
@@ -538,7 +538,7 @@ function getAutoBackupHealth(now = new Date()) {
       code: 'unsupported',
       title: 'Folder backup is unavailable',
       detail: 'Automatic folder backups cannot run here. Download a JSON backup now, or open the app in Chrome or Edge desktop.',
-      action: 'Download JSON',
+      action: 'Open Backup',
     };
   }
 
@@ -603,24 +603,14 @@ function getAutoBackupHealth(now = new Date()) {
 
 function handleBackupHealthAction() {
   const health = getAutoBackupHealth();
-  if (health.code === 'unsupported' || health.code === 'storage-failure' || health.code === 'storage-test' || health.code === 'storage-unavailable') {
-    try {
-      exportFullBackup();
-    } catch (err) {
-      alert(`Emergency export failed: ${autoBackupErrorMessage(err)}`);
-    }
-    return;
-  }
-  if (health.code === 'data-safety') {
+  const dataHealthCodes = ['storage-failure', 'storage-test', 'storage-unavailable', 'data-safety'];
+  if (dataHealthCodes.includes(health.code)) {
     openSettingsModal();
-    setSettingsTab('backup', true);
+    setSettingsTab('data-health', true);
     return;
   }
-  if (health.code === 'due' || health.code === 'error') {
-    runManualFolderBackup();
-    return;
-  }
-  chooseAutoBackupFolder();
+  openSettingsModal();
+  setSettingsTab('backup', true);
 }
 
 function renderAutoBackupSettings() {
@@ -690,6 +680,8 @@ function updateAutoBackupHealthUi(health) {
   const settingsBtn = document.getElementById('btn-settings');
   const backupTab = document.getElementById('settings-tab-backup');
   const backupPanel = document.getElementById('settings-panel-backup');
+  const dataHealthTab = document.getElementById('settings-tab-data-health');
+  const dataHealthPanel = document.getElementById('settings-panel-data-health');
   const folderState = document.getElementById('settings-auto-backup-folder-state');
   const dataSafetyState = document.getElementById('settings-data-safety-state');
   const dataSafetyDetail = document.getElementById('settings-data-safety-detail');
@@ -703,6 +695,9 @@ function updateAutoBackupHealthUi(health) {
   const auto = getAutoBackupSettings();
   const dataSafety = getDataSafetyReport();
   const folderIssueCodes = ['unsupported', 'missing-folder', 'reconnect', 'checking', 'due', 'error'];
+  const dataHealthIssueCodes = ['storage-failure', 'storage-test', 'storage-unavailable', 'data-safety'];
+  const folderHasIssue = folderIssueCodes.includes(health.code);
+  const dataHealthHasIssue = dataHealthIssueCodes.includes(health.code);
 
   const hasIssue = !health.ok;
   document.body.classList.toggle('backup-health-open', hasIssue);
@@ -720,12 +715,19 @@ function updateAutoBackupHealthUi(health) {
   }
 
   if (backupTab) {
-    backupTab.classList.toggle('has-backup-issue', hasIssue);
-    backupTab.title = hasIssue ? health.title : '';
-    backupTab.setAttribute('aria-label', hasIssue ? `Backup. ${health.title}.` : 'Backup');
+    backupTab.classList.toggle('has-backup-issue', hasIssue && folderHasIssue);
+    backupTab.title = hasIssue && folderHasIssue ? health.title : '';
+    backupTab.setAttribute('aria-label', hasIssue && folderHasIssue ? `Backup. ${health.title}.` : 'Backup');
   }
 
-  if (backupPanel) backupPanel.classList.toggle('has-backup-issue', hasIssue);
+  if (dataHealthTab) {
+    dataHealthTab.classList.toggle('has-backup-issue', hasIssue && dataHealthHasIssue);
+    dataHealthTab.title = hasIssue && dataHealthHasIssue ? health.title : '';
+    dataHealthTab.setAttribute('aria-label', hasIssue && dataHealthHasIssue ? `Data Health. ${health.title}.` : 'Data Health');
+  }
+
+  if (backupPanel) backupPanel.classList.toggle('has-backup-issue', hasIssue && folderHasIssue);
+  if (dataHealthPanel) dataHealthPanel.classList.toggle('has-backup-issue', hasIssue && dataHealthHasIssue);
   if (folderState) folderState.classList.toggle('is-backup-issue', folderIssueCodes.includes(health.code));
   if (dataSafetyState && dataSafetyDetail) {
     dataSafetyState.textContent = dataSafety.ok ? 'Saved data is readable' : 'Saved data needs attention';

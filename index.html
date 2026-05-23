@@ -186,6 +186,15 @@
             </span>
             <span>Backup</span>
           </button>
+          <button class="settings-tab" id="settings-tab-data-health" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-data-health" data-settings-tab="data-health">
+            <span class="settings-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M12 21s7-3.5 7-10V5l-7-2-7 2v6c0 6.5 7 10 7 10z"></path>
+                <path d="M8.5 12.5l2.2 2.2 4.8-5.2"></path>
+              </svg>
+            </span>
+            <span>Data Health</span>
+          </button>
         </div>
 
         <div class="settings-content">
@@ -269,6 +278,84 @@
         </section>
 
         <section class="settings-panel" id="settings-panel-backup" role="tabpanel" aria-labelledby="settings-tab-backup" data-settings-panel="backup" hidden>
+          <div class="settings-section is-first">
+            <div class="settings-section-header">
+              <h3>Folder backup</h3>
+            </div>
+            <div class="settings-row-group">
+              <div class="settings-backup-row settings-folder-row">
+                <div class="settings-folder-field" aria-live="polite">
+                  <span class="settings-folder-icon" aria-hidden="true">▣</span>
+                  <span class="settings-folder-name" id="settings-auto-backup-folder-name">No folder selected</span>
+                </div>
+                <button class="settings-backup-btn" id="settings-auto-backup-folder" type="button" data-settings-icon="folder">Browse</button>
+              </div>
+              <div class="settings-backup-row">
+                <div class="settings-action-label">
+                  <strong id="settings-auto-backup-folder-state">Not selected</strong>
+                  <span>Keeps about 31 days of dated backups plus latest.</span>
+                </div>
+                <button class="settings-backup-btn" id="settings-auto-backup-now" type="button" data-settings-icon="backup-now">Backup now</button>
+              </div>
+            </div>
+            <div class="settings-status-grid settings-folder-schedule">
+              <label class="settings-status-item" for="setting-auto-backup-time">
+                <span>Auto-backup time</span>
+                <input type="time" id="setting-auto-backup-time" />
+              </label>
+              <div class="settings-status-item">
+                <span>Last backup</span>
+                <strong id="settings-auto-backup-last">Never</strong>
+              </div>
+              <div class="settings-status-item">
+                <span>Next backup</span>
+                <strong id="settings-auto-backup-next">Choose a folder</strong>
+              </div>
+              <div class="settings-status-item settings-status-issue" id="settings-auto-backup-issue" hidden>
+                <span>Issue</span>
+                <strong id="settings-auto-backup-issue-text"></strong>
+              </div>
+            </div>
+            <div class="settings-row-group settings-folder-history">
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <strong>Backup history</strong>
+                  <span>Review the latest folder backup result and older runs.</span>
+                </div>
+                <button class="auto-backup-history-toggle" id="settings-auto-backup-history-toggle" type="button">Show history</button>
+              </div>
+              <div class="settings-history-row">
+                <div class="auto-backup-history-summary" id="settings-auto-backup-summary"></div>
+                <div class="auto-backup-history" id="settings-auto-backup-history"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h3>JSON backup / restore</h3>
+            </div>
+            <div class="settings-row-group">
+              <div class="settings-backup-row">
+                <div class="settings-action-label">
+                  <strong>Download full backup</strong>
+                  <span>Exercises, sessions, settings, and timeline.</span>
+                </div>
+                <button class="settings-backup-btn" id="settings-export-json" type="button" data-settings-icon="backup-download">Download JSON</button>
+              </div>
+              <div class="settings-backup-row">
+                <div class="settings-action-label">
+                  <strong>Restore from JSON</strong>
+                  <span>Replaces this browser's saved app data after confirmation.</span>
+                </div>
+                <button class="settings-backup-btn settings-import-btn" id="settings-import-json" type="button" data-settings-icon="backup-import">Import JSON</button>
+                <input id="settings-import-file" type="file" accept="application/json,.json" hidden />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-panel" id="settings-panel-data-health" role="tabpanel" aria-labelledby="settings-tab-data-health" data-settings-panel="data-health" hidden>
           <div class="settings-section is-first">
             <div class="settings-section-header">
               <h3>Current status</h3>
@@ -373,82 +460,6 @@
                 </div>
               </div>
             </details>
-          </div>
-
-          <div class="settings-section">
-            <div class="settings-section-header">
-              <h3>Folder backup</h3>
-            </div>
-            <div class="settings-row-group">
-              <div class="settings-backup-row settings-folder-row">
-                <div class="settings-folder-field" aria-live="polite">
-                  <span class="settings-folder-icon" aria-hidden="true">▣</span>
-                  <span class="settings-folder-name" id="settings-auto-backup-folder-name">No folder selected</span>
-                </div>
-                <button class="settings-backup-btn" id="settings-auto-backup-folder" type="button" data-settings-icon="folder">Browse</button>
-              </div>
-              <div class="settings-backup-row">
-                <div class="settings-action-label">
-                  <strong id="settings-auto-backup-folder-state">Not selected</strong>
-                  <span>Keeps about 31 days of dated backups plus latest.</span>
-                </div>
-                <button class="settings-backup-btn" id="settings-auto-backup-now" type="button" data-settings-icon="backup-now">Backup now</button>
-              </div>
-            </div>
-            <div class="settings-status-grid settings-folder-schedule">
-              <label class="settings-status-item" for="setting-auto-backup-time">
-                <span>Auto-backup time</span>
-                <input type="time" id="setting-auto-backup-time" />
-              </label>
-              <div class="settings-status-item">
-                <span>Last backup</span>
-                <strong id="settings-auto-backup-last">Never</strong>
-              </div>
-              <div class="settings-status-item">
-                <span>Next backup</span>
-                <strong id="settings-auto-backup-next">Choose a folder</strong>
-              </div>
-              <div class="settings-status-item settings-status-issue" id="settings-auto-backup-issue" hidden>
-                <span>Issue</span>
-                <strong id="settings-auto-backup-issue-text"></strong>
-              </div>
-            </div>
-            <div class="settings-row-group settings-folder-history">
-              <div class="settings-action-row">
-                <div class="settings-action-label">
-                  <strong>Backup history</strong>
-                  <span>Review the latest folder backup result and older runs.</span>
-                </div>
-                <button class="auto-backup-history-toggle" id="settings-auto-backup-history-toggle" type="button">Show history</button>
-              </div>
-              <div class="settings-history-row">
-                <div class="auto-backup-history-summary" id="settings-auto-backup-summary"></div>
-                <div class="auto-backup-history" id="settings-auto-backup-history"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="settings-section">
-            <div class="settings-section-header">
-              <h3>JSON backup / restore</h3>
-            </div>
-            <div class="settings-row-group">
-              <div class="settings-backup-row">
-                <div class="settings-action-label">
-                  <strong>Download full backup</strong>
-                  <span>Exercises, sessions, settings, and timeline.</span>
-                </div>
-                <button class="settings-backup-btn" id="settings-export-json" type="button" data-settings-icon="backup-download">Download JSON</button>
-              </div>
-              <div class="settings-backup-row">
-                <div class="settings-action-label">
-                  <strong>Restore from JSON</strong>
-                  <span>Replaces this browser's saved app data after confirmation.</span>
-                </div>
-                <button class="settings-backup-btn settings-import-btn" id="settings-import-json" type="button" data-settings-icon="backup-import">Import JSON</button>
-                <input id="settings-import-file" type="file" accept="application/json,.json" hidden />
-              </div>
-            </div>
           </div>
 
           <div class="settings-section">
@@ -595,7 +606,7 @@
 
   <!-- Scripts - order matters: data/storage, shared helpers, features, then bootstrap. -->
   <script>
-    window.PEM_APP_VERSION = '1.0.7';
+    window.PEM_APP_VERSION = '1.0.8';
 
     const appVersionLabel = document.getElementById('app-version');
     if (appVersionLabel) appVersionLabel.textContent = `v${window.PEM_APP_VERSION}`;

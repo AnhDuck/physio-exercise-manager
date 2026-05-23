@@ -255,7 +255,7 @@ function getStorageHealthIssue() {
       code: 'storage-unavailable',
       title: 'Browser storage is unavailable',
       detail: localStorageAvailability.error || 'This browser is not allowing saved app data right now. Download JSON now to protect the current data.',
-      action: 'Download JSON',
+      action: 'Open Data Health',
     };
   }
   if (storageHealth.lastFailure) {
@@ -265,7 +265,7 @@ function getStorageHealthIssue() {
       code: 'storage-failure',
       title: 'Save failed',
       detail: `${failure.label || 'App data'} did not save (${formatBytes(failure.size)}). ${failure.error || 'Download JSON now to protect the current data.'}`,
-      action: 'Download JSON',
+      action: 'Open Data Health',
     };
   }
   if (storageHealth.simulatedFailure) {
@@ -273,8 +273,8 @@ function getStorageHealthIssue() {
       ok: false,
       code: 'storage-test',
       title: 'Test save warning',
-      detail: 'This is a non-destructive simulated save warning. Use Download JSON to test the emergency export action, or dismiss it in Backup settings.',
-      action: 'Download JSON',
+      detail: 'This is a non-destructive simulated save warning. Use Download JSON to test the emergency export action, or dismiss it in Data Health settings.',
+      action: 'Open Data Health',
     };
   }
   return null;
