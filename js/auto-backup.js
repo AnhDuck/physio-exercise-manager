@@ -89,6 +89,7 @@ async function initializeAutoBackup() {
 
   try {
     autoBackupDirectoryHandle = await readAutoBackupDirectoryHandle();
+    autoBackupDirectoryHandleFresh = false;
     autoBackupHandleLoaded = true;
     const auto = getAutoBackupSettings();
     if (autoBackupDirectoryHandle) {
@@ -106,6 +107,7 @@ async function initializeAutoBackup() {
   } catch (err) {
     autoBackupHandleLoaded = true;
     autoBackupDirectoryHandle = null;
+    autoBackupDirectoryHandleFresh = false;
     const auto = getAutoBackupSettings();
     if (auto.folderName) {
       auto.needsReconnect = true;
@@ -174,10 +176,8 @@ async function chooseAutoBackupFolder() {
       mode: 'readwrite',
       startIn: 'documents',
     });
-    const granted = await requestAutoBackupPermission(handle);
-    if (!granted) throw new Error('Write permission was not granted.');
-
     autoBackupDirectoryHandle = handle;
+    autoBackupDirectoryHandleFresh = true;
     autoBackupHandleLoaded = true;
 
     const auto = getAutoBackupSettings();
@@ -266,6 +266,7 @@ async function getReadyAutoBackupDirectoryHandle(promptPermission) {
   if (!handle && !autoBackupHandleLoaded) {
     handle = await readAutoBackupDirectoryHandle();
     autoBackupDirectoryHandle = handle;
+    autoBackupDirectoryHandleFresh = false;
     autoBackupHandleLoaded = true;
   }
 
@@ -274,9 +275,11 @@ async function getReadyAutoBackupDirectoryHandle(promptPermission) {
     return null;
   }
 
-  const granted = promptPermission
-    ? await requestAutoBackupPermission(handle)
-    : await hasAutoBackupPermission(handle);
+  const granted = autoBackupDirectoryHandleFresh
+    ? true
+    : promptPermission
+      ? await requestAutoBackupPermission(handle)
+      : await hasAutoBackupPermission(handle);
   if (!granted) {
     markAutoBackupNeedsReconnect('Reconnect the backup folder to allow file writes.');
     return null;
@@ -384,6 +387,7 @@ function recordAutoBackupFailure(type, err, details = {}) {
   auto.lastError = message;
   auto.lastErrorAt = at.toISOString();
   if (isAutoBackupPermissionError(err) || /folder/i.test(message)) {
+    if (isAutoBackupPermissionError(err)) autoBackupDirectoryHandleFresh = false;
     auto.needsReconnect = Boolean(auto.folderName);
   }
   pushAutoBackupHistory({

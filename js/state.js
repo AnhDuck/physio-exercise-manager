@@ -21,6 +21,7 @@ let toastTimer = null;
 let lastBlockDropWarningAt = 0;
 let draggedExerciseId = null;
 let autoBackupDirectoryHandle = null;
+let autoBackupDirectoryHandleFresh = false;
 let autoBackupHandleLoaded = false;
 let autoBackupTimer = null;
 let autoBackupRunning = false;
