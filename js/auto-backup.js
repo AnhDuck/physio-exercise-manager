@@ -19,6 +19,7 @@ const AUTO_BACKUP_DEFAULT_SETTINGS = {
   lastErrorAt: '',
   lastError: '',
   needsReconnect: false,
+  lastMissedBackupDate: '',
   history: [],
 };
 
@@ -44,6 +45,7 @@ function normalizeRuntimeAutoBackupSettings(value = {}) {
     lastErrorAt: typeof source.lastErrorAt === 'string' ? source.lastErrorAt : AUTO_BACKUP_DEFAULT_SETTINGS.lastErrorAt,
     lastError: typeof source.lastError === 'string' ? source.lastError : AUTO_BACKUP_DEFAULT_SETTINGS.lastError,
     needsReconnect: Boolean(source.needsReconnect),
+    lastMissedBackupDate: typeof source.lastMissedBackupDate === 'string' ? source.lastMissedBackupDate : AUTO_BACKUP_DEFAULT_SETTINGS.lastMissedBackupDate,
     history,
   };
 }
@@ -70,6 +72,10 @@ async function initializeAutoBackup() {
   getAutoBackupSettings();
   if (!isFolderAutoBackupSupported()) {
     renderAutoBackupSettings();
+    document.addEventListener('visibilitychange', handleAutoBackupVisibilityChange);
+    window.addEventListener('focus', handleAutoBackupFocus);
+    scheduleAutoBackupChecks();
+    maybeRunAutoBackup('startup');
     return;
   }
 
@@ -111,7 +117,6 @@ async function initializeAutoBackup() {
 function scheduleAutoBackupChecks() {
   window.clearInterval(autoBackupTimer);
   autoBackupTimer = null;
-  if (!isFolderAutoBackupSupported()) return;
   autoBackupTimer = window.setInterval(() => {
     maybeRunAutoBackup('timer');
   }, AUTO_BACKUP_TIMER_MS);
@@ -126,15 +131,24 @@ function handleAutoBackupFocus() {
 }
 
 async function maybeRunAutoBackup(trigger = 'auto') {
-  if (!isFolderAutoBackupSupported() || autoBackupRunning) return;
+  if (autoBackupRunning) return;
 
   const auto = getAutoBackupSettings();
-  if (!auto.folderName || auto.needsReconnect) return;
-
   const now = new Date();
-  const today = toDateStr(now);
-  if (!isAtOrAfterAutoBackupTime(now, auto.time)) return;
-  if (auto.lastScheduledBackupDate === today) return;
+  const pending = pendingScheduledAutoBackup(auto, now);
+  if (!pending) return;
+  if (!isFolderAutoBackupSupported()) {
+    recordAutoBackupMissed(pending.dateStr, pending.dueAt, 'Folder backup is unavailable in this browser. Download a JSON backup or open the app in Chrome or Edge desktop.');
+    return;
+  }
+  if (!auto.folderName) {
+    recordAutoBackupMissed(pending.dateStr, pending.dueAt, 'No backup folder is connected.');
+    return;
+  }
+  if (auto.needsReconnect) {
+    recordAutoBackupMissed(pending.dateStr, pending.dueAt, auto.lastError || 'Reconnect the backup folder to resume automatic backups.');
+    return;
+  }
 
   await runFolderBackup('auto', { promptPermission: false, trigger });
 }
@@ -339,6 +353,30 @@ function recordAutoBackupFailure(type, err, details = {}) {
   showToast(`Backup failed: ${message}`);
 }
 
+function recordAutoBackupMissed(dateStr, dueAt, message) {
+  const auto = getAutoBackupSettings();
+  if (auto.lastMissedBackupDate === dateStr) {
+    renderAutoBackupSettings();
+    return;
+  }
+
+  auto.lastMissedBackupDate = dateStr;
+  auto.lastError = message;
+  auto.lastErrorAt = dueAt.toISOString();
+  if (auto.folderName) auto.needsReconnect = true;
+  pushAutoBackupHistory({
+    id: `${dueAt.getTime()}-auto-missed`,
+    type: 'auto',
+    status: 'missed',
+    at: dueAt.toISOString(),
+    folderName: auto.folderName,
+    files: [],
+    message,
+  });
+  saveSettings(settings);
+  renderAutoBackupSettings();
+}
+
 function pushAutoBackupHistory(entry) {
   const auto = getAutoBackupSettings();
   auto.history = normalizeAutoBackupHistory([entry, ...(auto.history || [])]).slice(0, AUTO_BACKUP_HISTORY_LIMIT);
@@ -359,6 +397,127 @@ function isAtOrAfterAutoBackupTime(date, timeStr) {
   return (date.getHours() * 60 + date.getMinutes()) >= target;
 }
 
+function scheduledAutoBackupDueAtDate(dateStr, timeStr) {
+  const due = dateFromStr(dateStr);
+  const [hour, minute] = normalizeAutoBackupTime(timeStr).split(':').map(Number);
+  due.setHours(hour, minute, 0, 0);
+  return due;
+}
+
+function pendingScheduledAutoBackup(auto, now = new Date()) {
+  const today = toDateStr(now);
+  let pendingDate = today;
+  const lastRecorded = latestAutoBackupScheduleDate([
+    auto.lastScheduledBackupDate,
+    auto.lastMissedBackupDate,
+  ]);
+
+  if (lastRecorded) {
+    const next = dateFromStr(lastRecorded);
+    next.setDate(next.getDate() + 1);
+    pendingDate = toDateStr(next);
+  }
+
+  if (pendingDate > today) return null;
+  const dueAt = scheduledAutoBackupDueAtDate(pendingDate, auto.time);
+  if (now < dueAt) return null;
+  return { dateStr: pendingDate, dueAt };
+}
+
+function latestAutoBackupScheduleDate(values) {
+  return values
+    .filter(value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value))
+    .sort()
+    .pop() || '';
+}
+
+function getAutoBackupHealth(now = new Date()) {
+  const auto = getAutoBackupSettings();
+  const supported = isFolderAutoBackupSupported();
+  const pending = pendingScheduledAutoBackup(auto, now);
+
+  if (!supported) {
+    return {
+      ok: false,
+      code: 'unsupported',
+      title: 'Folder backup is unavailable',
+      detail: 'Automatic folder backups cannot run here. Download a JSON backup now, or open the app in Chrome or Edge desktop.',
+      action: 'Download JSON',
+    };
+  }
+
+  if (!auto.folderName) {
+    return {
+      ok: false,
+      code: 'missing-folder',
+      title: 'Backups are not connected',
+      detail: 'Choose a backup folder so this app can save automatic daily backups.',
+      action: 'Choose folder',
+    };
+  }
+
+  if (auto.needsReconnect) {
+    return {
+      ok: false,
+      code: 'reconnect',
+      title: 'Backup folder needs reconnect',
+      detail: auto.lastError || 'Reconnect the backup folder so automatic backups can resume.',
+      action: 'Reconnect',
+    };
+  }
+
+  if (!autoBackupDirectoryHandle) {
+    return {
+      ok: false,
+      code: 'checking',
+      title: 'Checking backup folder',
+      detail: 'The app is checking whether the saved backup folder can still be used.',
+      action: 'Reconnect',
+    };
+  }
+
+  if (pending) {
+    return {
+      ok: false,
+      code: 'due',
+      title: 'Backup is due now',
+      detail: 'The scheduled backup has not completed yet. Keep this page open or run a backup now.',
+      action: 'Backup now',
+    };
+  }
+
+  if (auto.lastError) {
+    return {
+      ok: false,
+      code: 'error',
+      title: 'Last backup failed',
+      detail: auto.lastError,
+      action: 'Backup now',
+    };
+  }
+
+  return {
+    ok: true,
+    code: 'ok',
+    title: 'Backups connected',
+    detail: 'Folder backup is connected.',
+    action: '',
+  };
+}
+
+function handleBackupHealthAction() {
+  const health = getAutoBackupHealth();
+  if (health.code === 'unsupported') {
+    exportFullBackup();
+    return;
+  }
+  if (health.code === 'due' || health.code === 'error') {
+    runManualFolderBackup();
+    return;
+  }
+  chooseAutoBackupFolder();
+}
+
 function renderAutoBackupSettings() {
   const folderBtn = document.getElementById('settings-auto-backup-folder');
   const backupNowBtn = document.getElementById('settings-auto-backup-now');
@@ -376,6 +535,7 @@ function renderAutoBackupSettings() {
   const auto = getAutoBackupSettings();
   const supported = isFolderAutoBackupSupported();
   const folderReady = supported && Boolean(auto.folderName) && !auto.needsReconnect && Boolean(autoBackupDirectoryHandle);
+  const health = getAutoBackupHealth();
   const normalizedHistory = normalizeAutoBackupHistory(auto.history || []);
 
   folderBtn.disabled = !supported || autoBackupRunning;
@@ -394,6 +554,7 @@ function renderAutoBackupSettings() {
   next.textContent = supported ? nextAutoBackupDueText(auto) : 'Unavailable';
   issue.hidden = !auto.lastError;
   issueText.textContent = auto.lastError || '';
+  updateAutoBackupHealthUi(health);
   renderAutoBackupSummary(summary, normalizedHistory);
   toggle.hidden = normalizedHistory.length <= 1;
   toggle.textContent = autoBackupHistoryExpanded ? 'Hide history' : 'Show history';
@@ -412,6 +573,41 @@ function autoBackupFolderStateText(auto, supported, folderReady) {
   if (auto.needsReconnect) return 'Reconnect required';
   if (folderReady) return 'Connected';
   return 'Checking permission';
+}
+
+function updateAutoBackupHealthUi(health) {
+  const banner = document.getElementById('backup-health-banner');
+  const title = document.getElementById('backup-health-title');
+  const detail = document.getElementById('backup-health-detail');
+  const action = document.getElementById('backup-health-action');
+  const settingsBtn = document.getElementById('btn-settings');
+  const backupTab = document.getElementById('settings-tab-backup');
+  const backupPanel = document.getElementById('settings-panel-backup');
+  const folderState = document.getElementById('settings-auto-backup-folder-state');
+
+  const hasIssue = !health.ok;
+  document.body.classList.toggle('backup-health-open', hasIssue);
+  if (banner && title && detail && action) {
+    banner.hidden = !hasIssue;
+    title.textContent = health.title;
+    detail.textContent = health.detail;
+    action.textContent = health.action || 'Open backup';
+  }
+
+  if (settingsBtn) {
+    settingsBtn.classList.toggle('has-backup-issue', hasIssue);
+    settingsBtn.title = hasIssue ? `Settings - ${health.title}` : 'Settings';
+    settingsBtn.setAttribute('aria-label', hasIssue ? `Settings. ${health.title}.` : 'Settings');
+  }
+
+  if (backupTab) {
+    backupTab.classList.toggle('has-backup-issue', hasIssue);
+    backupTab.title = hasIssue ? health.title : '';
+    backupTab.setAttribute('aria-label', hasIssue ? `Backup. ${health.title}.` : 'Backup');
+  }
+
+  if (backupPanel) backupPanel.classList.toggle('has-backup-issue', hasIssue);
+  if (folderState) folderState.classList.toggle('is-backup-issue', hasIssue);
 }
 
 function toggleAutoBackupHistory() {
@@ -460,7 +656,7 @@ function normalizeAutoBackupHistoryEntry(entry) {
   return {
     id: entry.id || `${new Date(at).getTime()}-${entry.type || 'backup'}`,
     type: entry.type === 'auto' ? 'auto' : 'manual',
-    status: entry.status === 'error' ? 'error' : 'success',
+    status: ['error', 'missed'].includes(entry.status) ? entry.status : 'success',
     at,
     count: Math.max(1, Number(entry.count) || 1),
     message: typeof entry.message === 'string' ? entry.message : '',
@@ -497,7 +693,7 @@ function renderAutoBackupHistory(root, history) {
 }
 
 function buildAutoBackupHistoryItem(item) {
-  const row = el('div', `auto-backup-history-item ${item.status === 'error' ? 'is-error' : 'is-success'}`);
+  const row = el('div', `auto-backup-history-item ${item.status === 'success' ? 'is-success' : 'is-error'}`);
   row.appendChild(elText('div', 'auto-backup-history-main', autoBackupHistoryTitle(item)));
   const detail = autoBackupHistoryDetail(item);
   if (detail) row.appendChild(elText('div', 'auto-backup-history-detail', detail));
@@ -505,6 +701,9 @@ function buildAutoBackupHistoryItem(item) {
 }
 
 function autoBackupHistoryTitle(item) {
+  if (item.status === 'missed') {
+    return `Backup missed - ${formatAutoBackupDateTime(item.at)}`;
+  }
   if (item.status === 'error') {
     return `Backup failed - ${formatAutoBackupDateTime(item.at)}`;
   }
@@ -513,7 +712,7 @@ function autoBackupHistoryTitle(item) {
 }
 
 function autoBackupHistoryDetail(item) {
-  if (item.status === 'error') return item.message || 'Backup did not complete.';
+  if (item.status === 'error' || item.status === 'missed') return item.message || 'Backup did not complete.';
   if (item.type === 'manual' && item.count > 1) {
     return `${formatNumber(item.count)} manual runs today`;
   }

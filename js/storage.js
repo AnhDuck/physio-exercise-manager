@@ -14,6 +14,7 @@ function defaultAutoBackupSettings() {
     lastErrorAt: '',
     lastError: '',
     needsReconnect: false,
+    lastMissedBackupDate: '',
     history: [],
   };
 }
@@ -36,6 +37,7 @@ function normalizeAutoBackupSettings(value = {}) {
     lastErrorAt: typeof source.lastErrorAt === 'string' ? source.lastErrorAt : defaults.lastErrorAt,
     lastError: typeof source.lastError === 'string' ? source.lastError : defaults.lastError,
     needsReconnect: Boolean(source.needsReconnect),
+    lastMissedBackupDate: typeof source.lastMissedBackupDate === 'string' ? source.lastMissedBackupDate : defaults.lastMissedBackupDate,
     history,
   };
 }

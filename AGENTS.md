@@ -193,4 +193,13 @@ node --check js\storage.js
 Get-ChildItem -Path js -Filter *.js | Sort-Object Name | ForEach-Object { node --check $_.FullName }
 ```
 
-For browser verification, open `index.html`, check console errors, and test the compact grid, notes, settings, set tracking, and image modal entry points.
+## Browser Verification
+
+Do not run shell-launched headless Chrome, headless Edge, Playwright, Puppeteer, or Node-based browser automation for this repo. This local environment has unreliable headless browser/GPU support, and those checks waste time and tokens when they fail for environment reasons.
+
+For UI verification:
+
+- Prefer normal/manual browser checks: open `index.html` directly or serve the repo root with a simple static server, then check the compact grid, notes, settings, set tracking, backup warnings, and image modal entry points.
+- It is acceptable to use the Codex in-app/visible browser workflow against the local URL for screenshots or interactive checks when visual verification is genuinely useful.
+- Keep automated visual checks focused and brief. Do not use them as the default for every change.
+- Always report when browser verification was manual, in-app/visible-browser based, or skipped.

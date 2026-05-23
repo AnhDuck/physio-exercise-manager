@@ -68,6 +68,7 @@ function bindStaticEvents() {
   document.getElementById('settings-clear-review').addEventListener('click', clearChangedSincePhysioMarkers);
   document.getElementById('settings-export-json').addEventListener('click', exportFullBackup);
   document.getElementById('settings-import-json').addEventListener('click', openBackupImportPicker);
+  document.getElementById('backup-health-action').addEventListener('click', handleBackupHealthAction);
   document.getElementById('settings-auto-backup-folder').addEventListener('click', chooseAutoBackupFolder);
   document.getElementById('settings-auto-backup-now').addEventListener('click', runManualFolderBackup);
   document.getElementById('settings-auto-backup-history-toggle').addEventListener('click', toggleAutoBackupHistory);
