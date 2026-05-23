@@ -355,11 +355,23 @@
             <div class="settings-row-group">
               <div class="settings-action-row">
                 <div class="settings-action-label">
-                  <strong id="settings-data-safety-state">Checking app data structure</strong>
-                  <span>App data is checked when this panel opens. Backup files are verified after each manual or automatic folder backup.</span>
-                  <span id="settings-data-safety-detail">Backup files are verified after they are written.</span>
-                  <span id="settings-backup-verify-detail">No backup file has been verified yet.</span>
+                  <div class="settings-label-heading">
+                    <strong id="settings-data-safety-state">Checking saved data</strong>
+                    <button class="settings-tooltip settings-tooltip-below" type="button" aria-label="What saved data check means" data-tooltip="Checks the exercises, session logs, settings, and timeline currently saved in this browser. This does not compare against the backup folder.">?</button>
+                  </div>
+                  <span id="settings-data-safety-detail">Checking exercises, session logs, settings, and timeline.</span>
                 </div>
+                <span class="settings-status-pill" id="settings-data-safety-pill">Checking</span>
+              </div>
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <div class="settings-label-heading">
+                    <strong id="settings-backup-verify-state">Latest folder backup</strong>
+                    <button class="settings-tooltip" type="button" aria-label="What backup verification means" data-tooltip="After a folder backup is written, the app reads the latest JSON file back and validates that backup file can be restored.">?</button>
+                  </div>
+                  <span id="settings-backup-verify-detail">No folder backup has been verified yet.</span>
+                </div>
+                <span class="settings-status-pill" id="settings-backup-verify-pill">Not checked</span>
               </div>
             </div>
           </div>

@@ -1886,6 +1886,11 @@ body:has(#settings-modal:not(.hidden)) {
   transition: opacity .12s ease, transform .12s ease;
 }
 
+.settings-tooltip.settings-tooltip-below::after {
+  top: calc(100% + 8px);
+  bottom: auto;
+}
+
 .settings-tooltip:hover::after,
 .settings-tooltip:focus-visible::after {
   opacity: 1;
@@ -2380,6 +2385,13 @@ body:has(#settings-modal:not(.hidden)) {
   min-width: 0;
 }
 
+.settings-label-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
 .settings-action-label strong,
 .settings-backup-label strong {
   color: var(--text);
@@ -2523,6 +2535,32 @@ body:has(#settings-modal:not(.hidden)) {
 
 .settings-status-issue[hidden] {
   display: none;
+}
+
+.settings-status-pill {
+  justify-self: end;
+  min-width: 78px;
+  padding: 5px 8px;
+  border: 1px solid rgba(49,185,170,.36);
+  border-radius: 999px;
+  background: rgba(49,185,170,.08);
+  color: #c9fff8;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.settings-status-pill.is-muted {
+  border-color: var(--border);
+  background: rgba(255,255,255,.035);
+  color: var(--text-muted);
+}
+
+.settings-status-pill.is-backup-issue {
+  border-color: rgba(248,113,113,.48);
+  background: rgba(248,113,113,.10);
 }
 
 .settings-history-row {
@@ -3466,6 +3504,10 @@ body:has(#settings-modal:not(.hidden)) {
   }
 
   .settings-backup-btn {
+    justify-self: start;
+  }
+
+  .settings-status-pill {
     justify-self: start;
   }
 

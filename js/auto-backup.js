@@ -644,7 +644,10 @@ function updateAutoBackupHealthUi(health) {
   const folderState = document.getElementById('settings-auto-backup-folder-state');
   const dataSafetyState = document.getElementById('settings-data-safety-state');
   const dataSafetyDetail = document.getElementById('settings-data-safety-detail');
+  const dataSafetyPill = document.getElementById('settings-data-safety-pill');
+  const backupVerifyState = document.getElementById('settings-backup-verify-state');
   const backupVerifyDetail = document.getElementById('settings-backup-verify-detail');
+  const backupVerifyPill = document.getElementById('settings-backup-verify-pill');
   const auto = getAutoBackupSettings();
   const dataSafety = getDataSafetyReport();
 
@@ -672,17 +675,35 @@ function updateAutoBackupHealthUi(health) {
   if (backupPanel) backupPanel.classList.toggle('has-backup-issue', hasIssue);
   if (folderState) folderState.classList.toggle('is-backup-issue', hasIssue);
   if (dataSafetyState && dataSafetyDetail) {
-    dataSafetyState.textContent = dataSafety.ok ? 'App data structure healthy' : 'App data structure needs attention';
+    dataSafetyState.textContent = dataSafety.ok ? 'Saved data is readable' : 'Saved data needs attention';
     dataSafetyDetail.textContent = dataSafety.ok
       ? dataSafetyReceiptText(dataSafety)
       : dataSafety.issues.slice(0, 3).join(' ');
     dataSafetyState.classList.toggle('is-backup-issue', !dataSafety.ok);
   }
+  setStatusPill(dataSafetyPill, dataSafety.ok ? 'OK' : 'Review', {
+    issue: !dataSafety.ok,
+  });
+  if (backupVerifyState) {
+    backupVerifyState.textContent = auto.lastVerifiedAt
+      ? 'Latest folder backup verified'
+      : 'Latest folder backup not verified';
+  }
   if (backupVerifyDetail) {
     backupVerifyDetail.textContent = auto.lastVerifiedAt
       ? verifiedBackupReceiptText(auto)
-      : 'No backup file has been verified yet.';
+      : 'Run Backup now, or wait for the next automatic folder backup.';
   }
+  setStatusPill(backupVerifyPill, auto.lastVerifiedAt ? 'Verified' : 'Not checked', {
+    muted: !auto.lastVerifiedAt,
+  });
+}
+
+function setStatusPill(pill, text, options = {}) {
+  if (!pill) return;
+  pill.textContent = text;
+  pill.classList.toggle('is-muted', Boolean(options.muted));
+  pill.classList.toggle('is-backup-issue', Boolean(options.issue));
 }
 
 function toggleAutoBackupHistory() {
@@ -829,18 +850,21 @@ function formatAutoBackupDateTime(value) {
 function dataSafetyReceiptText(report) {
   const summary = report.summary || {};
   return [
-    `App data checked: ${formatAutoBackupDateTime(report.checkedAt)}`,
-    `${formatNumber(summary.exerciseCount || 0)} exercises, ${formatNumber(summary.sessionDateCount || 0)} session days, ${formatNumber(summary.timelineEventCount || 0)} timeline items.`,
+    `Checked ${formatAutoBackupDateTime(report.checkedAt)}.`,
+    `Saved in this browser: ${backupSummaryText(summary)}.`,
   ].join(' ');
 }
 
 function verifiedBackupReceiptText(auto) {
   const summary = auto.lastVerifiedSummary || {};
   return [
-    `Latest backup verified: ${formatAutoBackupDateTime(auto.lastVerifiedAt)}`,
-    'Read back latest JSON backup successfully.',
-    `${formatNumber(summary.exerciseCount || 0)} exercises, ${formatNumber(summary.sessionDateCount || 0)} session days, ${formatNumber(summary.timelineEventCount || 0)} timeline items.`,
+    `Verified ${formatAutoBackupDateTime(auto.lastVerifiedAt)} by reading back the latest JSON backup.`,
+    `Backup contains ${backupSummaryText(summary)}.`,
   ].join(' ');
+}
+
+function backupSummaryText(summary) {
+  return `${formatNumber(summary.exerciseCount || 0)} exercises, ${formatNumber(summary.sessionDateCount || 0)} session days, ${formatNumber(summary.timelineEventCount || 0)} timeline items`;
 }
 
 function autoBackupErrorMessage(err) {
