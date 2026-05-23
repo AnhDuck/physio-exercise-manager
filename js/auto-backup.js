@@ -7,6 +7,7 @@ const AUTO_BACKUP_DIR_KEY = 'backup-directory';
 const AUTO_BACKUP_PICKER_ID = 'pem-auto-backup-folder';
 const AUTO_BACKUP_DATED_PREFIX = 'physio-exercise-auto-backup-';
 const AUTO_BACKUP_LATEST_FILE = 'physio-exercise-auto-backup-latest.json';
+const AUTO_BACKUP_VERIFIED_VERSION = 1;
 const AUTO_BACKUP_KEEP_DAYS = 31;
 const AUTO_BACKUP_HISTORY_LIMIT = 20;
 const AUTO_BACKUP_TIMER_MS = 60 * 1000;
@@ -20,6 +21,9 @@ const AUTO_BACKUP_DEFAULT_SETTINGS = {
   lastError: '',
   needsReconnect: false,
   lastMissedBackupDate: '',
+  lastVerifiedAt: '',
+  lastVerifiedFile: '',
+  lastVerifiedSummary: null,
   history: [],
 };
 
@@ -46,6 +50,11 @@ function normalizeRuntimeAutoBackupSettings(value = {}) {
     lastError: typeof source.lastError === 'string' ? source.lastError : AUTO_BACKUP_DEFAULT_SETTINGS.lastError,
     needsReconnect: Boolean(source.needsReconnect),
     lastMissedBackupDate: typeof source.lastMissedBackupDate === 'string' ? source.lastMissedBackupDate : AUTO_BACKUP_DEFAULT_SETTINGS.lastMissedBackupDate,
+    lastVerifiedAt: typeof source.lastVerifiedAt === 'string' ? source.lastVerifiedAt : AUTO_BACKUP_DEFAULT_SETTINGS.lastVerifiedAt,
+    lastVerifiedFile: typeof source.lastVerifiedFile === 'string' ? source.lastVerifiedFile : AUTO_BACKUP_DEFAULT_SETTINGS.lastVerifiedFile,
+    lastVerifiedSummary: source.lastVerifiedSummary && typeof source.lastVerifiedSummary === 'object' && !Array.isArray(source.lastVerifiedSummary)
+      ? source.lastVerifiedSummary
+      : AUTO_BACKUP_DEFAULT_SETTINGS.lastVerifiedSummary,
     history,
   };
 }
@@ -169,6 +178,7 @@ async function chooseAutoBackupFolder() {
     const granted = await requestAutoBackupPermission(handle);
     if (!granted) throw new Error('Write permission was not granted.');
 
+    await writeAutoBackupDirectoryHandle(handle);
     autoBackupDirectoryHandle = handle;
     autoBackupHandleLoaded = true;
 
@@ -178,14 +188,6 @@ async function chooseAutoBackupFolder() {
     auto.lastError = '';
     auto.lastErrorAt = '';
     saveSettings(settings);
-
-    try {
-      await writeAutoBackupDirectoryHandle(handle);
-    } catch (storeErr) {
-      auto.lastError = `Backup folder connected for this session, but may need reconnect after reload: ${autoBackupErrorMessage(storeErr)}`;
-      auto.lastErrorAt = new Date().toISOString();
-      saveSettings(settings);
-    }
 
     renderAutoBackupSettings();
     showToast(`Backup folder connected: ${auto.folderName}.`);
@@ -223,11 +225,11 @@ async function runFolderBackup(type, options = {}) {
     const handle = await getReadyAutoBackupDirectoryHandle(Boolean(options.promptPermission));
     if (!handle) throw new Error('Choose a backup folder before running folder backups.');
 
-    const backup = window.buildFullBackup();
+    const backup = buildFullBackup();
     const json = JSON.stringify(backup, null, 2);
     await writeAutoBackupFile(handle, datedFile, json);
     await writeAutoBackupFile(handle, AUTO_BACKUP_LATEST_FILE, json);
-    await verifyAutoBackupFile(handle, AUTO_BACKUP_LATEST_FILE);
+    const verified = await verifyAutoBackupFile(handle, AUTO_BACKUP_LATEST_FILE);
 
     let cleanupMessage = '';
     try {
@@ -244,6 +246,7 @@ async function runFolderBackup(type, options = {}) {
       files,
       folderName: handle.name || getAutoBackupSettings().folderName,
       message: cleanupMessage,
+      verified,
       countsAsScheduled: type === 'auto' || isAtOrAfterAutoBackupTime(startedAt, getAutoBackupSettings().time),
     });
   } catch (err) {
@@ -306,10 +309,16 @@ async function verifyAutoBackupFile(directoryHandle, fileName) {
     throw new Error(`Backup file could not be verified: ${autoBackupErrorMessage(err)}`);
   }
 
-  const errors = window.validateBackup(backup);
+  const errors = validateBackup(backup);
   if (errors.length) {
     throw new Error(`Backup file could not be verified: ${errors[0]}`);
   }
+
+  return {
+    at: new Date().toISOString(),
+    file: fileName,
+    summary: buildBackupSummary(backup.data),
+  };
 }
 
 async function cleanupOldAutoBackupFiles(directoryHandle, now = new Date()) {
@@ -343,6 +352,11 @@ function recordAutoBackupSuccess(type, result) {
   auto.lastSuccessAt = at.toISOString();
   auto.lastError = '';
   auto.lastErrorAt = '';
+  if (result.verified) {
+    auto.lastVerifiedAt = result.verified.at || at.toISOString();
+    auto.lastVerifiedFile = result.verified.file || '';
+    auto.lastVerifiedSummary = result.verified.summary || null;
+  }
   if (result.countsAsScheduled) {
     auto.lastScheduledBackupDate = toDateStr(at);
   }
@@ -525,7 +539,7 @@ function getAutoBackupHealth(now = new Date()) {
     };
   }
 
-  const dataSafety = window.getDataSafetyReport();
+  const dataSafety = getDataSafetyReport();
   if (!dataSafety.ok) {
     return {
       ok: false,
@@ -548,7 +562,7 @@ function getAutoBackupHealth(now = new Date()) {
 function handleBackupHealthAction() {
   const health = getAutoBackupHealth();
   if (health.code === 'unsupported') {
-    window.exportFullBackup();
+    exportFullBackup();
     return;
   }
   if (health.code === 'data-safety') {
@@ -631,7 +645,9 @@ function updateAutoBackupHealthUi(health) {
   const folderState = document.getElementById('settings-auto-backup-folder-state');
   const dataSafetyState = document.getElementById('settings-data-safety-state');
   const dataSafetyDetail = document.getElementById('settings-data-safety-detail');
-  const dataSafety = window.getDataSafetyReport();
+  const backupVerifyDetail = document.getElementById('settings-backup-verify-detail');
+  const auto = getAutoBackupSettings();
+  const dataSafety = getDataSafetyReport();
 
   const hasIssue = !health.ok;
   document.body.classList.toggle('backup-health-open', hasIssue);
@@ -657,13 +673,16 @@ function updateAutoBackupHealthUi(health) {
   if (backupPanel) backupPanel.classList.toggle('has-backup-issue', hasIssue);
   if (folderState) folderState.classList.toggle('is-backup-issue', hasIssue);
   if (dataSafetyState && dataSafetyDetail) {
-    dataSafetyState.textContent = dataSafety.ok ? 'App data structure looks healthy' : 'App data structure needs attention';
+    dataSafetyState.textContent = dataSafety.ok ? 'App data structure healthy' : 'App data structure needs attention';
     dataSafetyDetail.textContent = dataSafety.ok
-      ? auto.lastSuccessAt
-        ? 'Exercises, sessions, settings, and timeline have the expected shape. Latest backup is verified after it is written.'
-        : 'Exercises, sessions, settings, and timeline have the expected shape. No backup file has been verified yet.'
+      ? dataSafetyReceiptText(dataSafety)
       : dataSafety.issues.slice(0, 3).join(' ');
     dataSafetyState.classList.toggle('is-backup-issue', !dataSafety.ok);
+  }
+  if (backupVerifyDetail) {
+    backupVerifyDetail.textContent = auto.lastVerifiedAt
+      ? verifiedBackupReceiptText(auto)
+      : 'No backup file has been verified yet.';
   }
 }
 
@@ -808,6 +827,24 @@ function formatAutoBackupDateTime(value) {
   });
 }
 
+function dataSafetyReceiptText(report) {
+  const summary = report.summary || {};
+  return [
+    `App data checked: ${formatAutoBackupDateTime(report.checkedAt)}`,
+    `${formatNumber(summary.exerciseCount || 0)} exercises, ${formatNumber(summary.sessionDateCount || 0)} session days, ${formatNumber(summary.timelineEventCount || 0)} timeline items.`,
+  ].join(' ');
+}
+
+function verifiedBackupReceiptText(auto) {
+  const summary = auto.lastVerifiedSummary || {};
+  const file = auto.lastVerifiedFile || 'latest backup';
+  return [
+    `Latest backup verified: ${formatAutoBackupDateTime(auto.lastVerifiedAt)}`,
+    `${file} parsed as backup v${AUTO_BACKUP_VERIFIED_VERSION}.`,
+    `${formatNumber(summary.exerciseCount || 0)} exercises, ${formatNumber(summary.sessionDateCount || 0)} session days, ${formatNumber(summary.timelineEventCount || 0)} timeline items.`,
+  ].join(' ');
+}
+
 function autoBackupErrorMessage(err) {
   if (!err) return 'Unknown error.';
   if (err.name === 'NotAllowedError') return 'Folder permission was not granted.';
@@ -875,16 +912,3 @@ async function writeAutoBackupDirectoryHandle(handle) {
     };
   });
 }
-
-Object.assign(window, {
-  AUTO_BACKUP_DEFAULT_SETTINGS,
-  chooseAutoBackupFolder,
-  getAutoBackupSettings,
-  handleBackupHealthAction,
-  initializeAutoBackup,
-  maybeRunAutoBackup,
-  renderAutoBackupSettings,
-  runManualFolderBackup,
-  scheduleAutoBackupChecks,
-  toggleAutoBackupHistory,
-});

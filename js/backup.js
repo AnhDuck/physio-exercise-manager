@@ -1,5 +1,7 @@
 // JSON backup export/import helpers.
 
+const CURRENT_BACKUP_VERSION = 1;
+
 function exportFullBackup() {
   const backup = buildFullBackup();
   const json = JSON.stringify(backup, null, 2);
@@ -27,7 +29,7 @@ function buildFullBackup() {
   return {
     app: 'physio-exercise-manager',
     format: 'pem-backup',
-    version: 1,
+    version: CURRENT_BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
     summary: buildBackupSummary(data),
     data,
@@ -87,6 +89,13 @@ function importBackupJson(jsonText) {
     return;
   }
 
+  const migration = migrateBackupToCurrent(backup);
+  if (migration.errors.length) {
+    alert(`Import failed:\n\n${migration.errors.map(error => `- ${error}`).join('\n')}`);
+    return;
+  }
+
+  backup = migration.backup;
   const errors = validateBackup(backup);
   if (errors.length) {
     alert(`Import failed:\n\n${errors.map(error => `- ${error}`).join('\n')}`);
@@ -125,7 +134,7 @@ function validateBackup(backup) {
   }
   if (backup.app !== 'physio-exercise-manager') errors.push('Missing or invalid app value.');
   if (backup.format !== 'pem-backup') errors.push('Missing or invalid backup format.');
-  if (backup.version !== 1) errors.push('Unsupported backup version.');
+  if (backup.version !== CURRENT_BACKUP_VERSION) errors.push('Unsupported backup version.');
   if (!backup.data || typeof backup.data !== 'object' || Array.isArray(backup.data)) {
     errors.push('Missing or invalid data object.');
     return errors;
@@ -137,18 +146,43 @@ function validateBackup(backup) {
   return errors;
 }
 
+function migrateBackupToCurrent(backup) {
+  if (!backup || typeof backup !== 'object' || Array.isArray(backup)) {
+    return { backup: null, errors: ['Backup must be a JSON object.'] };
+  }
+  if (backup.app !== 'physio-exercise-manager') {
+    return { backup: null, errors: ['Missing or invalid app value.'] };
+  }
+  if (backup.format !== 'pem-backup') {
+    return { backup: null, errors: ['Missing or invalid backup format.'] };
+  }
+  if (!Number.isInteger(backup.version)) {
+    return { backup: null, errors: ['Missing or invalid backup version.'] };
+  }
+  if (backup.version > CURRENT_BACKUP_VERSION) {
+    return { backup: null, errors: [`Backup version ${backup.version} is newer than this app supports.`] };
+  }
+
+  if (backup.version === 1) {
+    return { backup, errors: [] };
+  }
+
+  return { backup: null, errors: [`Backup version ${backup.version} is too old to import.`] };
+}
+
 function getDataSafetyReport(data = {}) {
   const dataExercises = data.exercises ?? exercises;
   const dataSessions = data.sessions ?? sessions;
   const dataSettings = data.settings ?? settings;
   const dataEvents = data.events ?? events;
   const issues = [];
+  const checkedAt = new Date().toISOString();
 
   if (!Array.isArray(dataExercises)) issues.push('Exercises are not saved as a list.');
   if (!isPlainObject(dataSessions)) issues.push('Sessions are not saved as an object.');
   if (!isPlainObject(dataSettings)) issues.push('Settings are not saved as an object.');
   if (!Array.isArray(dataEvents)) issues.push('Timeline items are not saved as a list.');
-  if (issues.length) return { ok: false, issues };
+  if (issues.length) return { ok: false, issues, checkedAt, summary: null };
 
   const exerciseIds = new Set();
   dataExercises.forEach((ex, index) => {
@@ -193,17 +227,18 @@ function getDataSafetyReport(data = {}) {
     });
   });
 
-  return { ok: !issues.length, issues };
+  return {
+    ok: !issues.length,
+    issues,
+    checkedAt,
+    summary: buildBackupSummary({
+      exercises: dataExercises,
+      sessions: dataSessions,
+      settings: dataSettings,
+      events: dataEvents,
+    }),
+  };
 }
-
-Object.assign(window, {
-  buildFullBackup,
-  exportFullBackup,
-  getDataSafetyReport,
-  handleBackupImportFile,
-  openBackupImportPicker,
-  validateBackup,
-});
 
 function isPlainObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);

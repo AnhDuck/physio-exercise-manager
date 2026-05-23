@@ -15,6 +15,9 @@ function defaultAutoBackupSettings() {
     lastError: '',
     needsReconnect: false,
     lastMissedBackupDate: '',
+    lastVerifiedAt: '',
+    lastVerifiedFile: '',
+    lastVerifiedSummary: null,
     history: [],
   };
 }
@@ -38,6 +41,11 @@ function normalizeAutoBackupSettings(value = {}) {
     lastError: typeof source.lastError === 'string' ? source.lastError : defaults.lastError,
     needsReconnect: Boolean(source.needsReconnect),
     lastMissedBackupDate: typeof source.lastMissedBackupDate === 'string' ? source.lastMissedBackupDate : defaults.lastMissedBackupDate,
+    lastVerifiedAt: typeof source.lastVerifiedAt === 'string' ? source.lastVerifiedAt : defaults.lastVerifiedAt,
+    lastVerifiedFile: typeof source.lastVerifiedFile === 'string' ? source.lastVerifiedFile : defaults.lastVerifiedFile,
+    lastVerifiedSummary: source.lastVerifiedSummary && typeof source.lastVerifiedSummary === 'object' && !Array.isArray(source.lastVerifiedSummary)
+      ? source.lastVerifiedSummary
+      : defaults.lastVerifiedSummary,
     history,
   };
 }
