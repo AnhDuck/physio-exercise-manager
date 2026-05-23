@@ -163,6 +163,23 @@ The app uses one spreadsheet-like compact grid view. There is no alternate view 
 - Add exercise controls belong in the group header.
 - Group header add buttons must stop propagation so header drag/drop behavior is not affected.
 
+## Settings UI Guidance
+
+Settings UI should stay visually consistent across tabs and features.
+
+When adding a setting or settings-managed feature, first reuse the existing settings modal primitives instead of creating feature-specific layout CSS:
+
+- Use `settings-section` for titled groups.
+- Use `settings-row-group` for bordered groups of rows.
+- Use `settings-action-row` for label/action rows.
+- Use `settings-action-label` with `strong` and `span` for row title and supporting text.
+- Reuse existing settings button classes such as `settings-clear-review`, `settings-draft-btn`, or `settings-backup-btn` when the button behavior and visual weight match.
+- Use `settings-grid` or `settings-status-grid` only when the setting naturally matches those existing patterns.
+
+Avoid custom CSS for new settings features unless it significantly improves visibility, usability, accessibility, or responsive behavior beyond what the existing settings primitives can do. If custom CSS is necessary, keep it minimal and scoped, and layer it on top of the shared settings classes rather than replacing the shared layout.
+
+Before finishing settings UI work, compare the new setting visually with nearby Settings rows for consistent borders, spacing, typography, button styling, and mobile wrapping.
+
 ## Editing Guidance
 
 - Use `textContent` or DOM creation helpers for user-controlled strings.

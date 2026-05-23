@@ -120,52 +120,50 @@ function renderHiddenExerciseSettings() {
   if (!root) return;
   root.innerHTML = '';
 
+  const group = el('div', 'settings-row-group');
+  root.appendChild(group);
+
   const hiddenExercises = exercises
     .filter(isExerciseHidden)
     .sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group) || a.order - b.order);
 
   if (!hiddenExercises.length) {
-    root.appendChild(elText('div', 'hidden-exercise-empty', 'No hidden exercises.'));
+    group.appendChild(buildHiddenExerciseEmptyRow());
     return;
   }
 
-  GROUP_ORDER.forEach(group => {
-    const groupExercises = hiddenExercises.filter(ex => ex.group === group);
-    if (!groupExercises.length) return;
-    root.appendChild(buildHiddenExerciseGroup(group, groupExercises));
-  });
-}
-
-function buildHiddenExerciseGroup(group, groupExercises) {
-  const cfg = GROUPS[group];
-  const section = el('section', 'hidden-exercise-group');
-  section.style.setProperty('--exercise-group-color', cfg.color);
-  section.appendChild(elText('h4', 'hidden-exercise-group-title', cfg.label));
-
-  const list = el('div', 'hidden-exercise-list');
-  groupExercises.forEach(ex => list.appendChild(buildHiddenExerciseRow(ex)));
-  section.appendChild(list);
-  return section;
+  hiddenExercises.forEach(ex => group.appendChild(buildHiddenExerciseRow(ex)));
 }
 
 function buildHiddenExerciseRow(ex) {
-  const row = el('div', 'hidden-exercise-row');
-  const info = el('div', 'hidden-exercise-info');
-  info.appendChild(elText('strong', 'hidden-exercise-name', ex.name));
-  info.appendChild(elText('span', 'hidden-exercise-meta', hiddenExerciseMeta(ex)));
+  const row = el('div', 'settings-action-row hidden-exercise-row');
+  const info = el('div', 'settings-action-label');
+  info.appendChild(elText('strong', '', ex.name));
+  info.appendChild(elText('span', '', hiddenExerciseMeta(ex)));
   row.appendChild(info);
 
-  const restore = elText('button', 'hidden-exercise-restore', 'Restore');
+  const restore = elText('button', 'settings-clear-review hidden-exercise-restore', 'Restore');
   restore.type = 'button';
   restore.addEventListener('click', () => restoreExercise(ex.id));
   row.appendChild(restore);
   return row;
 }
 
+function buildHiddenExerciseEmptyRow() {
+  const row = el('div', 'settings-action-row hidden-exercise-row hidden-exercise-empty-row');
+  const info = el('div', 'settings-action-label');
+  info.appendChild(elText('strong', '', 'No hidden exercises'));
+  info.appendChild(elText('span', '', 'Hidden exercises will appear here so they can be restored.'));
+  row.appendChild(info);
+  return row;
+}
+
 function hiddenExerciseMeta(ex) {
+  const group = GROUPS[ex.group]?.label || 'Exercise';
   const dose = `${targetSetsForExercise(ex)} sets / ${ex.reps || '?'} reps${ex.resistance ? ` / ${ex.resistance}` : ''}`;
   const hiddenDate = formatHiddenExerciseDate(ex.hiddenAt);
-  return hiddenDate ? `${dose} | Hidden ${hiddenDate}` : dose;
+  const details = hiddenDate ? `${dose} | Hidden ${hiddenDate}` : dose;
+  return `${group} | ${details}`;
 }
 
 function formatHiddenExerciseDate(iso) {
