@@ -194,8 +194,7 @@ async function chooseAutoBackupFolder() {
     }
 
     renderAutoBackupSettings();
-    showToast(`Backup folder connected: ${auto.folderName}.`);
-    maybeRunAutoBackup('folder');
+    showToast(`Backup folder connected: ${auto.folderName}. Use Backup now to test writing files.`);
   } catch (err) {
     if (err?.name === 'AbortError') return;
     recordAutoBackupFailure('manual', err);

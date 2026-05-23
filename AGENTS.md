@@ -42,7 +42,7 @@ Required script order in `index.html`: `js/data.js`, `js/storage.js`, shared hel
 
 `index.html` defines `window.PEM_APP_VERSION` and shows it in the header beside Settings. Any Codex code edit must bump this version; default to a patch SemVer bump unless the user explicitly asks for minor or major. The same version is used to cache-bust local scripts, so keep it as the single source of truth.
 
-For hosted browser checks, first read the local `PEM_APP_VERSION`, then open `http://127.0.0.1:<port>/index.html?v=<version>` and confirm the visible header shows `v<version>`. If the visible version does not match the local file version, the browser result is invalid: reload with the versioned URL, correct the server/root, or start a correctly rooted server before testing.
+For hosted browser checks, first decide whether browser/UI verification is actually needed. Do not open the browser just to prove every code edit loaded. When browser verification is needed, read the local `PEM_APP_VERSION`, then open `http://127.0.0.1:<port>/index.html?v=<version>` and confirm the visible header shows `v<version>`. If the visible version does not match the local file version, the browser result is invalid: reload with the versioned URL, correct the server/root, or start a correctly rooted server before testing.
 
 Reuse a same-chat/same-workspace local server after a version match. Use a fresh port for new chats, branch/worktree/path changes, stopped servers, or unresolved version mismatches. Do not use a fresh port merely as the default after every small fix because `localStorage`, IndexedDB, and folder backup permissions are browser-origin scoped.
 
