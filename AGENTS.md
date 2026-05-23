@@ -1,216 +1,65 @@
 # Physio Exercise Management - Agent Guide
 
-## What This App Is
+Static personal physio tracker. No build step/server/deps; open `index.html` or host repo root statically. User data is browser `localStorage`; folder backup also depends on browser-origin-scoped IndexedDB + File System Access permissions. A folder chosen on one origin (`127.0.0.1:8891`, another port, or `file://`) is not connected on another origin; verify backup on the same origin before calling it broken.
 
-This is a personal physiotherapy exercise tracker. It is a static web app with no build step, no server, and no package dependencies. Open `index.html` directly in a browser or host the repo root on a static site service such as GitHub Pages.
+## Files / load order
 
-All user data is stored in browser `localStorage`.
+`index.html` loads CSS + JS in this order via `PEM_APP_VERSION` cache-busting: `data.js`, `storage.js`, `constants.js`, `state.js`, `dates.js`, `dom.js`, `sessions.js`, `exercises.js`, `grid.js`, `tracker.js`, `timeline.js`, `backup.js`, `auto-backup.js`, `settings.js`, `images.js`, `main.js`. Never load `main.js` before the feature files it binds. `app.js` is only a pointer; app logic lives in feature files. `assets/physio-icon.svg` is the icon.
 
-Folder backup state also depends on browser-origin scoped IndexedDB and File System Access permissions. A folder selected on one origin, such as `http://127.0.0.1:8891`, is not automatically connected on another port or under `file://`. Do not conclude backup is broken solely because a different origin lacks the selected folder; verify on the same origin or report that the new origin has separate backup settings.
+Module map: `data` defaults/groups; `storage` localStorage + local date helpers; `constants` labels/quotes; `state` mutable globals/migrations; `dates` calendar/schedule; `dom` DOM/toast helpers; `sessions` completion/set progress; `exercises` ordering/blocks/drag/edit; `grid` compact grid/week nav; `tracker` set tracker/timer/log edit/cues/shortcuts; `timeline` notes/events/Markdown/event edit; `backup` JSON import/export/validation; `auto-backup` folder backups; `settings` settings/review/block/backup UI; `images` upload/URL import; `main` bootstrap/static bindings.
 
-## File Layout
+## Versioning + browser checks
 
-```text
-physio-exercise-manager/
-|-- index.html          App shell; loads CSS and JavaScript in order
-|-- css/
-|   `-- styles.css      Dark theme, compact grid layout, modals, tracker UI
-|-- js/
-|   |-- data.js         DEFAULT_EXERCISES and GROUPS config
-|   |-- storage.js      localStorage helpers and local date helpers
-|   |-- constants.js    Shared constants, labels, and quote text
-|   |-- state.js        Shared mutable app state and startup helpers
-|   |-- dates.js        Calendar, week, and schedule helpers
-|   |-- dom.js          DOM construction helpers and toast feedback
-|   |-- sessions.js     Session, completion, and set-progress helpers
-|   |-- exercises.js    Exercise ordering, blocks, drag/drop, and edit modal logic
-|   |-- grid.js         Calendar grid rendering and week navigation
-|   |-- tracker.js      Set tracker, timer UI, log editing, cues, and shortcuts
-|   |-- timeline.js     Notes panel, timeline events, Markdown copy, and event editing
-|   |-- backup.js       JSON export/import helpers
-|   |-- settings.js     Settings modal, cue settings, review markers, and block settings
-|   |-- images.js       Exercise image upload and URL import
-|   |-- main.js         Bootstrap and static event bindings
-|   `-- app.js          Pointer only; app logic was split into feature files
-`-- assets/
-    `-- physio-icon.svg App icon
-```
+`index.html` defines `window.PEM_APP_VERSION`, displays `v<version>` in the header, and uses it for script cache-busting. Any Codex code edit must bump it; default to patch SemVer unless asked otherwise.
 
-Required script order in `index.html`: `js/data.js`, `js/storage.js`, shared helpers, feature files, then `js/main.js`. Do not load `js/main.js` before the feature files it binds.
+Only use browser/UI verification when it adds value. For verification, prefer a local static server over `file://`: `python -m http.server <port> --bind 127.0.0.1`, then open `http://127.0.0.1:<port>/index.html?v=<PEM_APP_VERSION>` and confirm the visible header matches. If it does not match, the browser result is invalid; reload the versioned URL, fix server/root, or start the correct server. Reuse a same-chat/same-workspace server after a version match. Use a fresh port for new chats, branch/worktree/path changes, stopped servers, or unresolved version mismatches; do not fresh-port every small fix because `localStorage`, IndexedDB, and folder backup permissions are origin-scoped.
 
-## App Version and Hosted Freshness
+Do not run shell-launched headless Chrome/Edge, Playwright, Puppeteer, or Node browser automation here; local headless/GPU support is unreliable. Visible/in-app browser checks are okay when visual verification is genuinely useful. For UI checks, cover compact grid, notes, settings, set tracker, backup warnings, and image modal entry points. Always report whether browser verification was manual, visible-browser based, or skipped.
 
-`index.html` defines `window.PEM_APP_VERSION` and shows it in the header beside Settings. Any Codex code edit must bump this version; default to a patch SemVer bump unless the user explicitly asks for minor or major. The same version is used to cache-bust local scripts, so keep it as the single source of truth.
+## Core app rules
 
-For hosted browser checks, first decide whether browser/UI verification is actually needed. Do not open the browser just to prove every code edit loaded. When browser verification is needed, read the local `PEM_APP_VERSION`, then open `http://127.0.0.1:<port>/index.html?v=<version>` and confirm the visible header shows `v<version>`. If the visible version does not match the local file version, the browser result is invalid: reload with the versioned URL, correct the server/root, or start a correctly rooted server before testing.
+Groups are fixed: `arm-day1` (Arm Day 1), `arm-day2` (Arm Day 2), `legs` (Legs). Labels/colors live in `GROUPS` (`data.js`); CSS colors are `--c-day1`, `--c-day2`, `--c-legs`.
 
-Reuse a same-chat/same-workspace local server after a version match. Use a fresh port for new chats, branch/worktree/path changes, stopped servers, or unresolved version mismatches. Do not use a fresh port merely as the default after every small fix because `localStorage`, IndexedDB, and folder backup permissions are browser-origin scoped.
+Arm rotation is calendar-based, not completion-count-based: anchor Friday 2026-05-01 = `arm-day1`; scheduled arm days are Monday/Wednesday/Friday; each scheduled arm day after the anchor flips between Day 1 and Day 2; logic is `getArmDayForDate(dateStr)` in `dates.js`. Do not reintroduce stale `armSessionCount`.
 
-## Exercise Groups
+Dates are local `YYYY-MM-DD`; use `toDateStr()` / `dateFromStr()` from `storage.js`.
 
-Group keys are fixed and used across data, rendering, CSS, and storage:
+Timeline storage/sorting uses actual calendar dates/times. `personalDayStartTime` only inserts the visual/Markdown boundary `Before <time> · <previous date> waking day` for early-morning events; do not rewrite event dates to the previous waking day.
 
-```js
-'arm-day1' // Arm Day 1
-'arm-day2' // Arm Day 2
-'legs'     // Legs
-```
+## Data model
 
-Group labels and colors live in `GROUPS` in `js/data.js`. Matching CSS colors are defined as `--c-day1`, `--c-day2`, and `--c-legs` in `css/styles.css`.
+localStorage keys: `pem_exercises` array, `pem_sessions` object keyed by `YYYY-MM-DD`, `pem_settings` object, `pem_events` array. `DEFAULT_EXERCISES` only seeds new installs when `pem_exercises` is missing. Hidden exercises remain in `pem_exercises` to preserve linked session/timeline data but are excluded from active calendar.
 
-## Arm Day Rotation
+Exercise fields: `id`, `name`, `group`, `sets`, `reps`, `resistance`, `frequency`, `instructions`, `image` (data URL/null), `order`, optional `hiddenAt`, `deletedAt`, `blockId`, `changedSinceLastPhysioVisit`. Legacy per-exercise `blockTitle`, `blockMinGapHours`, `blockPreferredGapHours` are migration-only and should not be reintroduced.
 
-Arm Day 1 and Arm Day 2 are calendar-based, not completion-count-based.
+Session shape: `{ completedExercises: string[], setProgress: { [exerciseId]: progress }, activeExerciseId? }`. Progress fields: `completedSets`, `targetSets`, `startedAt`, `updatedAt`, `completedAt|null`, `finishedEarly`, `setDurations[]`, `setCompletedAt[]`, `timerStartedAt|null`, `elapsedSeconds`, `timerStoppedAt|null`, `timerCapped`, `exerciseSnapshot|null`.
 
-- Anchor date: Friday May 1, 2026.
-- Anchor group: `arm-day1`.
-- Scheduled arm days are Monday, Wednesday, and Friday.
-- Each scheduled arm day after the anchor flips between `arm-day1` and `arm-day2`.
-- The logic lives in `getArmDayForDate(dateStr)` in `js/dates.js`.
+Settings fields include `createdAt`, `notesOpen?`, `personalDayStartTime`, `setCueSound`, `setCueVibrate`, `setCueSpeech`, `setCueSpeechVolume`, `autoBackup`, `blocks`, `defaultBlocksApplied`. Legacy `legsDays`, `denseMode`, `collapsedGroups`, and `blockTitles` are migration-only.
 
-Do not reintroduce `armSessionCount`; it is stale and not part of the current rotation model.
+Stored events are `note`, `dose-change`, and `exercise-added` with `id`, `date`, `time`, optional `exerciseId`, `exerciseName`, `text`, `annotation`, `changes`, `createdAt`, `updatedAt`. Timeline also renders derived `exercise-log` items from session progress; do not store those in `pem_events`.
 
-## localStorage Keys
+Blocks are group-scoped: definitions live in `settings.blocks[group]`; exercises only store `blockId`. Settings uses a draft/apply/discard flow for block edits. Moving an exercise to another group clears invalid `blockId`; block-member drag/drop is constrained to the same block. Do not restore legacy exercise-level block title/gap fields.
 
-```text
-pem_exercises -> JSON array of Exercise objects
-pem_sessions  -> JSON object keyed by YYYY-MM-DD
-pem_settings  -> JSON object for UI/settings state
-pem_events    -> JSON array of timeline events
-```
+Folder auto-backup writes a dated daily file plus `physio-exercise-auto-backup-latest.json`, verifies by reading/validating latest, cleans old dated files, records success/error/missed history, and drives Settings backup status + the backup health banner. Do not treat folder backup as simple JSON download; it needs File System Access support, stored directory handles, permission checks, reconnect state, and same-origin testing.
 
-### Exercise Object
+## Behavior constraints
 
-```js
-{
-  id: string,
-  name: string,
-  group: 'arm-day1' | 'arm-day2' | 'legs',
-  sets: number,
-  reps: string,
-  resistance: string,
-  frequency: string,
-  instructions: string,
-  image: string | null, // data URL when uploaded/imported
-  order: number,
-  hiddenAt: string | undefined // ISO timestamp when hidden/restorable
-}
-```
+Set tracker: clicking exercise/day opens tracker; `Complete Set` logs one set; clicking the active grid cell completes all sets; `Pause & Close` stops timer, saves partial progress, clears `activeExerciseId`, and closes tracker. No path may hide the tracker while leaving its timer running. Real-time timer updates text in place; do not rerender tracker/log-modal DOM every second because that causes hover/focus glitches, duplicate tooltips, and unstable modal inputs. `Clear` and completed-cell `Clear Log` must confirm before deleting progress.
 
-Defaults live in `DEFAULT_EXERCISES` in `js/data.js` and only seed new installs when `pem_exercises` is missing.
-Hidden exercises stay in `pem_exercises` to preserve linked session and timeline data, but are excluded from the active calendar.
+Log details: calendar day controls grid placement; started-at controls timeline/notes placement; finished-at records final-set time. Historical logs for hidden/deleted/missing exercises open read-only/details-first. Preserve `exerciseSnapshot` so old logs survive renamed/hidden/deleted exercises.
 
-### Session Object
+Compact grid: one spreadsheet-like grid, no alternate view toggle, groups stay open. Do not add extra full-width action rows. Add-exercise controls belong in group headers. Group-header add buttons must stop propagation so header drag/drop is unaffected.
 
-```js
-{
-  completedExercises: string[],
-  setProgress: {
-    [exerciseId]: {
-      completedSets: number,
-      targetSets: number,
-      startedAt: string,
-      updatedAt: string,
-      completedAt: string | null,
-      finishedEarly: boolean,
-      setDurations: number[],
-      timerStartedAt: string | null,
-      elapsedSeconds: number,
-      timerStoppedAt: string | null,
-      timerCapped: boolean
-    }
-  },
-  activeExerciseId: string | undefined
-}
-```
+Review markers: dose changes and exercise additions can mark `changedSinceLastPhysioVisit`; Settings can clear markers. Do not remove marker rendering or the clear-review flow when editing exercise/settings UI.
 
-### Settings Object
+Settings UI: first reuse existing primitives before custom CSS: `settings-section`, `settings-row-group`, `settings-action-row`, `settings-action-label` with `strong` + `span`, matching button classes (`settings-clear-review`, `settings-draft-btn`, `settings-backup-btn`), and `settings-grid` / `settings-status-grid` only when they naturally fit. Custom settings CSS must be minimal, scoped, and layered on shared classes. Compare new settings rows against nearby rows for borders, spacing, typography, button styling, and mobile wrapping.
 
-```js
-{
-  createdAt: string,
-  notesOpen: boolean | undefined,
-  personalDayStartTime: string,
-  setCueSound: boolean,
-  setCueVibrate: boolean,
-  setCueSpeech: boolean
-}
-```
+Security/storage: use `textContent` or DOM helpers for user-controlled strings. Exercise images are data URLs inside `pem_exercises`; large images can exceed browser storage.
 
-### Event Object
+## Checks
 
-```js
-{
-  id: string,
-  type: 'note' | 'dose-change' | 'exercise-added',
-  date: string,
-  time: string,
-  exerciseId: string | undefined,
-  exerciseName: string | undefined,
-  text: string | undefined,
-  annotation: string | undefined,
-  changes: object | undefined,
-  createdAt: string,
-  updatedAt: string | undefined
-}
-```
-
-## Set Tracker Behavior
-
-Clicking an exercise/day cell opens the set tracker. `Complete Set` logs one set and advances progress. Clicking the active grid cell completes all sets for that exercise/date. `Pause & Close` stops the timer, saves partial progress, clears `activeExerciseId`, and closes the tracker.
-
-There should be no path that hides the tracker while leaving its timer running.
-
-The real-time set timer must not recreate the tracker or log-edit modal DOM every second. Updating timer text in place is intentional; full rerenders during the timer interval cause hover/focus glitches, duplicate tooltip behavior, and unstable modal inputs.
-
-`Clear` and completed-cell `Clear Log` must confirm before deleting progress.
-
-## Compact Grid
-
-The app uses one spreadsheet-like compact grid view. There is no alternate view toggle and groups stay open:
-
-- Do not add extra full-width action rows.
-- Add exercise controls belong in the group header.
-- Group header add buttons must stop propagation so header drag/drop behavior is not affected.
-
-## Settings UI Guidance
-
-Settings UI should stay visually consistent across tabs and features.
-
-When adding a setting or settings-managed feature, first reuse the existing settings modal primitives instead of creating feature-specific layout CSS:
-
-- Use `settings-section` for titled groups.
-- Use `settings-row-group` for bordered groups of rows.
-- Use `settings-action-row` for label/action rows.
-- Use `settings-action-label` with `strong` and `span` for row title and supporting text.
-- Reuse existing settings button classes such as `settings-clear-review`, `settings-draft-btn`, or `settings-backup-btn` when the button behavior and visual weight match.
-- Use `settings-grid` or `settings-status-grid` only when the setting naturally matches those existing patterns.
-
-Avoid custom CSS for new settings features unless it significantly improves visibility, usability, accessibility, or responsive behavior beyond what the existing settings primitives can do. If custom CSS is necessary, keep it minimal and scoped, and layer it on top of the shared settings classes rather than replacing the shared layout.
-
-Before finishing settings UI work, compare the new setting visually with nearby Settings rows for consistent borders, spacing, typography, button styling, and mobile wrapping.
-
-## Editing Guidance
-
-- Use `textContent` or DOM creation helpers for user-controlled strings.
-- Keep all date strings local `YYYY-MM-DD`; use `toDateStr()` and `dateFromStr()` from `js/storage.js`.
-- Exercise images are stored as data URLs in `pem_exercises`, so large images can hit browser storage limits.
-- After JavaScript edits, run:
+After JS edits run:
 
 ```powershell
-node --check js\data.js
-node --check js\storage.js
 Get-ChildItem -Path js -Filter *.js | Sort-Object Name | ForEach-Object { node --check $_.FullName }
 ```
-
-## Browser Verification
-
-Do not run shell-launched headless Chrome, headless Edge, Playwright, Puppeteer, or Node-based browser automation for this repo. This local environment has unreliable headless browser/GPU support, and those checks waste time and tokens when they fail for environment reasons.
-
-For UI verification:
-
-- Always prefer a local static server over opening `index.html` directly. Serve the repo root on `127.0.0.1` with a simple server such as `python -m http.server <port> --bind 127.0.0.1`, choose an available port, and give the user the exact `http://127.0.0.1:<port>/index.html` URL.
-- Use the local hosted URL for normal/manual browser checks, then check the compact grid, notes, settings, set tracking, backup warnings, and image modal entry points.
-- It is acceptable to use the Codex in-app/visible browser workflow against the local URL for screenshots or interactive checks when visual verification is genuinely useful.
-- Keep automated visual checks focused and brief. Do not use them as the default for every change.
-- Always report when browser verification was manual, in-app/visible-browser based, or skipped.
