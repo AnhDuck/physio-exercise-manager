@@ -461,23 +461,24 @@
   <input type="file" id="image-upload-input" accept="image/*" />
   <div id="set-tracker-root"></div>
 
-  <!-- Scripts - order matters: data/storage, shared helpers, features, then bootstrap -->
-  <script src="js/data.js"></script>
-  <script src="js/storage.js"></script>
-  <script src="js/constants.js"></script>
-  <script src="js/state.js"></script>
-  <script src="js/dates.js"></script>
-  <script src="js/dom.js"></script>
-  <script src="js/sessions.js"></script>
-  <script src="js/exercises.js"></script>
-  <script src="js/grid.js"></script>
-  <script src="js/tracker.js"></script>
-  <script src="js/timeline.js"></script>
-  <script src="js/backup.js"></script>
-  <script src="js/auto-backup.js"></script>
-  <script src="js/settings.js"></script>
-  <script src="js/images.js"></script>
-  <script src="js/main.js"></script>
+  <!-- Scripts - order matters: data/storage, shared helpers, features, then bootstrap.
+       Bump the shared asset version when JS changes to avoid stale hosted browser caches. -->
+  <script src="js/data.js?v=2026-05-23-1"></script>
+  <script src="js/storage.js?v=2026-05-23-1"></script>
+  <script src="js/constants.js?v=2026-05-23-1"></script>
+  <script src="js/state.js?v=2026-05-23-1"></script>
+  <script src="js/dates.js?v=2026-05-23-1"></script>
+  <script src="js/dom.js?v=2026-05-23-1"></script>
+  <script src="js/sessions.js?v=2026-05-23-1"></script>
+  <script src="js/exercises.js?v=2026-05-23-1"></script>
+  <script src="js/grid.js?v=2026-05-23-1"></script>
+  <script src="js/tracker.js?v=2026-05-23-1"></script>
+  <script src="js/timeline.js?v=2026-05-23-1"></script>
+  <script src="js/backup.js?v=2026-05-23-1"></script>
+  <script src="js/auto-backup.js?v=2026-05-23-1"></script>
+  <script src="js/settings.js?v=2026-05-23-1"></script>
+  <script src="js/images.js?v=2026-05-23-1"></script>
+  <script src="js/main.js?v=2026-05-23-1"></script>
 
 </body>
 </html>
