@@ -35,7 +35,10 @@ function normalizeRuntimeAutoBackupSettings(value = {}) {
   const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
   const time = normalizeAutoBackupTime(source.time) || AUTO_BACKUP_DEFAULT_SETTINGS.time;
   const history = Array.isArray(source.history)
-    ? source.history.filter(item => item && typeof item === 'object').slice(0, AUTO_BACKUP_HISTORY_LIMIT)
+    ? source.history
+        .filter(item => item && typeof item === 'object')
+        .filter(item => !isAutoBackupPickerPermissionNoise(item))
+        .slice(0, AUTO_BACKUP_HISTORY_LIMIT)
     : AUTO_BACKUP_DEFAULT_SETTINGS.history;
 
   return {
@@ -66,6 +69,34 @@ function normalizeAutoBackupTime(timeStr) {
   const minute = Number(match[2]);
   if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return '';
   return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
+function isAutoBackupPickerPermissionNoise(item) {
+  return item.status === 'error' &&
+    item.type === 'manual' &&
+    !item.folderName &&
+    (!Array.isArray(item.files) || !item.files.length) &&
+    /folder permission was not granted/i.test(item.message || '');
+}
+
+function autoBackupFolderConnectErrorMessage(err) {
+  if (err?.name === 'NotAllowedError') {
+    return 'The browser blocked folder access before the app received a folder. Try a normal Chrome or Edge tab, or select a regular subfolder that is not protected by the browser.';
+  }
+  return autoBackupErrorMessage(err);
+}
+
+function recordAutoBackupFolderConnectFailure(err) {
+  const auto = getAutoBackupSettings();
+  const message = autoBackupFolderConnectErrorMessage(err);
+  if (auto.folderName) {
+    auto.needsReconnect = true;
+    auto.lastError = message;
+    auto.lastErrorAt = new Date().toISOString();
+    saveSettings(settings);
+  }
+  renderAutoBackupSettings();
+  showToast(`Folder access failed: ${message}`);
 }
 
 function isFolderAutoBackupSupported() {
@@ -194,7 +225,7 @@ async function chooseAutoBackupFolder() {
     showToast(`Backup folder connected: ${auto.folderName}. Use Backup now to test writing files.`);
   } catch (err) {
     if (err?.name === 'AbortError') return;
-    recordAutoBackupFailure('manual', err);
+    recordAutoBackupFolderConnectFailure(err);
   }
 }
 
