@@ -8,7 +8,11 @@ function sortedExercisesInGroup(group) {
 }
 
 function isExerciseActive(ex) {
-  return ex && !ex.deletedAt;
+  return ex && !ex.deletedAt && !ex.hiddenAt;
+}
+
+function isExerciseHidden(ex) {
+  return Boolean(ex?.hiddenAt && !ex.deletedAt);
 }
 
 function groupedExercisesForRender(exs) {
@@ -323,7 +327,7 @@ function showBlockDropWarningThrottled(dragged = null, target = null) {
 function openEditModal(exId) {
   editingExId = exId;
   const ex = exercises.find(e => e.id === exId);
-  if (!ex || ex.deletedAt) return;
+  if (!ex || !isExerciseActive(ex)) return;
 
   document.getElementById('modal-title').textContent = 'Edit Exercise';
   document.getElementById('field-name').value = ex.name;
@@ -335,7 +339,8 @@ function openEditModal(exId) {
   document.getElementById('field-group').value = ex.group;
   document.getElementById('field-changed-since-physio').checked = Boolean(ex.changedSinceLastPhysioVisit);
 
-  document.getElementById('delete-btn').style.display = 'inline-block';
+  document.getElementById('hide-btn').style.display = 'inline-block';
+  document.getElementById('hide-btn').textContent = 'Hide exercise';
   showModal();
 }
 
@@ -350,7 +355,7 @@ function openAddModal(group) {
   document.getElementById('field-instructions').value = '';
   document.getElementById('field-group').value = group;
   document.getElementById('field-changed-since-physio').checked = false;
-  document.getElementById('delete-btn').style.display = 'none';
+  document.getElementById('hide-btn').style.display = 'none';
   showModal();
 }
 
@@ -417,20 +422,52 @@ function saveExerciseModal() {
   render();
 }
 
-function deleteExercise() {
+function hideExercise() {
   if (!editingExId) return;
   const ex = exercises.find(item => item.id === editingExId);
   if (!ex) return;
   const logCount = countExerciseLogs(editingExId);
   const historyText = logCount
-    ? ` It has ${logCount} historical ${logCount === 1 ? 'log' : 'logs'} that will stay in the timeline with a deleted marker.`
+    ? ` It has ${logCount} historical ${logCount === 1 ? 'log' : 'logs'} that will stay in the timeline with a hidden marker.`
     : '';
-  if (!confirm(`Delete ${ex.name}? This hides it from the active calendar but keeps notes and historical exercise logs.${historyText}`)) return;
-  ex.deletedAt = new Date().toISOString();
-  if (activeTracker?.exerciseId === editingExId) activeTracker = null;
+  if (!confirm(`Hide ${ex.name}? This removes it from the calendar but keeps notes and historical exercise logs.${historyText}`)) return;
+  stopActiveTrackerForExercise(editingExId);
+  ex.hiddenAt = new Date().toISOString();
   saveExercises(exercises);
   closeModal();
   render();
+}
+
+function stopActiveTrackerForExercise(exId) {
+  if (activeTracker?.exerciseId !== exId) return;
+  const session = getSessionForEdit(activeTracker.dateStr);
+  const progress = session.setProgress?.[exId];
+  const ex = exercises.find(item => item.id === exId);
+  if (progress) {
+    const now = new Date();
+    const normalized = normalizeSetProgress(progress, ex);
+    enforceTimerCap(normalized, now);
+    stopSetTimer(normalized, now);
+    normalized.updatedAt = now.toISOString();
+    normalized.completedAt = isProgressComplete(normalized) ? (normalized.completedAt || normalized.updatedAt) : null;
+    normalized.finishedEarly = false;
+    session.setProgress[exId] = normalized;
+    setCompletion(activeTracker.dateStr, exId, isProgressComplete(normalized));
+  }
+  if (session.activeExerciseId === exId) delete session.activeExerciseId;
+  saveSession(activeTracker.dateStr, session);
+  activeTracker = null;
+}
+
+function restoreExercise(exId) {
+  const ex = exercises.find(item => item.id === exId);
+  if (!ex || !isExerciseHidden(ex)) return;
+  delete ex.hiddenAt;
+  saveExercises(exercises);
+  renderHiddenExerciseSettings();
+  refreshOpenBlockSettings();
+  render();
+  showToast(`${ex.name} restored.`);
 }
 
 function countExerciseLogs(exId) {

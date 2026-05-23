@@ -222,6 +222,7 @@ function decrementActiveSet() {
 function clearActiveProgress() {
   const current = getActiveTrackerParts();
   if (!current) return;
+  if (activeTracker?.readOnly) return;
   confirmAndClearExerciseProgress(current.ex.id, current.dateStr);
 }
 
@@ -302,12 +303,14 @@ function renderSetTracker() {
 
   const utility = el('div', 'set-tracker-utility');
   const utilityMain = el('div', 'set-tracker-utility-group set-tracker-utility-main');
-  const editLogBtn = buildTrackerIconButton('wrench', 'Edit log', 'set-log-toggle', openLogDetails);
+  const editLogBtn = buildTrackerIconButton('wrench', isHistoricalOnly ? 'View log details' : 'Edit log', 'set-log-toggle', openLogDetails);
   editLogBtn.setAttribute('aria-haspopup', 'dialog');
   editLogBtn.setAttribute('aria-expanded', String(Boolean(activeTracker?.detailsOpen)));
   const utilityDanger = el('div', 'set-tracker-utility-group set-tracker-utility-danger');
-  utilityDanger.appendChild(buildTrackerIconButton('trash', 'Clear set log', 'set-log-clear', clearActiveProgress));
-  utility.appendChild(utilityDanger);
+  if (!isHistoricalOnly) {
+    utilityDanger.appendChild(buildTrackerIconButton('trash', 'Clear set log', 'set-log-clear', clearActiveProgress));
+    utility.appendChild(utilityDanger);
+  }
   utilityMain.appendChild(editLogBtn);
   utilityMain.appendChild(buildTrackerIconButton('x', 'Close set tracker', 'set-tracker-close', pauseAndCloseTracker));
   utility.appendChild(utilityMain);
@@ -315,8 +318,9 @@ function renderSetTracker() {
   const main = el('div', 'set-tracker-main');
   const info = el('div', 'set-tracker-info');
   const startMeta = el('div', 'set-tracker-start-meta');
-  if (ex.deletedAt || ex.missing) {
-    startMeta.appendChild(elText('div', 'set-tracker-kicker set-tracker-deleted-kicker', ex.missing ? 'Missing exercise log' : 'Deleted exercise log'));
+  if (ex.hiddenAt || ex.deletedAt || ex.missing) {
+    const status = ex.missing ? 'Missing exercise log' : (ex.hiddenAt ? 'Hidden exercise log' : 'Deleted exercise log');
+    startMeta.appendChild(elText('div', 'set-tracker-kicker set-tracker-deleted-kicker', status));
   }
   startMeta.appendChild(elText('div', 'set-tracker-kicker', trackerStartedLabel(progress)));
   const sessionDayLabel = trackerSessionDayLabel(progress, dateStr);
@@ -403,6 +407,7 @@ function buildIconSvg(iconName) {
 
 function buildLogEditModal(ex, dateStr, progress) {
   if (!activeTracker?.detailsOpen) return null;
+  const readOnly = activeTracker?.readOnly || !isExerciseActive(ex) || ex.missing;
 
   const layer = el('div', 'set-log-modal-layer');
   const backdrop = el('button', 'set-log-modal-backdrop');
@@ -416,7 +421,7 @@ function buildLogEditModal(ex, dateStr, progress) {
   modal.setAttribute('aria-modal', 'true');
   modal.setAttribute('aria-labelledby', 'set-log-modal-title');
   const header = el('div', 'set-log-modal-header');
-  header.appendChild(elText('h3', 'set-log-modal-title', 'Edit log'));
+  header.appendChild(elText('h3', 'set-log-modal-title', readOnly ? 'Log details' : 'Edit log'));
   const close = elText('button', 'set-log-modal-close', '');
   close.type = 'button';
   close.setAttribute('aria-label', 'Close log editor');
@@ -435,9 +440,10 @@ function buildLogEditModal(ex, dateStr, progress) {
   sessionInput.type = 'date';
   sessionInput.id = 'log-session-date';
   sessionInput.value = dateStr;
+  sessionInput.disabled = readOnly;
   sessionField.appendChild(sessionInput);
   calendarSection.appendChild(sessionField);
-  calendarSection.appendChild(elText('p', 'set-log-section-help', 'Controls where this log appears on the calendar.'));
+  calendarSection.appendChild(elText('p', 'set-log-section-help', readOnly ? 'Restore the exercise before editing this log.' : 'Controls where this log appears on the calendar.'));
   calendarGroup.appendChild(calendarSection);
   sections.appendChild(calendarGroup);
 
@@ -445,21 +451,23 @@ function buildLogEditModal(ex, dateStr, progress) {
   timingGroup.appendChild(elText('h4', 'set-log-section-title', 'Actual exercise time'));
   const timingSection = el('section', 'set-log-section set-log-time-section');
   const timing = el('div', 'set-log-edit-grid');
-  timing.appendChild(buildDateTimeField('Started at', 'log-start-date', 'log-start-time', progress.startedAt));
-  timing.appendChild(buildDateTimeField('Finished at', 'log-completed-date', 'log-completed-time', progress.completedAt, !isProgressComplete(progress), 'secondary'));
+  timing.appendChild(buildDateTimeField('Started at', 'log-start-date', 'log-start-time', progress.startedAt, readOnly));
+  timing.appendChild(buildDateTimeField('Finished at', 'log-completed-date', 'log-completed-time', progress.completedAt, readOnly || !isProgressComplete(progress), 'secondary'));
   timingSection.appendChild(timing);
-  timingSection.appendChild(elText('p', 'set-log-section-help', 'Started at controls timeline/notes placement. Finished at is when the final set was logged.'));
+  timingSection.appendChild(elText('p', 'set-log-section-help', readOnly ? 'Historical logs for hidden exercises are read-only.' : 'Started at controls timeline/notes placement. Finished at is when the final set was logged.'));
   timingGroup.appendChild(timingSection);
   sections.appendChild(timingGroup);
 
   modal.appendChild(sections);
 
-  const actions = el('div', 'set-log-edit-actions');
-  const save = elText('button', 'set-action set-action-primary set-log-save', 'Save / Move Log');
-  save.type = 'button';
-  save.addEventListener('click', saveActiveLogDetails);
-  actions.appendChild(save);
-  modal.appendChild(actions);
+  if (!readOnly) {
+    const actions = el('div', 'set-log-edit-actions');
+    const save = elText('button', 'set-action set-action-primary set-log-save', 'Save / Move Log');
+    save.type = 'button';
+    save.addEventListener('click', saveActiveLogDetails);
+    actions.appendChild(save);
+    modal.appendChild(actions);
+  }
   layer.appendChild(modal);
   return layer;
 }
@@ -502,9 +510,11 @@ function buildDateTimeField(label, dateId, timeId, iso, disabled = false, varian
 }
 
 function saveActiveLogDetails() {
+  if (activeTracker?.readOnly) return;
   const current = getActiveTrackerParts();
   if (!current) return;
   const { ex, dateStr, session, progress } = current;
+  if (!isExerciseActive(ex) || ex.missing) return;
 
   const startedAt = isoFromLocalInputs('log-start-date', 'log-start-time');
   if (!startedAt) {

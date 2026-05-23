@@ -66,6 +66,7 @@ function displayExerciseForLog(exId, progress) {
     resistance: ex?.resistance || snapshot.resistance || '',
     frequency: ex?.frequency || snapshot.frequency || '',
     deletedAt: ex?.deletedAt || null,
+    hiddenAt: ex?.hiddenAt || null,
     missing: !ex,
   };
 }

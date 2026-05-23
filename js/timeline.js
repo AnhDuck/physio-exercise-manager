@@ -9,7 +9,11 @@ function eventsForDate(dateStr) {
 function timelineEvents() {
   const eventItems = events
     .filter(ev => ev.type === 'note' || ev.type === 'dose-change' || ev.type === 'exercise-added')
-    .map(ev => ({ ...ev, sortKey: `${ev.date || ''}T${ev.time || '00:00'}` }));
+    .map(ev => ({
+      ...ev,
+      ...exerciseLinkStatus(ev.exerciseId),
+      sortKey: `${ev.date || ''}T${ev.time || '00:00'}`,
+    }));
   return eventItems.concat(exerciseLogTimelineEvents())
     .sort((a, b) => (b.sortKey || `${b.date || ''}T${b.time || '00:00'}`)
       .localeCompare(a.sortKey || `${a.date || ''}T${a.time || '00:00'}`));
@@ -37,6 +41,7 @@ function exerciseLogTimelineEvents() {
         exerciseId: exId,
         exerciseName: ex.name,
         group: ex.group,
+        hidden: Boolean(ex.hiddenAt),
         deleted: Boolean(ex.deletedAt),
         missing: Boolean(ex.missing),
         progress,
@@ -45,6 +50,16 @@ function exerciseLogTimelineEvents() {
     });
   });
   return items;
+}
+
+function exerciseLinkStatus(exerciseId) {
+  if (!exerciseId) return {};
+  const ex = exercises.find(item => item.id === exerciseId);
+  return {
+    hidden: Boolean(ex?.hiddenAt && !ex?.deletedAt),
+    deleted: Boolean(ex?.deletedAt),
+    missing: !ex,
+  };
 }
 
 function groupedTimelineEvents(items = timelineEvents()) {
@@ -233,7 +248,8 @@ function formatTimelineEventMarkdownBody(ev) {
     return parts.join(': ');
   }
 
-  const parts = [`**${eventTitle(ev)}**`];
+  const status = exerciseStatusLabel(ev);
+  const parts = [`**${status ? `${status}: ` : ''}${eventTitle(ev)}**`];
   const detail = eventText(ev);
   if (detail) parts.push(detail);
   if (ev.annotation) parts.push(formatMarkdownEntryText(ev.annotation));
@@ -423,7 +439,11 @@ function formatBoundaryTime(timeStr) {
 }
 
 function buildTimelineItem(ev) {
-  const item = el('article', 'timeline-row timeline-' + ev.type + (ev.deleted || ev.missing ? ' timeline-exercise-deleted' : ''));
+  const status = exerciseStatusLabel(ev);
+  const inactiveClass = status
+    ? ` timeline-exercise-${status.toLowerCase()}`
+    : '';
+  const item = el('article', 'timeline-row timeline-' + ev.type + inactiveClass);
   const content = el('div', 'timeline-row-content');
   content.appendChild(elText('span', 'timeline-time', formatEventTime(ev.time)));
 
@@ -432,11 +452,11 @@ function buildTimelineItem(ev) {
     content.appendChild(elText('span', 'timeline-note-text', ev.text || ''));
   } else if (ev.type === 'exercise-log') {
     content.appendChild(elText('span', 'timeline-separator', '-'));
-    if (ev.deleted || ev.missing) content.appendChild(elText('span', 'timeline-broken-link', 'Deleted'));
+    appendExerciseStatusBadge(content, ev);
     content.appendChild(elText('span', 'timeline-event-title', eventTitle(ev)));
     const detail = eventText(ev);
     if (detail) content.appendChild(elText('span', 'timeline-event-detail', detail));
-    item.title = ev.deleted || ev.missing ? 'Open historical exercise log' : 'Open exercise log';
+    item.title = status ? 'Open historical exercise log' : 'Open exercise log';
     item.setAttribute('role', 'button');
     item.setAttribute('tabindex', '0');
     item.addEventListener('click', () => openExerciseLogFromTimeline(ev));
@@ -447,6 +467,7 @@ function buildTimelineItem(ev) {
     });
   } else {
     content.appendChild(elText('span', 'timeline-separator', '-'));
+    appendExerciseStatusBadge(content, ev);
     content.appendChild(elText('span', 'timeline-event-title', eventTitle(ev)));
     const detail = eventText(ev);
     if (detail) content.appendChild(elText('span', 'timeline-event-detail', detail));
@@ -469,11 +490,11 @@ function openExerciseLogFromTimeline(ev) {
   if (!ev?.exerciseId || !ev.sessionDate) return;
   currentWeekStart = getMonday(dateFromStr(ev.sessionDate));
   openSetTracker(ev.exerciseId, ev.sessionDate, {
-    readOnly: Boolean(ev.deleted || ev.missing),
-    detailsOpen: Boolean(ev.deleted || ev.missing),
-    skipScroll: Boolean(ev.deleted || ev.missing),
+    readOnly: Boolean(ev.hidden || ev.deleted || ev.missing),
+    detailsOpen: Boolean(ev.hidden || ev.deleted || ev.missing),
+    skipScroll: Boolean(ev.hidden || ev.deleted || ev.missing),
   });
-  if (!ev.deleted && !ev.missing) {
+  if (!ev.hidden && !ev.deleted && !ev.missing) {
     window.setTimeout(() => scrollActiveCellIntoView(ev.exerciseId, ev.sessionDate), 0);
   }
 }
@@ -640,10 +661,22 @@ function eventTitle(ev) {
   if (ev.type === 'dose-change') return `Dose change: ${ev.exerciseName || 'Exercise'}`;
   if (ev.type === 'exercise-added') return `Added exercise: ${ev.exerciseName || 'Exercise'}`;
   if (ev.type === 'exercise-log') {
-    const prefix = ev.deleted || ev.missing ? 'Deleted exercise' : 'Exercise';
+    const prefix = ev.hidden ? 'Hidden exercise' : (ev.deleted || ev.missing ? 'Deleted exercise' : 'Exercise');
     return `${prefix}: ${ev.exerciseName || ev.exerciseId || 'Exercise'}`;
   }
   return 'Note';
+}
+
+function exerciseStatusLabel(ev) {
+  if (ev?.hidden) return 'Hidden';
+  if (ev?.deleted || ev?.missing) return 'Deleted';
+  return '';
+}
+
+function appendExerciseStatusBadge(content, ev) {
+  const label = exerciseStatusLabel(ev);
+  if (!label) return;
+  content.appendChild(elText('span', `timeline-link-status timeline-link-status-${label.toLowerCase()}`, label));
 }
 
 function eventText(ev) {

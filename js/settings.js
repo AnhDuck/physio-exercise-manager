@@ -7,6 +7,7 @@ function openSettingsModal() {
   settingsActiveTab = 'general';
   beginBlockDraft();
   syncSettingsControls();
+  renderHiddenExerciseSettings();
   renderBlockSettings();
   hydrateSettingsIconButtons(document.getElementById('settings-modal'));
   renderAutoBackupSettings();
@@ -112,6 +113,64 @@ function updateClearReviewButton() {
   const btn = document.getElementById('settings-clear-review');
   if (!btn) return;
   btn.disabled = !exercises.some(ex => ex.changedSinceLastPhysioVisit);
+}
+
+function renderHiddenExerciseSettings() {
+  const root = document.getElementById('settings-hidden-exercises');
+  if (!root) return;
+  root.innerHTML = '';
+
+  const hiddenExercises = exercises
+    .filter(isExerciseHidden)
+    .sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group) || a.order - b.order);
+
+  if (!hiddenExercises.length) {
+    root.appendChild(elText('div', 'hidden-exercise-empty', 'No hidden exercises.'));
+    return;
+  }
+
+  GROUP_ORDER.forEach(group => {
+    const groupExercises = hiddenExercises.filter(ex => ex.group === group);
+    if (!groupExercises.length) return;
+    root.appendChild(buildHiddenExerciseGroup(group, groupExercises));
+  });
+}
+
+function buildHiddenExerciseGroup(group, groupExercises) {
+  const cfg = GROUPS[group];
+  const section = el('section', 'hidden-exercise-group');
+  section.style.setProperty('--exercise-group-color', cfg.color);
+  section.appendChild(elText('h4', 'hidden-exercise-group-title', cfg.label));
+
+  const list = el('div', 'hidden-exercise-list');
+  groupExercises.forEach(ex => list.appendChild(buildHiddenExerciseRow(ex)));
+  section.appendChild(list);
+  return section;
+}
+
+function buildHiddenExerciseRow(ex) {
+  const row = el('div', 'hidden-exercise-row');
+  const info = el('div', 'hidden-exercise-info');
+  info.appendChild(elText('strong', 'hidden-exercise-name', ex.name));
+  info.appendChild(elText('span', 'hidden-exercise-meta', hiddenExerciseMeta(ex)));
+  row.appendChild(info);
+
+  const restore = elText('button', 'hidden-exercise-restore', 'Restore');
+  restore.type = 'button';
+  restore.addEventListener('click', () => restoreExercise(ex.id));
+  row.appendChild(restore);
+  return row;
+}
+
+function hiddenExerciseMeta(ex) {
+  const dose = `${targetSetsForExercise(ex)} sets / ${ex.reps || '?'} reps${ex.resistance ? ` / ${ex.resistance}` : ''}`;
+  const hiddenDate = formatHiddenExerciseDate(ex.hiddenAt);
+  return hiddenDate ? `${dose} | Hidden ${hiddenDate}` : dose;
+}
+
+function formatHiddenExerciseDate(iso) {
+  const date = dateFromIso(iso);
+  return date ? formatEventDate(toDateStr(date)) : '';
 }
 
 function clearChangedSincePhysioMarkers() {

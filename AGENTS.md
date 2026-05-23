@@ -82,11 +82,13 @@ pem_events    -> JSON array of timeline events
   frequency: string,
   instructions: string,
   image: string | null, // data URL when uploaded/imported
-  order: number
+  order: number,
+  hiddenAt: string | undefined // ISO timestamp when hidden/restorable
 }
 ```
 
 Defaults live in `DEFAULT_EXERCISES` in `js/data.js` and only seed new installs when `pem_exercises` is missing.
+Hidden exercises stay in `pem_exercises` to preserve linked session and timeline data, but are excluded from the active calendar.
 
 ### Session Object
 

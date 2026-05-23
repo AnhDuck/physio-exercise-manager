@@ -34,7 +34,7 @@ function bindStaticEvents() {
 
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
   document.getElementById('modal-save').addEventListener('click', saveExerciseModal);
-  document.getElementById('delete-btn').addEventListener('click', deleteExercise);
+  document.getElementById('hide-btn').addEventListener('click', hideExercise);
 
   document.getElementById('exercise-modal').addEventListener('click', (e) => {
     if (e.target === document.getElementById('exercise-modal')) closeModal();
