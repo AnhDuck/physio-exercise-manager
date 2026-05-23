@@ -199,7 +199,8 @@ Do not run shell-launched headless Chrome, headless Edge, Playwright, Puppeteer,
 
 For UI verification:
 
-- Prefer normal/manual browser checks: open `index.html` directly or serve the repo root with a simple static server, then check the compact grid, notes, settings, set tracking, backup warnings, and image modal entry points.
+- Always prefer a local static server over opening `index.html` directly. Serve the repo root on `127.0.0.1` with a simple server such as `python -m http.server <port> --bind 127.0.0.1`, choose an available port, and give the user the exact `http://127.0.0.1:<port>/index.html` URL.
+- Use the local hosted URL for normal/manual browser checks, then check the compact grid, notes, settings, set tracking, backup warnings, and image modal entry points.
 - It is acceptable to use the Codex in-app/visible browser workflow against the local URL for screenshots or interactive checks when visual verification is genuinely useful.
 - Keep automated visual checks focused and brief. Do not use them as the default for every change.
 - Always report when browser verification was manual, in-app/visible-browser based, or skipped.
