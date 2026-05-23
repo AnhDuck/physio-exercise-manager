@@ -260,7 +260,18 @@ body {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 8px;
   flex: 0 0 auto;
+}
+
+.app-version {
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
 }
 
 .backup-health-banner {

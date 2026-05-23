@@ -23,6 +23,7 @@
       </span>
     </span>
     <div class="header-actions">
+      <span id="app-version" class="app-version" aria-label="App version"></span>
       <button id="btn-settings" class="btn-settings" title="Settings" aria-label="Settings">&#9881;</button>
     </div>
   </header>
@@ -461,24 +462,34 @@
   <input type="file" id="image-upload-input" accept="image/*" />
   <div id="set-tracker-root"></div>
 
-  <!-- Scripts - order matters: data/storage, shared helpers, features, then bootstrap.
-       Bump the shared asset version when JS changes to avoid stale hosted browser caches. -->
-  <script src="js/data.js?v=2026-05-23-1"></script>
-  <script src="js/storage.js?v=2026-05-23-1"></script>
-  <script src="js/constants.js?v=2026-05-23-1"></script>
-  <script src="js/state.js?v=2026-05-23-1"></script>
-  <script src="js/dates.js?v=2026-05-23-1"></script>
-  <script src="js/dom.js?v=2026-05-23-1"></script>
-  <script src="js/sessions.js?v=2026-05-23-1"></script>
-  <script src="js/exercises.js?v=2026-05-23-1"></script>
-  <script src="js/grid.js?v=2026-05-23-1"></script>
-  <script src="js/tracker.js?v=2026-05-23-1"></script>
-  <script src="js/timeline.js?v=2026-05-23-1"></script>
-  <script src="js/backup.js?v=2026-05-23-1"></script>
-  <script src="js/auto-backup.js?v=2026-05-23-1"></script>
-  <script src="js/settings.js?v=2026-05-23-1"></script>
-  <script src="js/images.js?v=2026-05-23-1"></script>
-  <script src="js/main.js?v=2026-05-23-1"></script>
+  <!-- Scripts - order matters: data/storage, shared helpers, features, then bootstrap. -->
+  <script>
+    window.PEM_APP_VERSION = '1.0.0';
+
+    const appVersionLabel = document.getElementById('app-version');
+    if (appVersionLabel) appVersionLabel.textContent = `v${window.PEM_APP_VERSION}`;
+
+    [
+      'js/data.js',
+      'js/storage.js',
+      'js/constants.js',
+      'js/state.js',
+      'js/dates.js',
+      'js/dom.js',
+      'js/sessions.js',
+      'js/exercises.js',
+      'js/grid.js',
+      'js/tracker.js',
+      'js/timeline.js',
+      'js/backup.js',
+      'js/auto-backup.js',
+      'js/settings.js',
+      'js/images.js',
+      'js/main.js',
+    ].forEach((src) => {
+      document.write(`<script src="${src}?v=${encodeURIComponent(window.PEM_APP_VERSION)}"><\/script>`);
+    });
+  </script>
 
 </body>
 </html>

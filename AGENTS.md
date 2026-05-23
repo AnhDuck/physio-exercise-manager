@@ -6,6 +6,8 @@ This is a personal physiotherapy exercise tracker. It is a static web app with n
 
 All user data is stored in browser `localStorage`.
 
+Folder backup state also depends on browser-origin scoped IndexedDB and File System Access permissions. A folder selected on one origin, such as `http://127.0.0.1:8891`, is not automatically connected on another port or under `file://`. Do not conclude backup is broken solely because a different origin lacks the selected folder; verify on the same origin or report that the new origin has separate backup settings.
+
 ## File Layout
 
 ```text
@@ -35,6 +37,14 @@ physio-exercise-manager/
 ```
 
 Required script order in `index.html`: `js/data.js`, `js/storage.js`, shared helpers, feature files, then `js/main.js`. Do not load `js/main.js` before the feature files it binds.
+
+## App Version and Hosted Freshness
+
+`index.html` defines `window.PEM_APP_VERSION` and shows it in the header beside Settings. Any Codex code edit must bump this version; default to a patch SemVer bump unless the user explicitly asks for minor or major. The same version is used to cache-bust local scripts, so keep it as the single source of truth.
+
+For hosted browser checks, first read the local `PEM_APP_VERSION`, then open `http://127.0.0.1:<port>/index.html?v=<version>` and confirm the visible header shows `v<version>`. If the visible version does not match the local file version, the browser result is invalid: reload with the versioned URL, correct the server/root, or start a correctly rooted server before testing.
+
+Reuse a same-chat/same-workspace local server after a version match. Use a fresh port for new chats, branch/worktree/path changes, stopped servers, or unresolved version mismatches. Do not use a fresh port merely as the default after every small fix because `localStorage`, IndexedDB, and folder backup permissions are browser-origin scoped.
 
 ## Exercise Groups
 
