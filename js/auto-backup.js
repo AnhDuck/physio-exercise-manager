@@ -7,7 +7,6 @@ const AUTO_BACKUP_DIR_KEY = 'backup-directory';
 const AUTO_BACKUP_PICKER_ID = 'pem-auto-backup-folder';
 const AUTO_BACKUP_DATED_PREFIX = 'physio-exercise-auto-backup-';
 const AUTO_BACKUP_LATEST_FILE = 'physio-exercise-auto-backup-latest.json';
-const AUTO_BACKUP_VERIFIED_VERSION = 1;
 const AUTO_BACKUP_KEEP_DAYS = 31;
 const AUTO_BACKUP_HISTORY_LIMIT = 20;
 const AUTO_BACKUP_TIMER_MS = 60 * 1000;
@@ -837,10 +836,9 @@ function dataSafetyReceiptText(report) {
 
 function verifiedBackupReceiptText(auto) {
   const summary = auto.lastVerifiedSummary || {};
-  const file = auto.lastVerifiedFile || 'latest backup';
   return [
     `Latest backup verified: ${formatAutoBackupDateTime(auto.lastVerifiedAt)}`,
-    `${file} parsed as backup v${AUTO_BACKUP_VERIFIED_VERSION}.`,
+    'Read back latest JSON backup successfully.',
     `${formatNumber(summary.exerciseCount || 0)} exercises, ${formatNumber(summary.sessionDateCount || 0)} session days, ${formatNumber(summary.timelineEventCount || 0)} timeline items.`,
   ].join(' ');
 }
