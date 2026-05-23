@@ -147,12 +147,9 @@ async function maybeRunAutoBackup(trigger = 'auto') {
   const now = new Date();
   const pending = pendingScheduledAutoBackup(auto, now);
   if (!pending) return;
+  if (!auto.folderName) return;
   if (!isFolderAutoBackupSupported()) {
     recordAutoBackupMissed(pending.dateStr, pending.dueAt, 'Folder backup is unavailable in this browser. Download a JSON backup or open the app in Chrome or Edge desktop.');
-    return;
-  }
-  if (!auto.folderName) {
-    recordAutoBackupMissed(pending.dateStr, pending.dueAt, 'No backup folder is connected.');
     return;
   }
   if (auto.needsReconnect) {
@@ -500,8 +497,8 @@ function getAutoBackupHealth(now = new Date()) {
     return {
       ok: false,
       code: 'missing-folder',
-      title: auto.lastError ? 'Backup folder was not connected' : 'Backups are not connected',
-      detail: auto.lastError || 'Choose a backup folder so this app can save automatic daily backups.',
+      title: 'Backups are not connected',
+      detail: 'Choose a backup folder so this app can save automatic daily backups.',
       action: 'Choose folder',
     };
   }
@@ -618,8 +615,8 @@ function renderAutoBackupSettings() {
   folderState.textContent = autoBackupFolderStateText(auto, supported, folderReady);
   last.textContent = auto.lastSuccessAt ? formatAutoBackupDateTime(auto.lastSuccessAt) : 'Never';
   next.textContent = supported ? nextAutoBackupDueText(auto) : 'Unavailable';
-  issue.hidden = !auto.lastError;
-  issueText.textContent = auto.lastError || '';
+  issue.hidden = !auto.folderName || !auto.lastError;
+  issueText.textContent = auto.folderName ? (auto.lastError || '') : '';
   updateAutoBackupHealthUi(health);
   renderAutoBackupSummary(summary, normalizedHistory);
   toggle.hidden = normalizedHistory.length <= 1;
