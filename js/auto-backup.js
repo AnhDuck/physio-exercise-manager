@@ -177,7 +177,6 @@ async function chooseAutoBackupFolder() {
     const granted = await requestAutoBackupPermission(handle);
     if (!granted) throw new Error('Write permission was not granted.');
 
-    await writeAutoBackupDirectoryHandle(handle);
     autoBackupDirectoryHandle = handle;
     autoBackupHandleLoaded = true;
 
@@ -187,6 +186,12 @@ async function chooseAutoBackupFolder() {
     auto.lastError = '';
     auto.lastErrorAt = '';
     saveSettings(settings);
+
+    try {
+      await writeAutoBackupDirectoryHandle(handle);
+    } catch (err) {
+      showToast(`Folder connected for this session. Reconnect may be needed after reload: ${autoBackupErrorMessage(err)}`);
+    }
 
     renderAutoBackupSettings();
     showToast(`Backup folder connected: ${auto.folderName}.`);
@@ -492,8 +497,8 @@ function getAutoBackupHealth(now = new Date()) {
     return {
       ok: false,
       code: 'missing-folder',
-      title: 'Backups are not connected',
-      detail: 'Choose a backup folder so this app can save automatic daily backups.',
+      title: auto.lastError ? 'Backup folder was not connected' : 'Backups are not connected',
+      detail: auto.lastError || 'Choose a backup folder so this app can save automatic daily backups.',
       action: 'Choose folder',
     };
   }
