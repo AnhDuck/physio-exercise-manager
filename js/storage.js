@@ -551,6 +551,7 @@ function loadSettings() {
       setCueSpeech: false,
       setCueSpeechVolume: 1,
       personalDayStartTime: '07:00',
+      timelineRange: 'past-30-days',
       autoBackup: defaultAutoBackupSettings(),
     };
     try {
@@ -566,6 +567,7 @@ function loadSettings() {
     setCueSpeech: false,
     setCueSpeechVolume: 1,
     personalDayStartTime: '07:00',
+    timelineRange: 'past-30-days',
     autoBackup: defaultAutoBackupSettings(),
     ...JSON.parse(raw),
   });
@@ -579,6 +581,7 @@ function saveSettings(settings) {
   const nextSettings = {
     ...cleanSettings,
     setCueSpeechVolume: clampSetCueSpeechVolume(cleanSettings.setCueSpeechVolume),
+    timelineRange: normalizeStoredTimelineRange(cleanSettings.timelineRange),
     autoBackup: normalizeAutoBackupSettings(cleanSettings.autoBackup),
   };
   safeSetLocalStorageItem(KEYS.SETTINGS, JSON.stringify(nextSettings), STORAGE_LABELS[KEYS.SETTINGS]);
@@ -589,7 +592,18 @@ function sanitizeLegacySettings(value) {
   delete settings.legsDays;
   delete settings.denseMode;
   delete settings.collapsedGroups;
+  settings.timelineRange = normalizeStoredTimelineRange(settings.timelineRange);
   return settings;
+}
+
+function normalizeStoredTimelineRange(value) {
+  return [
+    'past-7-days',
+    'past-30-days',
+    'past-90-days',
+    'past-year',
+    'all-time',
+  ].includes(value) ? value : 'past-30-days';
 }
 
 function clampSetCueSpeechVolume(value) {

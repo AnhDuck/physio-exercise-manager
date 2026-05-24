@@ -48,11 +48,45 @@
           <h2>Notes</h2>
           <span class="notes-panel-subtitle">Timeline and regimen changes</span>
         </div>
-        <button type="button" class="btn-secondary timeline-copy-btn" id="timeline-copy" title="Copy everything in the timeline as Markdown" aria-label="Copy everything in the timeline as Markdown">Copy timeline</button>
+        <button type="button" class="btn-secondary timeline-copy-btn" id="timeline-copy" title="Copy shown timeline items as Markdown" aria-label="Copy shown timeline items as Markdown">Copy shown</button>
       </div>
 
+      <div class="timeline-search">
+        <input type="search" id="timeline-search-input" class="timeline-search-input" placeholder="Search timeline..." aria-label="Search timeline" aria-controls="timeline-search-options" aria-expanded="false" />
+        <div class="timeline-search-options" id="timeline-search-options" hidden>
+          <div class="timeline-search-options-title">Search options</div>
+          <label class="timeline-range-control" for="timeline-range">
+            <span>Range</span>
+            <select id="timeline-range"></select>
+          </label>
+          <div class="timeline-type-section">
+            <span>Types</span>
+            <div class="timeline-type-filters" id="timeline-type-filters"></div>
+          </div>
+          <div class="timeline-search-actions">
+            <button type="button" class="btn-secondary timeline-filter-reset" id="timeline-filter-reset">Reset</button>
+            <button type="button" class="btn-primary timeline-filter-done" id="timeline-filter-done">Done</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-filter-status" id="timeline-filter-status"></div>
+
       <div class="note-composer">
-        <div class="form-row">
+        <div class="form-row full">
+          <div class="form-field">
+            <label for="quick-note-text">Note</label>
+            <textarea id="quick-note-text" placeholder="Write what happened. Date and time are saved automatically."></textarea>
+          </div>
+        </div>
+
+        <button type="button" class="quick-note-manual-toggle" id="quick-note-manual-toggle" aria-expanded="false" aria-controls="quick-note-manual-fields">
+          <span class="quick-note-disclosure" aria-hidden="true"></span>
+          <span>Manual date/time</span>
+          <span class="quick-note-manual-summary" id="quick-note-manual-summary"></span>
+        </button>
+
+        <div class="form-row quick-note-manual-fields" id="quick-note-manual-fields" hidden>
           <div class="form-field">
             <label for="quick-note-date">Date</label>
             <input type="date" id="quick-note-date" />
@@ -60,13 +94,6 @@
           <div class="form-field">
             <label for="quick-note-time">Time</label>
             <input type="time" id="quick-note-time" />
-          </div>
-        </div>
-
-        <div class="form-row full">
-          <div class="form-field">
-            <label for="quick-note-text">Note</label>
-            <textarea id="quick-note-text" placeholder="Write what happened. Date and time are saved automatically."></textarea>
           </div>
         </div>
 
@@ -606,7 +633,7 @@
 
   <!-- Scripts - order matters: data/storage, shared helpers, features, then bootstrap. -->
   <script>
-    window.PEM_APP_VERSION = '1.0.11';
+    window.PEM_APP_VERSION = '1.0.12';
 
     const appVersionLabel = document.getElementById('app-version');
     if (appVersionLabel) appVersionLabel.textContent = `v${window.PEM_APP_VERSION}`;
@@ -622,6 +649,12 @@
       'js/exercises.js',
       'js/grid.js',
       'js/tracker.js',
+      'js/timeline-data.js',
+      'js/timeline-filters.js',
+      'js/timeline-render.js',
+      'js/timeline-notes.js',
+      'js/timeline-export.js',
+      'js/timeline-edit.js',
       'js/timeline.js',
       'js/backup.js',
       'js/auto-backup.js',

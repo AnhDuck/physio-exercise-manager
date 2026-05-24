@@ -25,8 +25,30 @@ function bindStaticEvents() {
   document.querySelectorAll('.notes-toggle').forEach(btn => {
     btn.addEventListener('click', toggleNotesPanel);
   });
-  document.getElementById('timeline-copy').addEventListener('click', copyTimelineMarkdown);
+  document.getElementById('timeline-copy').addEventListener('click', () => copyTimelineMarkdown('shown'));
+  document.getElementById('timeline-search-input').addEventListener('focus', () => setTimelineSearchOptionsOpen(true));
+  document.getElementById('timeline-search-input').addEventListener('input', (e) => setTimelineSearchText(e.target.value));
+  document.getElementById('timeline-range').addEventListener('change', (e) => setTimelineRange(e.target.value));
+  document.getElementById('timeline-filter-reset').addEventListener('click', resetTimelineFilters);
+  document.getElementById('timeline-filter-done').addEventListener('click', () => setTimelineSearchOptionsOpen(false));
+  document.getElementById('timeline-type-filters').addEventListener('click', (e) => {
+    const button = e.target.closest('[data-timeline-type-filter]');
+    if (!button) return;
+    toggleTimelineTypeFilter(button.dataset.timelineTypeFilter);
+  });
+  document.getElementById('timeline-list').addEventListener('click', (e) => {
+    if (e.target.closest('#timeline-load-older')) {
+      loadOlderTimelineItems();
+      return;
+    }
+    if (e.target.closest('#timeline-copy-matching')) {
+      copyTimelineAllMatchingMarkdown();
+    }
+  });
   document.getElementById('quick-note-save').addEventListener('click', addQuickNote);
+  document.getElementById('quick-note-manual-toggle').addEventListener('click', toggleQuickNoteManualDateTime);
+  document.getElementById('quick-note-date').addEventListener('input', renderQuickNoteManualDateTime);
+  document.getElementById('quick-note-time').addEventListener('input', renderQuickNoteManualDateTime);
   document.getElementById('quick-note-text').addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
