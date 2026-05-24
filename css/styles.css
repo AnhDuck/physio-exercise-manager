@@ -453,11 +453,11 @@ body.notes-open {
 
 .timeline-search-shell {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
+  grid-template-columns: 18px minmax(0, 1fr) 1px auto;
   align-items: center;
   gap: 9px;
   min-height: 42px;
-  padding: 0 14px;
+  padding: 0 8px 0 14px;
   border: 1px solid rgba(160,164,173,.42);
   border-radius: 999px;
   background: rgba(255,255,255,.075);
@@ -505,6 +505,59 @@ body.notes-open {
 
 .timeline-search-input::placeholder {
   color: var(--text-muted);
+}
+
+.timeline-search-input::-webkit-search-cancel-button {
+  cursor: pointer;
+  filter: invert(1) brightness(1.75);
+  opacity: .95;
+}
+
+.timeline-search-divider {
+  width: 1px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(232,234,237,.34);
+}
+
+.timeline-filter-reset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 30px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1;
+  white-space: nowrap;
+  transition: background .15s, border-color .15s, color .15s;
+}
+
+.timeline-filter-reset:hover,
+.timeline-filter-reset:focus-visible {
+  border-color: rgba(232,234,237,.22);
+  background: rgba(255,255,255,.1);
+  color: var(--text);
+  outline: none;
+}
+
+.timeline-filter-reset-icon {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
 }
 
 .timeline-search-options {
@@ -562,6 +615,15 @@ body.notes-open {
 .timeline-range-control select:focus {
   border-color: rgba(99,179,255,.72);
   box-shadow: 0 0 0 3px rgba(99,179,255,.12);
+}
+
+.timeline-range-control select option {
+  background: #28282c;
+  color: var(--text);
+}
+
+.timeline-range-control select option:disabled {
+  color: var(--text-dim);
 }
 
 .timeline-type-filters {
@@ -629,18 +691,6 @@ body.notes-open {
 
 .timeline-type-filter[data-timeline-type-filter="exercise-additions"] {
   --timeline-chip-accent: #79d6bd;
-}
-
-.timeline-search-actions {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.timeline-search-actions button {
-  min-height: 32px;
-  border-radius: 999px;
-  padding: 0 14px;
-  font-weight: 750;
 }
 
 .timeline-filter-status {

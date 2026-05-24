@@ -58,6 +58,16 @@
             <path d="m16.5 16.5 4 4"></path>
           </svg>
           <input type="search" id="timeline-search-input" class="timeline-search-input" placeholder="Search timeline..." aria-label="Search timeline" aria-controls="timeline-search-options" aria-expanded="false" />
+          <span class="timeline-search-divider" aria-hidden="true"></span>
+          <button type="button" class="timeline-filter-reset" id="timeline-filter-reset" title="Reset timeline search and filters" aria-label="Reset timeline search and filters">
+            <svg class="timeline-filter-reset-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M4 12a8 8 0 0 1 13.6-5.7"></path>
+              <path d="M18 3v5h-5"></path>
+              <path d="M20 12a8 8 0 0 1-13.6 5.7"></path>
+              <path d="M6 21v-5h5"></path>
+            </svg>
+            <span>Reset</span>
+          </button>
         </div>
         <div class="timeline-search-options" id="timeline-search-options" hidden>
           <label class="timeline-range-control" for="timeline-range">
@@ -67,9 +77,6 @@
           <div class="timeline-type-section">
             <span>Types</span>
             <div class="timeline-type-filters" id="timeline-type-filters"></div>
-          </div>
-          <div class="timeline-search-actions">
-            <button type="button" class="btn-secondary timeline-filter-reset" id="timeline-filter-reset">Reset</button>
           </div>
         </div>
       </div>
@@ -637,7 +644,7 @@
 
   <!-- Scripts - order matters: data/storage, shared helpers, features, then bootstrap. -->
   <script>
-    window.PEM_APP_VERSION = '1.0.15';
+    window.PEM_APP_VERSION = '1.0.17';
 
     const appVersionLabel = document.getElementById('app-version');
     if (appVersionLabel) appVersionLabel.textContent = `v${window.PEM_APP_VERSION}`;

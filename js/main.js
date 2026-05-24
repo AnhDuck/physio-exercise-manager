@@ -27,6 +27,7 @@ function bindStaticEvents() {
   });
   const timelineSearch = document.querySelector('.timeline-search');
   const timelineSearchInput = document.getElementById('timeline-search-input');
+  const timelineFilterReset = document.getElementById('timeline-filter-reset');
   document.getElementById('timeline-copy').addEventListener('click', () => copyTimelineMarkdown('shown'));
   timelineSearch?.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -43,7 +44,10 @@ function bindStaticEvents() {
     setTimelineSearchOptionsOpen(false);
   });
   document.getElementById('timeline-range').addEventListener('change', (e) => setTimelineRange(e.target.value));
-  document.getElementById('timeline-filter-reset').addEventListener('click', resetTimelineFilters);
+  timelineFilterReset?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    resetTimelineFilters();
+  });
   document.getElementById('timeline-type-filters').addEventListener('click', (e) => {
     const button = e.target.closest('[data-timeline-type-filter]');
     if (!button) return;
