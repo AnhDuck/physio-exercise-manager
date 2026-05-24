@@ -72,6 +72,18 @@ function setTimelineSearchOptionsOpen(open) {
   renderNotesPanel();
 }
 
+function timelineSearchControlsOpen() {
+  initializeTimelineViewState();
+  return timelineViewState.optionsOpen || timelineFiltersAreActive();
+}
+
+function timelineFiltersAreActive() {
+  initializeTimelineViewState();
+  if (timelineViewState.searchText.trim()) return true;
+  if (timelineViewState.range !== TIMELINE_DEFAULT_RANGE) return true;
+  return TIMELINE_TYPE_FILTERS.some(filter => !timelineViewState.typeFilters[filter.key]);
+}
+
 function toggleTimelineTypeFilter(key) {
   initializeTimelineViewState();
   if (!Object.prototype.hasOwnProperty.call(timelineViewState.typeFilters, key)) return;

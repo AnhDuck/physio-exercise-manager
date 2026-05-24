@@ -17,15 +17,25 @@ function groupedTimelineEvents(items = timelineEvents()) {
 
 function renderTimelineSearchControls(view) {
   const input = document.getElementById('timeline-search-input');
+  const panel = document.getElementById('timeline-search-panel');
   const options = document.getElementById('timeline-search-options');
   const range = document.getElementById('timeline-range');
   const types = document.getElementById('timeline-type-filters');
   const status = document.getElementById('timeline-filter-status');
+  const searchToggle = document.getElementById('timeline-search-toggle');
+  const filterToggle = document.getElementById('timeline-filter-toggle');
   if (!input || !options || !range || !types || !status) return;
 
+  const controlsOpen = timelineSearchControlsOpen();
   input.value = timelineViewState.searchText;
-  options.hidden = !timelineViewState.optionsOpen;
-  input.setAttribute('aria-expanded', String(timelineViewState.optionsOpen));
+  if (panel) panel.hidden = !controlsOpen;
+  options.hidden = !controlsOpen;
+  input.setAttribute('aria-expanded', String(controlsOpen));
+  [searchToggle, filterToggle].forEach(button => {
+    if (!button) return;
+    button.classList.toggle('is-active', controlsOpen);
+    button.setAttribute('aria-expanded', String(controlsOpen));
+  });
 
   if (!range.options.length) {
     TIMELINE_RANGE_OPTIONS.forEach(option => {

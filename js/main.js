@@ -27,19 +27,30 @@ function bindStaticEvents() {
   });
   const timelineSearch = document.querySelector('.timeline-search');
   const timelineSearchInput = document.getElementById('timeline-search-input');
+  const timelineSearchToggle = document.getElementById('timeline-search-toggle');
+  const timelineFilterToggle = document.getElementById('timeline-filter-toggle');
   const timelineFilterReset = document.getElementById('timeline-filter-reset');
   document.getElementById('timeline-copy').addEventListener('click', () => copyTimelineMarkdown('shown'));
+  timelineSearchToggle?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setTimelineSearchOptionsOpen(true);
+    window.setTimeout(() => document.getElementById('timeline-search-input')?.focus(), 0);
+  });
+  timelineFilterToggle?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setTimelineSearchOptionsOpen(true);
+    window.setTimeout(() => document.getElementById('timeline-range')?.focus(), 0);
+  });
   timelineSearch?.addEventListener('click', (e) => {
     e.stopPropagation();
-    if (!timelineViewState.optionsOpen) setTimelineSearchOptionsOpen(true);
   });
   timelineSearchInput?.addEventListener('focus', () => setTimelineSearchOptionsOpen(true));
   timelineSearchInput?.addEventListener('input', (e) => setTimelineSearchText(e.target.value));
   document.addEventListener('click', () => {
-    if (timelineViewState.optionsOpen) setTimelineSearchOptionsOpen(false);
+    if (timelineSearchControlsOpen()) setTimelineSearchOptionsOpen(false);
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape' || !timelineViewState.optionsOpen) return;
+    if (e.key !== 'Escape' || !timelineSearchControlsOpen()) return;
     e.preventDefault();
     setTimelineSearchOptionsOpen(false);
   });
