@@ -6,10 +6,10 @@
   <title>Physio Exercise Management</title>
   <link rel="icon" type="image/svg+xml" href="assets/physio-icon.svg" />
   <script>
-    window.PEM_APP_VERSION = '1.0.21';
+    window.PEM_APP_VERSION = '1.0.22';
     document.write(`<link rel="stylesheet" href="css/styles.css?v=${encodeURIComponent(window.PEM_APP_VERSION)}" />`);
   </script>
-  <noscript><link rel="stylesheet" href="css/styles.css?v=1.0.21" /></noscript>
+  <noscript><link rel="stylesheet" href="css/styles.css?v=1.0.22" /></noscript>
 </head>
 <body>
 
@@ -54,7 +54,7 @@
             <path d="M8 20a3 3 0 0 1 0-6h11"></path>
             <path d="M9 8h6"></path>
           </svg>
-          <h2>Notes</h2>
+          <h2>Notes &amp; Timeline</h2>
         </div>
       </div>
 
@@ -91,47 +91,29 @@
             <h3>Timeline</h3>
             <div class="timeline-filter-status" id="timeline-filter-status"></div>
           </div>
-          <div class="timeline-toolbar-actions">
-            <button type="button" class="timeline-tool-btn" id="timeline-search-toggle" title="Search timeline" aria-label="Search timeline" aria-controls="timeline-search-panel" aria-expanded="false">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <circle cx="11" cy="11" r="7"></circle>
-                <path d="m16.5 16.5 4 4"></path>
-              </svg>
-            </button>
-            <button type="button" class="timeline-tool-btn" id="timeline-filter-toggle" title="Filter timeline" aria-label="Filter timeline" aria-controls="timeline-search-panel" aria-expanded="false">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M4 5h16"></path>
-                <path d="M7 12h10"></path>
-                <path d="M10 19h4"></path>
-              </svg>
-            </button>
-            <button type="button" class="timeline-tool-btn" id="timeline-copy" title="Copy shown timeline items as Markdown" aria-label="Copy shown timeline items as Markdown">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <rect x="8" y="8" width="11" height="11" rx="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"></path>
-              </svg>
-            </button>
-          </div>
+          <button type="button" class="timeline-tool-btn timeline-copy-all" id="timeline-copy" title="Copy all matching timeline items as Markdown" aria-label="Copy all matching timeline items as Markdown">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <rect x="8" y="8" width="11" height="11" rx="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
         </div>
 
-        <div class="timeline-search" id="timeline-search-panel" hidden>
+        <div class="timeline-search" id="timeline-search-panel">
           <div class="timeline-search-shell">
             <svg class="timeline-search-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <circle cx="11" cy="11" r="7"></circle>
               <path d="m16.5 16.5 4 4"></path>
             </svg>
-            <input type="search" id="timeline-search-input" class="timeline-search-input" placeholder="Search timeline..." aria-label="Search timeline" aria-controls="timeline-search-options" aria-expanded="false" />
-            <span class="timeline-search-divider" aria-hidden="true"></span>
-            <button type="button" class="timeline-filter-reset" id="timeline-filter-reset" title="Reset timeline search and filters" aria-label="Reset timeline search and filters">
-              <svg class="timeline-filter-reset-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M4 12a8 8 0 0 1 13.6-5.7"></path>
-                <path d="M18 3v5h-5"></path>
-                <path d="M20 12a8 8 0 0 1-13.6 5.7"></path>
-                <path d="M6 21v-5h5"></path>
+            <input type="search" id="timeline-search-input" class="timeline-search-input" placeholder="Search timeline..." aria-label="Search timeline" />
+            <button type="button" class="timeline-filter-clear" id="timeline-filter-reset" title="Clear search" aria-label="Clear search and timeline filters" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path>
               </svg>
-              <span>Reset</span>
             </button>
           </div>
+
           <div class="timeline-search-options" id="timeline-search-options">
             <label class="timeline-range-control" for="timeline-range">
               <span>Range</span>

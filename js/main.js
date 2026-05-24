@@ -25,35 +25,10 @@ function bindStaticEvents() {
   document.querySelectorAll('.notes-toggle').forEach(btn => {
     btn.addEventListener('click', toggleNotesPanel);
   });
-  const timelineSearch = document.querySelector('.timeline-search');
   const timelineSearchInput = document.getElementById('timeline-search-input');
-  const timelineSearchToggle = document.getElementById('timeline-search-toggle');
-  const timelineFilterToggle = document.getElementById('timeline-filter-toggle');
   const timelineFilterReset = document.getElementById('timeline-filter-reset');
-  document.getElementById('timeline-copy').addEventListener('click', () => copyTimelineMarkdown('shown'));
-  timelineSearchToggle?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    setTimelineSearchOptionsOpen(true);
-    window.setTimeout(() => document.getElementById('timeline-search-input')?.focus(), 0);
-  });
-  timelineFilterToggle?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    setTimelineSearchOptionsOpen(true);
-    window.setTimeout(() => document.getElementById('timeline-range')?.focus(), 0);
-  });
-  timelineSearch?.addEventListener('click', (e) => {
-    e.stopPropagation();
-  });
-  timelineSearchInput?.addEventListener('focus', () => setTimelineSearchOptionsOpen(true));
+  document.getElementById('timeline-copy').addEventListener('click', () => copyTimelineMarkdown('matching'));
   timelineSearchInput?.addEventListener('input', (e) => setTimelineSearchText(e.target.value));
-  document.addEventListener('click', () => {
-    if (timelineSearchControlsOpen()) setTimelineSearchOptionsOpen(false);
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape' || !timelineSearchControlsOpen()) return;
-    e.preventDefault();
-    setTimelineSearchOptionsOpen(false);
-  });
   document.getElementById('timeline-range').addEventListener('change', (e) => setTimelineRange(e.target.value));
   timelineFilterReset?.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -67,10 +42,6 @@ function bindStaticEvents() {
   document.getElementById('timeline-list').addEventListener('click', (e) => {
     if (e.target.closest('#timeline-load-older')) {
       loadOlderTimelineItems();
-      return;
-    }
-    if (e.target.closest('#timeline-copy-matching')) {
-      copyTimelineAllMatchingMarkdown();
     }
   });
   document.getElementById('quick-note-save').addEventListener('click', addQuickNote);

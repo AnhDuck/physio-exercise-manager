@@ -22,7 +22,6 @@ let timelineViewState = {
   range: TIMELINE_DEFAULT_RANGE,
   searchText: '',
   typeFilters: defaultTimelineTypeFilters(),
-  optionsOpen: false,
   loadedLimit: TIMELINE_CHUNK_SIZE,
 };
 
@@ -64,17 +63,6 @@ function setTimelineSearchText(value) {
   timelineViewState.searchText = String(value || '');
   timelineViewState.loadedLimit = TIMELINE_CHUNK_SIZE;
   renderNotesPanel();
-}
-
-function setTimelineSearchOptionsOpen(open) {
-  initializeTimelineViewState();
-  timelineViewState.optionsOpen = Boolean(open);
-  renderNotesPanel();
-}
-
-function timelineSearchControlsOpen() {
-  initializeTimelineViewState();
-  return timelineViewState.optionsOpen || timelineFiltersAreActive();
 }
 
 function timelineFiltersAreActive() {
