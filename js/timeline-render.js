@@ -16,15 +16,23 @@ function groupedTimelineEvents(items = timelineEvents()) {
 }
 
 function renderTimelineSearchControls(view) {
+  const tools = document.querySelector('.timeline-tools');
+  const searchPanel = document.getElementById('timeline-search-panel');
   const input = document.getElementById('timeline-search-input');
   const range = document.getElementById('timeline-range');
   const types = document.getElementById('timeline-type-filters');
   const status = document.getElementById('timeline-filter-status');
   const clear = document.getElementById('timeline-filter-reset');
+  const summary = document.getElementById('timeline-filter-summary-text');
   if (!input || !range || !types || !status) return;
 
+  const expanded = timelineControlsExpanded();
+  tools?.classList.toggle('timeline-tools-expanded', expanded);
+  tools?.classList.toggle('timeline-tools-collapsed', !expanded);
+  searchPanel?.setAttribute('aria-expanded', String(expanded));
   input.value = timelineViewState.searchText;
   if (clear) clear.hidden = !timelineFiltersAreActive();
+  if (summary) summary.textContent = timelineControlsSummary(view.total);
 
   if (!range.options.length) {
     TIMELINE_RANGE_OPTIONS.forEach(option => {

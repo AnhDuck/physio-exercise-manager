@@ -2,6 +2,7 @@
 
 const TIMELINE_DEFAULT_RANGE = 'past-30-days';
 const TIMELINE_CHUNK_SIZE = 200;
+const TIMELINE_SUMMARY_SEPARATOR = ` ${String.fromCharCode(183)} `;
 const TIMELINE_RANGE_OPTIONS = [
   { value: 'current-waking-day', label: 'Current waking day', days: 1, sessionOnly: true },
   { value: 'past-7-days', label: 'Past 7 days', days: 7 },
@@ -23,6 +24,7 @@ let timelineViewState = {
   searchText: '',
   typeFilters: defaultTimelineTypeFilters(),
   loadedLimit: TIMELINE_CHUNK_SIZE,
+  controlsExpanded: false,
 };
 
 function defaultTimelineTypeFilters() {
@@ -70,6 +72,19 @@ function timelineFiltersAreActive() {
   if (timelineViewState.searchText.trim()) return true;
   if (timelineViewState.range !== TIMELINE_DEFAULT_RANGE) return true;
   return TIMELINE_TYPE_FILTERS.some(filter => !timelineViewState.typeFilters[filter.key]);
+}
+
+function setTimelineControlsExpanded(open) {
+  initializeTimelineViewState();
+  const next = Boolean(open);
+  if (timelineViewState.controlsExpanded === next) return;
+  timelineViewState.controlsExpanded = next;
+  renderTimelineSearchControls(getTimelineVisibleItems());
+}
+
+function timelineControlsExpanded() {
+  initializeTimelineViewState();
+  return Boolean(timelineViewState.controlsExpanded);
 }
 
 function toggleTimelineTypeFilter(key) {
@@ -206,7 +221,11 @@ function normalizeTimelineSearchText(value) {
 }
 
 function timelineStatusText(resultCount) {
-  return `${timelineRangeLabel(timelineViewState.range)} · ${timelineTypesSummary()} · ${formatNumber(resultCount)} ${resultCount === 1 ? 'result' : 'results'}`;
+  return [
+    timelineRangeLabel(timelineViewState.range),
+    timelineTypesSummary(),
+    `${formatNumber(resultCount)} ${resultCount === 1 ? 'result' : 'results'}`,
+  ].join(TIMELINE_SUMMARY_SEPARATOR);
 }
 
 function timelineShowingText(visibleCount, total) {
@@ -224,6 +243,17 @@ function timelineTypesSummary() {
   return enabled.map(item => item.label).join(' + ');
 }
 
+function timelineControlsSummary(resultCount) {
+  const parts = [
+    timelineRangeLabel(),
+    timelineTypesSummary(),
+  ];
+  const search = timelineViewState.searchText.trim();
+  if (search) parts.push(`Search: ${search}`);
+  parts.push(`${formatNumber(resultCount)} ${resultCount === 1 ? 'result' : 'results'}`);
+  return parts.join(TIMELINE_SUMMARY_SEPARATOR);
+}
+
 function timelineScopeSummary(scopeLabel) {
   const parts = [
     scopeLabel,
@@ -232,5 +262,5 @@ function timelineScopeSummary(scopeLabel) {
   ];
   const search = timelineViewState.searchText.trim();
   if (search) parts.push(`Search: ${search}`);
-  return parts.join(' · ');
+  return parts.join(TIMELINE_SUMMARY_SEPARATOR);
 }

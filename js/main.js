@@ -27,9 +27,22 @@ function bindStaticEvents() {
   });
   const timelineSearchInput = document.getElementById('timeline-search-input');
   const timelineFilterReset = document.getElementById('timeline-filter-reset');
+  const timelineTools = document.querySelector('.timeline-tools');
+  const timelineFilterSummary = document.getElementById('timeline-filter-summary');
+  const timelineSearchDone = document.getElementById('timeline-search-done');
   document.getElementById('timeline-copy').addEventListener('click', () => copyTimelineMarkdown('matching'));
+  timelineTools?.addEventListener('click', (e) => e.stopPropagation());
+  timelineSearchInput?.addEventListener('focus', () => setTimelineControlsExpanded(true));
+  timelineSearchInput?.addEventListener('click', () => setTimelineControlsExpanded(true));
   timelineSearchInput?.addEventListener('input', (e) => setTimelineSearchText(e.target.value));
+  timelineSearchInput?.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    setTimelineControlsExpanded(false);
+  });
   document.getElementById('timeline-range').addEventListener('change', (e) => setTimelineRange(e.target.value));
+  timelineFilterSummary?.addEventListener('click', () => setTimelineControlsExpanded(true));
+  timelineSearchDone?.addEventListener('click', () => setTimelineControlsExpanded(false));
   timelineFilterReset?.addEventListener('click', (e) => {
     e.stopPropagation();
     resetTimelineFilters();
@@ -38,6 +51,15 @@ function bindStaticEvents() {
     const button = e.target.closest('[data-timeline-type-filter]');
     if (!button) return;
     toggleTimelineTypeFilter(button.dataset.timelineTypeFilter);
+  });
+  document.addEventListener('click', (e) => {
+    if (!timelineControlsExpanded()) return;
+    if (timelineTools?.contains(e.target)) return;
+    setTimelineControlsExpanded(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || !timelineControlsExpanded()) return;
+    setTimelineControlsExpanded(false);
   });
   document.getElementById('timeline-list').addEventListener('click', (e) => {
     if (e.target.closest('#timeline-load-older')) {

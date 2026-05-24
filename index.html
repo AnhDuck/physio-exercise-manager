@@ -6,10 +6,10 @@
   <title>Physio Exercise Management</title>
   <link rel="icon" type="image/svg+xml" href="assets/physio-icon.svg" />
   <script>
-    window.PEM_APP_VERSION = '1.0.22';
+    window.PEM_APP_VERSION = '1.0.24';
     document.write(`<link rel="stylesheet" href="css/styles.css?v=${encodeURIComponent(window.PEM_APP_VERSION)}" />`);
   </script>
-  <noscript><link rel="stylesheet" href="css/styles.css?v=1.0.22" /></noscript>
+  <noscript><link rel="stylesheet" href="css/styles.css?v=1.0.24" /></noscript>
 </head>
 <body>
 
@@ -82,7 +82,13 @@
           </div>
         </div>
 
-        <button type="button" class="btn-primary note-save-btn" id="quick-note-save">Add note</button>
+        <button type="button" class="btn-primary note-save-btn" id="quick-note-save">
+          <svg class="note-save-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+          </svg>
+          <span>Add note</span>
+        </button>
       </div>
 
       <section class="timeline-tools" aria-label="Timeline tools">
@@ -114,6 +120,10 @@
             </button>
           </div>
 
+          <button type="button" class="timeline-filter-summary" id="timeline-filter-summary" aria-label="Edit timeline filters">
+            <span id="timeline-filter-summary-text"></span>
+          </button>
+
           <div class="timeline-search-options" id="timeline-search-options">
             <label class="timeline-range-control" for="timeline-range">
               <span>Range</span>
@@ -122,6 +132,10 @@
             <div class="timeline-type-section">
               <span>Types</span>
               <div class="timeline-type-filters" id="timeline-type-filters"></div>
+            </div>
+            <div class="timeline-search-actions">
+              <span class="timeline-search-hint">Press Enter when done</span>
+              <button type="button" class="btn-primary timeline-search-done" id="timeline-search-done" title="Press Enter when done">Search</button>
             </div>
           </div>
         </div>
