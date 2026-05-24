@@ -44,11 +44,56 @@ function renderTimelineSearchControls(view) {
     button.dataset.timelineTypeFilter = filter.key;
     button.classList.toggle('active', Boolean(timelineViewState.typeFilters[filter.key]));
     button.setAttribute('aria-pressed', String(Boolean(timelineViewState.typeFilters[filter.key])));
-    button.textContent = filter.label;
+    button.appendChild(timelineTypeFilterIcon(filter.key));
+    button.appendChild(elText('span', 'timeline-type-filter-label', filter.label));
     types.appendChild(button);
   });
 
   status.textContent = view.statusText;
+}
+
+function timelineTypeFilterIcon(key) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'timeline-type-filter-icon');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('focusable', 'false');
+
+  const iconParts = {
+    exercises: [
+      ['path', { d: 'M4 6h3' }],
+      ['path', { d: 'M4 12h3' }],
+      ['path', { d: 'M4 18h3' }],
+      ['path', { d: 'M11 6h9' }],
+      ['path', { d: 'M11 12h9' }],
+      ['path', { d: 'm11 18 2 2 5-6' }],
+    ],
+    notes: [
+      ['path', { d: 'M7 3h7l4 4v14H7z' }],
+      ['path', { d: 'M14 3v5h5' }],
+      ['path', { d: 'M10 12h6' }],
+      ['path', { d: 'M10 16h4' }],
+    ],
+    'dose-changes': [
+      ['path', { d: 'M10 21 3 14a4.2 4.2 0 0 1 0-6l1-1a4.2 4.2 0 0 1 6 0l7 7a4.2 4.2 0 0 1 0 6l-1 1a4.2 4.2 0 0 1-6 0Z' }],
+      ['path', { d: 'm8 10 6 6' }],
+      ['path', { d: 'M15 6h5' }],
+      ['path', { d: 'M17.5 3.5v5' }],
+    ],
+    'exercise-additions': [
+      ['circle', { cx: '12', cy: '12', r: '8' }],
+      ['path', { d: 'M12 8v8' }],
+      ['path', { d: 'M8 12h8' }],
+    ],
+  };
+
+  (iconParts[key] || []).forEach(([tag, attrs]) => {
+    const part = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    Object.entries(attrs).forEach(([name, value]) => part.setAttribute(name, value));
+    svg.appendChild(part);
+  });
+
+  return svg;
 }
 
 function renderTimelineList(view) {

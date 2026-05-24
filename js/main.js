@@ -25,12 +25,25 @@ function bindStaticEvents() {
   document.querySelectorAll('.notes-toggle').forEach(btn => {
     btn.addEventListener('click', toggleNotesPanel);
   });
+  const timelineSearch = document.querySelector('.timeline-search');
+  const timelineSearchInput = document.getElementById('timeline-search-input');
   document.getElementById('timeline-copy').addEventListener('click', () => copyTimelineMarkdown('shown'));
-  document.getElementById('timeline-search-input').addEventListener('focus', () => setTimelineSearchOptionsOpen(true));
-  document.getElementById('timeline-search-input').addEventListener('input', (e) => setTimelineSearchText(e.target.value));
+  timelineSearch?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!timelineViewState.optionsOpen) setTimelineSearchOptionsOpen(true);
+  });
+  timelineSearchInput?.addEventListener('focus', () => setTimelineSearchOptionsOpen(true));
+  timelineSearchInput?.addEventListener('input', (e) => setTimelineSearchText(e.target.value));
+  document.addEventListener('click', () => {
+    if (timelineViewState.optionsOpen) setTimelineSearchOptionsOpen(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || !timelineViewState.optionsOpen) return;
+    e.preventDefault();
+    setTimelineSearchOptionsOpen(false);
+  });
   document.getElementById('timeline-range').addEventListener('change', (e) => setTimelineRange(e.target.value));
   document.getElementById('timeline-filter-reset').addEventListener('click', resetTimelineFilters);
-  document.getElementById('timeline-filter-done').addEventListener('click', () => setTimelineSearchOptionsOpen(false));
   document.getElementById('timeline-type-filters').addEventListener('click', (e) => {
     const button = e.target.closest('[data-timeline-type-filter]');
     if (!button) return;
