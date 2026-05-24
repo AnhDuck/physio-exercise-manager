@@ -389,6 +389,10 @@ body.notes-open .notes-panel {
   gap: 14px;
 }
 
+body.notes-open .notes-panel > * {
+  flex-shrink: 0;
+}
+
 body.notes-open .grid-table {
   min-width: 620px;
 }
@@ -769,7 +773,7 @@ body.notes-open {
   white-space: nowrap;
 }
 
-.note-composer {
+.pem-note-composer {
   display: grid;
   gap: 0;
   overflow: hidden;
@@ -779,11 +783,11 @@ body.notes-open {
   padding: 0;
 }
 
-.note-composer .form-row {
+.pem-note-composer .form-row {
   margin-bottom: 0;
 }
 
-.note-composer > .form-row:first-child {
+.pem-note-composer > .form-row:first-child {
   padding: 12px;
 }
 
@@ -791,7 +795,7 @@ body.notes-open {
   gap: 0;
 }
 
-.note-composer textarea {
+.pem-note-composer textarea {
   min-height: 104px;
   border-radius: 6px;
   background: rgba(255,255,255,.035);
