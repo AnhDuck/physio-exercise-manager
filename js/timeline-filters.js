@@ -243,17 +243,6 @@ function timelineTypesSummary() {
   return enabled.map(item => item.label).join(' + ');
 }
 
-function timelineControlsSummary(resultCount) {
-  const parts = [
-    timelineRangeLabel(),
-    timelineTypesSummary(),
-  ];
-  const search = timelineViewState.searchText.trim();
-  if (search) parts.push(`Search: ${search}`);
-  parts.push(`${formatNumber(resultCount)} ${resultCount === 1 ? 'result' : 'results'}`);
-  return parts.join(TIMELINE_SUMMARY_SEPARATOR);
-}
-
 function timelineScopeSummary(scopeLabel) {
   const parts = [
     scopeLabel,

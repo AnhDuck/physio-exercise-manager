@@ -403,14 +403,36 @@ body.notes-open {
 }
 
 .notes-panel-header {
+  position: relative;
   display: flex;
   gap: 10px;
   align-items: center;
   height: var(--header-h);
+  overflow: hidden;
   margin: 0 -14px 0;
   border-bottom: 1px solid rgba(255,255,255,.08);
+  background:
+    linear-gradient(90deg, rgba(99,179,255,.22), rgba(37,37,40,0) 52%),
+    var(--bg-header);
   box-shadow: inset 0 -2px 0 rgba(99,179,255,.22);
   padding: 0 18px;
+}
+
+.notes-panel-header::before {
+  content: "";
+  position: absolute;
+  inset: -28px auto -28px 36px;
+  width: min(300px, 78%);
+  pointer-events: none;
+  opacity: .24;
+  background-image: radial-gradient(circle, rgba(232,234,237,.42) 1px, transparent 1.6px);
+  background-size: 18px 18px;
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 72%, transparent);
+}
+
+.notes-panel-header > * {
+  position: relative;
+  z-index: 1;
 }
 
 .notes-panel-toggle {
@@ -461,9 +483,7 @@ body.notes-open {
   border-radius: 8px;
   border-bottom-right-radius: 0;
   border-bottom-left-radius: 0;
-  background:
-    linear-gradient(90deg, rgba(99,179,255,.10), rgba(255,255,255,.018) 42%),
-    rgba(255,255,255,.018);
+  background: rgba(255,255,255,.018);
   padding: 8px 10px 7px 12px;
 }
 
@@ -630,35 +650,6 @@ body.notes-open {
   stroke-width: 2;
 }
 
-.timeline-filter-summary {
-  display: block;
-  width: 100%;
-  min-width: 0;
-  min-height: 28px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.25;
-  overflow: hidden;
-  padding: 5px 7px;
-  text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.timeline-filter-summary:hover,
-.timeline-filter-summary:focus-visible {
-  border-color: rgba(99,179,255,.36);
-  background: rgba(99,179,255,.08);
-  color: var(--text);
-  outline: none;
-}
-
 .timeline-search-options {
   display: grid;
   gap: 9px;
@@ -667,10 +658,6 @@ body.notes-open {
 }
 
 .timeline-tools-collapsed .timeline-search-options {
-  display: none;
-}
-
-.timeline-tools-expanded .timeline-filter-summary {
   display: none;
 }
 

@@ -23,7 +23,6 @@ function renderTimelineSearchControls(view) {
   const types = document.getElementById('timeline-type-filters');
   const status = document.getElementById('timeline-filter-status');
   const clear = document.getElementById('timeline-filter-reset');
-  const summary = document.getElementById('timeline-filter-summary-text');
   if (!input || !range || !types || !status) return;
 
   const expanded = timelineControlsExpanded();
@@ -32,7 +31,6 @@ function renderTimelineSearchControls(view) {
   searchPanel?.setAttribute('aria-expanded', String(expanded));
   input.value = timelineViewState.searchText;
   if (clear) clear.hidden = !timelineFiltersAreActive();
-  if (summary) summary.textContent = timelineControlsSummary(view.total);
 
   if (!range.options.length) {
     TIMELINE_RANGE_OPTIONS.forEach(option => {

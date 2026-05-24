@@ -28,7 +28,6 @@ function bindStaticEvents() {
   const timelineSearchInput = document.getElementById('timeline-search-input');
   const timelineFilterReset = document.getElementById('timeline-filter-reset');
   const timelineTools = document.querySelector('.timeline-tools');
-  const timelineFilterSummary = document.getElementById('timeline-filter-summary');
   const timelineSearchDone = document.getElementById('timeline-search-done');
   document.getElementById('timeline-copy').addEventListener('click', () => copyTimelineMarkdown('matching'));
   timelineTools?.addEventListener('click', (e) => e.stopPropagation());
@@ -41,7 +40,6 @@ function bindStaticEvents() {
     setTimelineControlsExpanded(false);
   });
   document.getElementById('timeline-range').addEventListener('change', (e) => setTimelineRange(e.target.value));
-  timelineFilterSummary?.addEventListener('click', () => setTimelineControlsExpanded(true));
   timelineSearchDone?.addEventListener('click', () => setTimelineControlsExpanded(false));
   timelineFilterReset?.addEventListener('click', (e) => {
     e.stopPropagation();
