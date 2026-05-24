@@ -1,7 +1,7 @@
 // Timeline view state, range filtering, search, and progressive loading.
 
 const TIMELINE_DEFAULT_RANGE = 'past-30-days';
-const TIMELINE_CHUNK_SIZE = 50;
+const TIMELINE_CHUNK_SIZE = 200;
 const TIMELINE_RANGE_OPTIONS = [
   { value: 'current-waking-day', label: 'Current waking day', days: 1, sessionOnly: true },
   { value: 'past-7-days', label: 'Past 7 days', days: 7 },

@@ -12,6 +12,8 @@
   --text-muted:   #a0a4ad;
   --text-dim:     #707480;
   --accent-green: #48bb78;
+  --primary-accent-blue: #4f9de8;
+  --primary-accent-blue-hover: #438bd1;
   --drag-handle-w: 18px;
   --thumb-size:   34px;
   --day-col-w:    minmax(68px, 1fr);
@@ -523,15 +525,33 @@ body.notes-open {
 }
 
 .timeline-type-filter.active {
-  border-color: rgba(99,179,255,.72);
-  background: rgba(99,179,255,.16);
-  color: var(--text);
+  color: #eef7ff;
 }
 
 .timeline-type-filter:hover,
 .timeline-type-filter:focus-visible {
   border-color: var(--c-day1);
   color: var(--text);
+}
+
+.timeline-type-filter[data-timeline-type-filter="exercises"].active {
+  border-color: rgba(90, 144, 217, .74);
+  background: rgba(74, 144, 217, .26);
+}
+
+.timeline-type-filter[data-timeline-type-filter="notes"].active {
+  border-color: rgba(251, 191, 36, .78);
+  background: rgba(120, 87, 22, .34);
+}
+
+.timeline-type-filter[data-timeline-type-filter="dose-changes"].active {
+  border-color: rgba(216,180,254,.85);
+  background: rgba(88,51,130,.68);
+}
+
+.timeline-type-filter[data-timeline-type-filter="exercise-additions"].active {
+  border-color: rgba(90,184,158,.62);
+  background: rgba(40,70,63,.58);
 }
 
 .timeline-search-actions {
@@ -1871,7 +1891,7 @@ body:has(#settings-modal:not(.hidden)) {
 .btn-secondary:hover { background: #444; }
 
 .btn-primary {
-  background: var(--c-day1);
+  background: var(--primary-accent-blue);
   border: none;
   color: #fff;
   padding: 8px 18px;
@@ -1879,10 +1899,10 @@ body:has(#settings-modal:not(.hidden)) {
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
-  transition: opacity .15s;
+  transition: background .15s, opacity .15s;
 }
 
-.btn-primary:hover { opacity: .85; }
+.btn-primary:hover { background: var(--primary-accent-blue-hover); }
 
 .btn-danger {
   background: none;
