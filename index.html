@@ -464,7 +464,7 @@
 
           <div class="settings-section">
             <div class="settings-section-header">
-              <h3>Advanced / testing</h3>
+              <h3>Storage failure tests</h3>
             </div>
             <details class="settings-disclosure settings-test-disclosure">
               <summary>
@@ -474,10 +474,10 @@
               <div class="settings-row-group">
                 <div class="settings-action-row">
                   <div class="settings-action-label">
-                    <strong id="settings-storage-test-state">No test warning active</strong>
-                    <span id="settings-storage-test-detail">Use the test button to verify the persistent save-failure banner without writing test data.</span>
+                    <strong id="settings-storage-test-state">No storage test mode active</strong>
+                    <span id="settings-storage-test-detail">These are debugging checks for after code changes. They intentionally break saving so you or Codex can confirm the warning and recovery paths still work.</span>
                   </div>
-                  <button class="settings-backup-btn" id="settings-test-save-warning" type="button">Test save warning</button>
+                  <button class="settings-backup-btn" id="settings-test-save-warning" type="button">Show warning only</button>
                 </div>
                 <div class="settings-action-row">
                   <div class="settings-action-label">
@@ -488,38 +488,38 @@
                 </div>
                 <div class="settings-action-row">
                   <div class="settings-action-label">
-                    <strong>Quota failure</strong>
-                    <span>Reloads in this tab with every safe app-data save throwing QuotaExceededError.</span>
+                    <strong>All saves fail</strong>
+                    <span>Dev check: every app-data save fails. Change a setting; the app should warn you and the change should not stick after reload.</span>
                   </div>
-                  <button class="settings-backup-btn settings-test-mode-btn" type="button" data-pem-test-mode="quota">Open quota test</button>
+                  <button class="settings-backup-btn settings-test-mode-btn" type="button" data-pem-test-mode="quota">Open test mode</button>
                 </div>
                 <div class="settings-action-row">
                   <div class="settings-action-label">
-                    <strong>Quota once</strong>
-                    <span>Reloads in this tab with the next safe save failing once, then normal saves resume.</span>
+                    <strong>Next save fails once</strong>
+                    <span>Dev check: only the next app-data save fails. Try changing a setting; the warning should appear once, then later saves should work again.</span>
                   </div>
-                  <button class="settings-backup-btn settings-test-mode-btn" type="button" data-pem-test-mode="quota_once">Open quota-once test</button>
+                  <button class="settings-backup-btn settings-test-mode-btn" type="button" data-pem-test-mode="quota_once">Open test mode</button>
                 </div>
                 <div class="settings-action-row">
                   <div class="settings-action-label">
-                    <strong>Storage unavailable</strong>
-                    <span>Reloads in this tab with the startup storage probe reporting unavailable storage.</span>
+                    <strong>Browser storage blocked</strong>
+                    <span>Dev check: the app acts like browser storage is unavailable. It should show a strong warning and point you toward downloading JSON.</span>
                   </div>
-                  <button class="settings-backup-btn settings-test-mode-btn" type="button" data-pem-test-mode="unavailable">Open unavailable test</button>
+                  <button class="settings-backup-btn settings-test-mode-btn" type="button" data-pem-test-mode="unavailable">Open test mode</button>
                 </div>
                 <div class="settings-action-row">
                   <div class="settings-action-label">
                     <strong>Import rollback</strong>
-                    <span>Reloads in this tab so backup import writes two keys, fails on the third, and rolls back.</span>
+                    <span>Dev check: importing a JSON backup fails partway through. Now import a valid JSON backup; the app should restore your previous data.</span>
                   </div>
-                  <button class="settings-backup-btn settings-test-mode-btn" type="button" data-pem-test-mode="import_fail">Open import test</button>
+                  <button class="settings-backup-btn settings-test-mode-btn" type="button" data-pem-test-mode="import_fail">Open test mode</button>
                 </div>
                 <div class="settings-action-row">
                   <div class="settings-action-label">
-                    <strong>Image quota</strong>
-                    <span>Reloads in this tab so only image-save writes fail with QuotaExceededError.</span>
+                    <strong>Image storage full</strong>
+                    <span>Dev check: saving an exercise image fails. Now add or import an image; the app should show a storage-full message and not save the image.</span>
                   </div>
-                  <button class="settings-backup-btn settings-test-mode-btn" type="button" data-pem-test-mode="image_quota">Open image quota test</button>
+                  <button class="settings-backup-btn settings-test-mode-btn" type="button" data-pem-test-mode="image_quota">Open test mode</button>
                 </div>
                 <div class="settings-action-row">
                   <div class="settings-action-label">
@@ -606,7 +606,7 @@
 
   <!-- Scripts - order matters: data/storage, shared helpers, features, then bootstrap. -->
   <script>
-    window.PEM_APP_VERSION = '1.0.8';
+    window.PEM_APP_VERSION = '1.0.10';
 
     const appVersionLabel = document.getElementById('app-version');
     if (appVersionLabel) appVersionLabel.textContent = `v${window.PEM_APP_VERSION}`;

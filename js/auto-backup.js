@@ -11,6 +11,7 @@ const AUTO_BACKUP_KEEP_DAYS = 31;
 const AUTO_BACKUP_HISTORY_LIMIT = 20;
 const AUTO_BACKUP_TIMER_MS = 60 * 1000;
 const AUTO_BACKUP_DATED_FILE_RE = /^physio-exercise-auto-backup-(\d{4}-\d{2}-\d{2})\.json$/;
+const DATA_HEALTH_ISSUE_CODES = ['storage-failure', 'storage-test', 'storage-test-mode', 'storage-unavailable', 'data-safety'];
 const AUTO_BACKUP_DEFAULT_SETTINGS = {
   time: '06:00',
   folderName: '',
@@ -603,8 +604,7 @@ function getAutoBackupHealth(now = new Date()) {
 
 function handleBackupHealthAction() {
   const health = getAutoBackupHealth();
-  const dataHealthCodes = ['storage-failure', 'storage-test', 'storage-unavailable', 'data-safety'];
-  if (dataHealthCodes.includes(health.code)) {
+  if (DATA_HEALTH_ISSUE_CODES.includes(health.code)) {
     openSettingsModal();
     setSettingsTab('data-health', true);
     return;
@@ -695,9 +695,8 @@ function updateAutoBackupHealthUi(health) {
   const auto = getAutoBackupSettings();
   const dataSafety = getDataSafetyReport();
   const folderIssueCodes = ['unsupported', 'missing-folder', 'reconnect', 'checking', 'due', 'error'];
-  const dataHealthIssueCodes = ['storage-failure', 'storage-test', 'storage-unavailable', 'data-safety'];
   const folderHasIssue = folderIssueCodes.includes(health.code);
-  const dataHealthHasIssue = dataHealthIssueCodes.includes(health.code);
+  const dataHealthHasIssue = DATA_HEALTH_ISSUE_CODES.includes(health.code);
 
   const hasIssue = !health.ok;
   document.body.classList.toggle('backup-health-open', hasIssue);
@@ -832,17 +831,24 @@ function renderStorageSettings(health) {
   const clearTestModeBtn = document.getElementById('settings-clear-test-mode');
   const testSummary = document.getElementById('settings-storage-test-summary');
   const activeTestMode = getActivePemStorageTestMode();
+  const activeTestInfo = pemStorageTestModeInfo(activeTestMode);
   if (testState && testDetail) {
-    testState.textContent = storageHealth.simulatedFailure ? 'Test warning is showing' : 'No test warning active';
-    testDetail.textContent = storageHealth.simulatedFailure
-      ? 'This simulated warning is non-destructive and can be dismissed here.'
-      : 'Use the test button to verify the persistent save-failure banner without writing test data.';
+    if (activeTestInfo) {
+      testState.textContent = activeTestInfo.title;
+      testDetail.textContent = activeTestInfo.detail;
+    } else if (storageHealth.simulatedFailure) {
+      testState.textContent = 'Test warning is showing';
+      testDetail.textContent = 'This simulated warning is non-destructive and can be dismissed here.';
+    } else {
+      testState.textContent = 'No storage test mode active';
+      testDetail.textContent = 'These are debugging checks for after code changes. They intentionally break saving so you or Codex can confirm the warning and recovery paths still work.';
+    }
   }
   if (dismissBtn) dismissBtn.disabled = !storageHealth.simulatedFailure;
   if (clearTestModeBtn) clearTestModeBtn.disabled = !activeTestMode;
   if (testSummary) {
-    testSummary.textContent = activeTestMode
-      ? `URL mode active: ${pemStorageTestModeLabel(activeTestMode)}`
+    testSummary.textContent = activeTestInfo
+      ? `Active: ${activeTestInfo.summary}`
       : 'No URL test mode active';
   }
 }

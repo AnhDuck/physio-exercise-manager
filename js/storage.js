@@ -21,6 +21,33 @@ const PEM_STORAGE_TEST_LABELS = {
   import_fail: 'Import rollback',
   image_quota: 'Image quota',
 };
+const PEM_STORAGE_TEST_DETAILS = {
+  quota: {
+    title: 'All saves fail test active',
+    detail: 'Every app-data save is intentionally blocked. Change a setting; the app should warn you and the change should not stick after reload.',
+    summary: 'All saves fail',
+  },
+  quota_once: {
+    title: 'Next save fails once test active',
+    detail: 'The next app-data save is intentionally blocked once. Try changing a setting; the app should warn you, then later saves should work again.',
+    summary: 'Next save fails once',
+  },
+  unavailable: {
+    title: 'Browser storage blocked test active',
+    detail: 'The app is acting like browser storage is unavailable. It should show a strong warning and point you toward downloading a JSON backup.',
+    summary: 'Browser storage blocked',
+  },
+  import_fail: {
+    title: 'Import rollback test active',
+    detail: 'Now import a valid JSON backup. The app should fail partway through and restore your previous data.',
+    summary: 'Import rollback',
+  },
+  image_quota: {
+    title: 'Image storage full test active',
+    detail: 'Now add or import an exercise image. The app should show a storage-full message and not save the image.',
+    summary: 'Image storage full',
+  },
+};
 const pemStorageTest = initializePemStorageTestMode();
 const localStorageAvailability = probeLocalStorageAvailability();
 let storageWriteContext = '';
@@ -31,6 +58,7 @@ function initializePemStorageTestMode() {
   const test = {
     mode: allowedModes.has(mode) ? mode : '',
     quotaOnceUsed: false,
+    quotaOnceReady: false,
     importActive: false,
     importWriteCount: 0,
   };
@@ -48,10 +76,19 @@ function pemStorageTestModeLabel(mode = pemStorageTest.mode) {
   return PEM_STORAGE_TEST_LABELS[mode] || '';
 }
 
+function pemStorageTestModeInfo(mode = pemStorageTest.mode) {
+  if (!mode || !PEM_STORAGE_TEST_LABELS[mode]) return null;
+  return {
+    mode,
+    label: PEM_STORAGE_TEST_LABELS[mode],
+    ...(PEM_STORAGE_TEST_DETAILS[mode] || {}),
+  };
+}
+
 function activatePemStorageTestMode(mode) {
   if (!PEM_STORAGE_TEST_LABELS[mode]) return;
-  const label = pemStorageTestModeLabel(mode);
-  if (!confirm(`Reload this app in the current tab with the "${label}" storage test mode?\n\nThis keeps the same browser origin and saved app data, but adds pem_test=${mode} to the URL until you return to normal mode.`)) return;
+  const info = pemStorageTestModeInfo(mode);
+  if (!confirm(`Reload this app in the current tab with the "${info.label}" storage test mode?\n\n${info.detail}\n\nThis keeps the same browser origin and saved app data, but adds pem_test=${mode} to the URL until you return to normal mode.`)) return;
   const url = new URL(window.location.href);
   url.searchParams.set('pem_test', mode);
   window.location.href = url.href;
@@ -63,6 +100,10 @@ function clearPemStorageTestMode() {
   if (!confirm('Reload this app in normal mode?\n\nThis removes pem_test from the current URL.')) return;
   url.searchParams.delete('pem_test');
   window.location.href = url.href;
+}
+
+function markStorageTestsReadyForUserActions() {
+  pemStorageTest.quotaOnceReady = true;
 }
 
 function probeLocalStorageAvailability() {
@@ -128,7 +169,7 @@ function safeSetLocalStorageItem(key, jsonString, label = STORAGE_LABELS[key] ||
 
 function storageTestErrorForWrite(key) {
   if (pemStorageTest.mode === 'quota') return createQuotaExceededError();
-  if (pemStorageTest.mode === 'quota_once' && !pemStorageTest.quotaOnceUsed) {
+  if (pemStorageTest.mode === 'quota_once' && pemStorageTest.quotaOnceReady && !pemStorageTest.quotaOnceUsed) {
     pemStorageTest.quotaOnceUsed = true;
     return createQuotaExceededError();
   }
@@ -249,12 +290,15 @@ function scheduleStorageHealthRender() {
 
 function getStorageHealthIssue() {
   if (typeof storageHealth !== 'object' || !storageHealth) return null;
+  const activeTest = pemStorageTestModeInfo();
   if (!localStorageAvailability.available) {
     return {
       ok: false,
       code: 'storage-unavailable',
-      title: 'Browser storage is unavailable',
-      detail: localStorageAvailability.error || 'This browser is not allowing saved app data right now. Download JSON now to protect the current data.',
+      title: activeTest?.mode === 'unavailable' ? activeTest.title : 'Browser storage is unavailable',
+      detail: activeTest?.mode === 'unavailable'
+        ? activeTest.detail
+        : localStorageAvailability.error || 'This browser is not allowing saved app data right now. Download JSON now to protect the current data.',
       action: 'Open Data Health',
     };
   }
@@ -264,7 +308,9 @@ function getStorageHealthIssue() {
       ok: false,
       code: 'storage-failure',
       title: 'Save failed',
-      detail: `${failure.label || 'App data'} did not save (${formatBytes(failure.size)}). ${failure.error || 'Download JSON now to protect the current data.'}`,
+      detail: activeTest
+        ? `${activeTest.title}. ${failure.label || 'App data'} did not save (${formatBytes(failure.size)}), which may be the expected test result. ${activeTest.detail}`
+        : `${failure.label || 'App data'} did not save (${formatBytes(failure.size)}). ${failure.error || 'Download JSON now to protect the current data.'}`,
       action: 'Open Data Health',
     };
   }
@@ -274,6 +320,15 @@ function getStorageHealthIssue() {
       code: 'storage-test',
       title: 'Test save warning',
       detail: 'This is a non-destructive simulated save warning. Use Download JSON to test the emergency export action, or dismiss it in Data Health settings.',
+      action: 'Open Data Health',
+    };
+  }
+  if (activeTest) {
+    return {
+      ok: false,
+      code: 'storage-test-mode',
+      title: activeTest.title,
+      detail: activeTest.detail,
       action: 'Open Data Health',
     };
   }

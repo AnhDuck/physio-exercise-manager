@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderNotesPanel();
   startRealtimeUpdates();
   initializeAutoBackup();
+  markStorageTestsReadyForUserActions();
 });
 function bindStaticEvents() {
   document.querySelectorAll('.notes-toggle').forEach(btn => {
