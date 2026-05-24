@@ -563,12 +563,22 @@ function getAutoBackupHealth(now = new Date()) {
     };
   }
 
-  if (!autoBackupDirectoryHandle) {
+  if (!autoBackupDirectoryHandle && !autoBackupHandleLoaded) {
     return {
-      ok: false,
+      ok: true,
       code: 'checking',
       title: 'Checking backup folder',
       detail: 'The app is checking whether the saved backup folder can still be used.',
+      action: 'Reconnect',
+    };
+  }
+
+  if (!autoBackupDirectoryHandle) {
+    return {
+      ok: false,
+      code: 'reconnect',
+      title: 'Backup folder needs reconnect',
+      detail: 'Reconnect the backup folder so automatic backups can resume.',
       action: 'Reconnect',
     };
   }
