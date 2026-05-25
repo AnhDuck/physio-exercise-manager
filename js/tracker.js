@@ -298,8 +298,9 @@ function renderSetTracker() {
   const { ex, dateStr, progress } = current;
   const done = isProgressComplete(progress);
   const isHistoricalOnly = activeTracker?.readOnly || !isExerciseActive(ex) || ex.missing;
+  const group = GROUPS[ex.group] || {};
   const panel = el('section', 'set-tracker' + (done ? ' complete' : '') + (isHistoricalOnly ? ' historical-only' : ''));
-  panel.style.setProperty('--tracker-color', GROUPS[ex.group]?.color || 'var(--accent-green)');
+  panel.style.setProperty('--tracker-color', group.color || 'var(--accent-green)');
 
   const utility = el('div', 'set-tracker-utility');
   const utilityMain = el('div', 'set-tracker-utility-group set-tracker-utility-main');
@@ -330,13 +331,24 @@ function renderSetTracker() {
   info.appendChild(startMeta);
   const titleRow = el('div', 'set-tracker-title-row');
   titleRow.appendChild(elText('div', 'set-tracker-name', ex.name));
-  const progressWrap = el('div', 'set-tracker-progress');
-  for (let i = 1; i <= progress.targetSets; i++) {
-    progressWrap.appendChild(el('span', 'set-dot' + (i <= progress.completedSets ? ' filled' : '')));
-  }
-  titleRow.appendChild(progressWrap);
+  const groupPill = elText('span', 'set-tracker-group-pill', group.label || ex.group || 'Exercise');
+  titleRow.appendChild(groupPill);
   info.appendChild(titleRow);
-  info.appendChild(elText('div', 'set-tracker-meta', `${progress.completedSets}/${progress.targetSets} sets | ${ex.reps} reps${ex.resistance ? ` | ${ex.resistance}` : ''}`));
+
+  const metaRow = el('div', 'set-tracker-meta');
+  metaRow.appendChild(elText('span', 'set-tracker-meta-pill set-tracker-set-count', `${progress.completedSets}/${progress.targetSets} sets`));
+  metaRow.appendChild(elText('span', 'set-tracker-meta-pill', `${ex.reps} reps`));
+  if (ex.resistance) metaRow.appendChild(elText('span', 'set-tracker-meta-pill', ex.resistance));
+  metaRow.appendChild(elText('span', 'set-tracker-meta-pill set-tracker-status-pill', trackerStatusText(progress)));
+  info.appendChild(metaRow);
+
+  const progressWrap = el('div', 'set-tracker-progress');
+  progressWrap.setAttribute('aria-label', `${progress.completedSets} of ${progress.targetSets} sets complete`);
+  progressWrap.style.setProperty('--set-count', Math.max(1, progress.targetSets));
+  for (let i = 1; i <= progress.targetSets; i++) {
+    progressWrap.appendChild(el('span', 'set-segment' + (i <= progress.completedSets ? ' filled' : '')));
+  }
+  info.appendChild(progressWrap);
   main.appendChild(info);
   main.appendChild(utility);
   panel.appendChild(main);
@@ -351,16 +363,16 @@ function renderSetTracker() {
   actions.appendChild(mainActions);
 
   const timer = el('div', 'set-tracker-timer');
-  const totalMetric = el('div', 'set-tracker-metric set-tracker-metric-total');
-  totalMetric.appendChild(elText('div', 'set-tracker-timer-label', 'Total elapsed'));
-  totalMetric.appendChild(elText('div', 'set-tracker-timer-value', trackerTotalTimeValue(progress)));
-  timer.appendChild(totalMetric);
   const sinceSetMetric = el('div', 'set-tracker-metric set-tracker-metric-since');
   sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-label', 'Current set'));
   sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-value', trackerCurrentSetTimeValue(progress)));
   const timerDetail = trackerTimerDetail(progress);
   if (timerDetail) sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-detail', timerDetail));
   timer.appendChild(sinceSetMetric);
+  const totalMetric = el('div', 'set-tracker-metric set-tracker-metric-total');
+  totalMetric.appendChild(elText('div', 'set-tracker-timer-label', 'Total elapsed'));
+  totalMetric.appendChild(elText('div', 'set-tracker-timer-value', trackerTotalTimeValue(progress)));
+  timer.appendChild(totalMetric);
   const setTimeline = buildCompletedSetTimeline(progress);
   if (setTimeline) timer.appendChild(setTimeline);
   panel.appendChild(timer);

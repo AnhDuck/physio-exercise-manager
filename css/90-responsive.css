@@ -115,17 +115,11 @@
   }
 
   .set-tracker-utility {
-    min-width: 108px;
+    min-width: 0;
   }
 
   .set-tracker-utility-main {
-    padding-left: 8px;
-  }
-
-  .set-tracker-help {
-    max-width: none;
-    text-align: left;
-    white-space: normal;
+    padding-left: 6px;
   }
 
   .set-tracker-timer {
@@ -136,7 +130,8 @@
     grid-column: 1 / -1;
     padding-top: 10px;
     padding-left: 0;
-    border-top: 1px solid rgba(148, 163, 184, .2);
+    border-top: 1px solid rgba(255,255,255,.075);
+    border-right: 0;
     border-left: none;
   }
 
@@ -153,6 +148,8 @@
   .set-log-modal {
     max-height: calc(100vh - 24px);
     overflow-y: auto;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
   }
 
   .set-log-edit-sections,
@@ -257,8 +254,27 @@
 
 @media (max-width: 480px) {
   .set-tracker-timer {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     max-width: none;
+  }
+
+  .set-tracker-main {
+    grid-template-columns: 1fr;
+  }
+
+  .set-tracker-utility {
+    justify-content: flex-start;
+  }
+
+  .set-tracker-metric,
+  .set-tracker-set-timeline {
+    min-height: 0;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255,255,255,.075);
+  }
+
+  .set-tracker-set-timeline {
+    border-bottom: 0;
   }
 
   .set-tracker-title-row {
@@ -276,11 +292,7 @@
   }
 
   .set-tracker-metric-since .set-tracker-timer-value {
-    font-size: 30px;
-  }
-
-  .set-tracker-help {
-    white-space: normal;
+    font-size: 38px;
   }
 
   #settings-modal {
