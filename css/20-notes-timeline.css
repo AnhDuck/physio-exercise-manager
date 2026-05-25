@@ -152,7 +152,7 @@ body.notes-open {
   height: 32px;
   border: 1px solid var(--border);
   border-radius: 5px;
-  background: var(--bg-card);
+  background: var(--ui-control-bg);
   color: var(--text-muted);
   cursor: pointer;
   transition: background .15s, border-color .15s, color .15s, box-shadow .15s;
@@ -172,7 +172,7 @@ body.notes-open {
 .timeline-tool-btn:focus-visible,
 .timeline-tool-btn.is-active {
   border-color: rgba(99,179,255,.52);
-  background: var(--bg-hover);
+  background: var(--ui-control-hover);
   color: var(--text);
   outline: none;
 }
@@ -336,7 +336,7 @@ body.notes-open {
 
 .timeline-range-control select:focus {
   border-color: rgba(99,179,255,.72);
-  box-shadow: 0 0 0 3px rgba(99,179,255,.12);
+  box-shadow: var(--ui-focus-ring);
 }
 
 .timeline-range-control select option {
@@ -436,6 +436,11 @@ body.notes-open {
   font-size: 12px;
   font-weight: 800;
   padding: 7px 10px;
+}
+
+.timeline-search-done .ui-button-icon {
+  width: 14px;
+  height: 14px;
 }
 
 .timeline-filter-status {
@@ -548,7 +553,8 @@ body.notes-open {
   border-radius: 0;
 }
 
-.note-save-icon {
+.note-save-icon,
+.note-save-btn .ui-button-icon {
   width: 15px;
   height: 15px;
   flex: 0 0 auto;

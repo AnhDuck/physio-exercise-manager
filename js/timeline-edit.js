@@ -14,7 +14,7 @@ function openEventModal(eventId) {
     : 'Optional annotation for this history item';
   renderEventDoseFields(ev);
   document.getElementById('event-detail').textContent = ev.type === 'note' || isDoseChange ? '' : eventText(ev);
-  document.getElementById('event-delete-btn').style.display = 'inline-block';
+  document.getElementById('event-delete-btn').style.display = 'inline-flex';
   document.getElementById('event-modal').classList.remove('hidden');
 }
 

@@ -1,14 +1,13 @@
 /* ── Settings button ─────────────────────────────────────────────── */
 .btn-settings {
-  background: var(--bg-card);
+  background: var(--ui-control-bg);
   border: 1px solid var(--border);
   color: var(--text-muted);
   width: 34px;
   height: 32px;
   padding: 0;
-  border-radius: 6px;
+  border-radius: var(--ui-control-radius);
   cursor: pointer;
-  font-size: 18px;
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -16,7 +15,12 @@
   position: relative;
   transition: background .15s, color .15s;
 }
-.btn-settings:hover { background: var(--bg-hover); color: var(--text); }
+.btn-settings:hover,
+.btn-settings:focus-visible {
+  background: var(--ui-control-hover);
+  color: var(--text);
+  outline: none;
+}
 
 .btn-settings.has-backup-issue {
   border-color: rgba(248,113,113,.72);
@@ -103,7 +107,7 @@
   height: 18px;
   border: 1px solid var(--border);
   border-radius: 50%;
-  background: var(--bg-hover);
+  background: var(--ui-control-hover);
   color: var(--text-muted);
   cursor: help;
   font-size: 12px;
@@ -204,20 +208,21 @@
   place-items: center;
   width: 32px;
   height: 32px;
-  border: 1px solid transparent;
+  border: 1px solid var(--border);
   border-radius: 5px;
-  background: transparent;
+  background: var(--ui-control-bg);
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 22px;
   line-height: 1;
+  padding: 0;
 }
 
 .settings-close:hover,
 .settings-close:focus-visible {
-  border-color: var(--border);
-  background: var(--bg-hover);
-  color: var(--text);
+  border-color: rgba(248,113,113,.72);
+  background: rgba(127,29,29,.28);
+  color: var(--ui-danger-soft);
+  outline: none;
 }
 
 .settings-layout {
@@ -357,8 +362,8 @@
   gap: 0;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: rgba(255,255,255,.018);
+  border-radius: var(--ui-panel-radius);
+  background: var(--ui-panel-bg);
 }
 
 .settings-draft-actions {
@@ -367,8 +372,8 @@
   margin: 4px 0 14px;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: rgba(255,255,255,.018);
+  border-radius: var(--ui-panel-radius);
+  background: var(--ui-panel-bg);
 }
 
 .settings-draft-actions[hidden] {
@@ -383,8 +388,8 @@
 .block-settings-group {
   border: 1px solid var(--border);
   border-left: 3px solid var(--exercise-group-color, var(--accent-green));
-  border-radius: 8px;
-  background: rgba(255,255,255,.018);
+  border-radius: var(--ui-panel-radius);
+  background: var(--ui-panel-bg);
   padding: 12px;
 }
 
@@ -414,7 +419,7 @@
 .auto-backup-history-toggle {
   border: 1px solid var(--border);
   border-radius: 5px;
-  background: var(--bg-card);
+  background: var(--ui-control-bg);
   color: var(--text);
   cursor: pointer;
   display: inline-flex;
@@ -426,6 +431,7 @@
   line-height: 1;
   min-height: 30px;
   white-space: nowrap;
+  transition: background .15s, border-color .15s, color .15s, box-shadow .15s;
 }
 
 .block-settings-add,
@@ -451,7 +457,19 @@
 .settings-draft-btn:hover:not(:disabled),
 .settings-backup-btn:hover:not(:disabled),
 .auto-backup-history-toggle:hover:not(:disabled) {
-  background: var(--bg-hover);
+  background: var(--ui-control-hover);
+}
+
+.block-settings-add:focus-visible,
+.block-settings-move:focus-visible:not(:disabled),
+.block-settings-delete:focus-visible,
+.settings-clear-review:focus-visible:not(:disabled),
+.settings-draft-btn:focus-visible:not(:disabled),
+.settings-backup-btn:focus-visible:not(:disabled),
+.auto-backup-history-toggle:focus-visible:not(:disabled) {
+  background: var(--ui-control-hover);
+  box-shadow: var(--ui-focus-ring);
+  outline: none;
 }
 
 .settings-backup-row {
@@ -546,6 +564,12 @@
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.8;
+}
+
+.settings-folder-svg {
+  display: block;
+  width: 15px;
+  height: 15px;
 }
 
 .settings-button-text {
@@ -852,17 +876,20 @@
   width: 100%;
   min-height: 30px;
   padding: 5px 8px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg);
+  border: 1px solid rgba(160,164,173,.34);
+  border-radius: var(--ui-control-radius);
+  background: rgba(255,255,255,.045);
   color: var(--text);
   font: inherit;
   font-size: 13px;
+  transition: background .15s, border-color .15s, box-shadow .15s;
 }
 
 .block-settings-title:focus,
 .block-exercise-assignment select:focus {
-  border-color: var(--c-day1);
+  border-color: rgba(99,179,255,.82);
+  background: rgba(255,255,255,.07);
+  box-shadow: var(--ui-focus-ring);
   outline: none;
 }
 
@@ -890,6 +917,12 @@
   padding: 0 8px;
   border-color: rgba(248,113,113,.45);
   color: #fecaca;
+}
+
+.block-settings-move .ui-button-icon,
+.settings-close .ui-button-icon {
+  width: 17px;
+  height: 17px;
 }
 
 .block-settings-empty {

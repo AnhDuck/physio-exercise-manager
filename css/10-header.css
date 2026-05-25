@@ -138,17 +138,31 @@
 }
 
 .header-actions button {
-  background: var(--bg-card);
+  background: var(--ui-control-bg);
   border: 1px solid var(--border);
   color: var(--text);
   padding: 6px 14px;
-  border-radius: 6px;
+  border-radius: var(--ui-control-radius);
   cursor: pointer;
   font-size: 13px;
-  transition: background .15s;
+  transition: background .15s, border-color .15s, color .15s, box-shadow .15s;
 }
 
-.header-actions button:hover { background: var(--bg-hover); }
+.header-actions button:hover,
+.header-actions button:focus-visible {
+  background: var(--ui-control-hover);
+  outline: none;
+}
+
+.header-actions .btn-settings {
+  padding: 0;
+}
+
+.btn-settings .ui-button-icon {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.9;
+}
 
 .header-quote::before {
   content: "";

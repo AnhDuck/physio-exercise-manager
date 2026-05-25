@@ -117,9 +117,11 @@ function buildGroupSection(group, exs, dates, todayS, startNumber) {
   dot.style.background = cfg.color;
   label.appendChild(dot);
   label.appendChild(document.createTextNode(cfg.label));
-  const addBtn = elText('button', 'group-add-btn', '+ Add');
+  const addBtn = el('button', 'group-add-btn');
   addBtn.type = 'button';
   addBtn.title = `Add exercise to ${cfg.label}`;
+  addBtn.appendChild(buildAppIconSvg('add'));
+  addBtn.appendChild(elText('span', 'ui-button-text', 'Add'));
   addBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     openAddModal(group);

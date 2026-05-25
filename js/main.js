@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
   markStorageTestsReadyForUserActions();
 });
 function bindStaticEvents() {
+  hydrateIconButtons(document);
   document.querySelectorAll('.notes-toggle').forEach(btn => {
     btn.addEventListener('click', toggleNotesPanel);
   });
@@ -79,6 +80,7 @@ function bindStaticEvents() {
   window.addEventListener('scroll', updateCompactHeader, { passive: true });
 
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
+  document.getElementById('exercise-modal-close').addEventListener('click', closeModal);
   document.getElementById('modal-save').addEventListener('click', saveExerciseModal);
   document.getElementById('hide-btn').addEventListener('click', hideExercise);
 
@@ -93,6 +95,7 @@ function bindStaticEvents() {
 
   document.getElementById('image-file-btn').addEventListener('click', openImageUpload);
   document.getElementById('image-cancel').addEventListener('click', closeImageModal);
+  document.getElementById('image-modal-close').addEventListener('click', closeImageModal);
   document.getElementById('image-import-btn').addEventListener('click', importImageFromUrl);
   document.getElementById('image-remove-btn').addEventListener('click', removeExerciseImage);
   document.getElementById('field-image-url').addEventListener('keydown', (e) => {
@@ -142,6 +145,7 @@ function bindStaticEvents() {
   });
 
   document.getElementById('event-cancel').addEventListener('click', closeEventModal);
+  document.getElementById('event-modal-close').addEventListener('click', closeEventModal);
   document.getElementById('event-save').addEventListener('click', saveEventModal);
   document.getElementById('event-delete-btn').addEventListener('click', deleteEventModal);
   document.getElementById('event-modal').addEventListener('click', (e) => {

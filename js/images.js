@@ -5,7 +5,7 @@ function openImageModal(exId) {
   const ex = exercises.find(item => item.id === exId);
   const removeBtn = document.getElementById('image-remove-btn');
   document.getElementById('field-image-url').value = '';
-  removeBtn.style.display = ex?.image ? 'inline-block' : 'none';
+  removeBtn.style.display = ex?.image ? 'inline-flex' : 'none';
   setImageImportPending(false);
   document.getElementById('image-modal').classList.remove('hidden');
   window.setTimeout(() => document.getElementById('field-image-url').focus(), 0);
@@ -27,7 +27,7 @@ function setImageImportPending(pending) {
   imageImportPending = pending;
   document.getElementById('image-import-btn').disabled = pending;
   document.getElementById('image-file-btn').disabled = pending;
-  document.getElementById('image-import-btn').textContent = pending ? 'Importing...' : 'Import URL';
+  setIconButtonContent(document.getElementById('image-import-btn'), pending ? 'Importing...' : 'Import URL', pending ? 'backup-now' : 'import');
 }
 
 function storeExerciseImage(exId, imageData) {

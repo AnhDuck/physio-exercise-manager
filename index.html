@@ -6,7 +6,7 @@
   <title>Physio Exercise Management</title>
   <link rel="icon" type="image/svg+xml" href="assets/physio-icon.svg" />
   <script>
-    window.PEM_APP_VERSION = '1.0.32';
+    window.PEM_APP_VERSION = '1.0.34';
     const PEM_CSS_FILES = [
       'css/00-base.css',
       'css/10-header.css',
@@ -23,15 +23,15 @@
     });
   </script>
   <noscript>
-    <link rel="stylesheet" href="css/00-base.css?v=1.0.32" />
-    <link rel="stylesheet" href="css/10-header.css?v=1.0.32" />
-    <link rel="stylesheet" href="css/20-notes-timeline.css?v=1.0.32" />
-    <link rel="stylesheet" href="css/30-grid-exercises.css?v=1.0.32" />
-    <link rel="stylesheet" href="css/40-modals-forms.css?v=1.0.32" />
-    <link rel="stylesheet" href="css/50-settings.css?v=1.0.32" />
-    <link rel="stylesheet" href="css/60-tracker.css?v=1.0.32" />
-    <link rel="stylesheet" href="css/70-images-scrollbar.css?v=1.0.32" />
-    <link rel="stylesheet" href="css/90-responsive.css?v=1.0.32" />
+    <link rel="stylesheet" href="css/00-base.css?v=1.0.34" />
+    <link rel="stylesheet" href="css/10-header.css?v=1.0.34" />
+    <link rel="stylesheet" href="css/20-notes-timeline.css?v=1.0.34" />
+    <link rel="stylesheet" href="css/30-grid-exercises.css?v=1.0.34" />
+    <link rel="stylesheet" href="css/40-modals-forms.css?v=1.0.34" />
+    <link rel="stylesheet" href="css/50-settings.css?v=1.0.34" />
+    <link rel="stylesheet" href="css/60-tracker.css?v=1.0.34" />
+    <link rel="stylesheet" href="css/70-images-scrollbar.css?v=1.0.34" />
+    <link rel="stylesheet" href="css/90-responsive.css?v=1.0.34" />
   </noscript>
 </head>
 <body>
@@ -51,7 +51,7 @@
     </span>
     <div class="header-actions">
       <span id="app-version" class="app-version" aria-label="App version"></span>
-      <button id="btn-settings" class="btn-settings" title="Settings" aria-label="Settings">&#9881;</button>
+      <button id="btn-settings" class="btn-settings" title="Settings" aria-label="Settings" data-ui-icon="gear"></button>
     </div>
   </header>
 
@@ -105,13 +105,7 @@
           </div>
         </div>
 
-        <button type="button" class="btn-primary note-save-btn" id="quick-note-save">
-          <svg class="note-save-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M12 20h9"></path>
-            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
-          </svg>
-          <span>Add note</span>
-        </button>
+        <button type="button" class="btn-primary note-save-btn" id="quick-note-save" data-ui-icon="pencil">Add note</button>
       </div>
 
       <section class="timeline-tools" aria-label="Timeline tools">
@@ -120,12 +114,7 @@
             <h3>Timeline</h3>
             <div class="timeline-filter-status" id="timeline-filter-status"></div>
           </div>
-          <button type="button" class="timeline-tool-btn timeline-copy-all" id="timeline-copy" title="Copy all matching timeline items as Markdown" aria-label="Copy all matching timeline items as Markdown">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <rect x="8" y="8" width="11" height="11" rx="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"></path>
-            </svg>
-          </button>
+          <button type="button" class="timeline-tool-btn timeline-copy-all" id="timeline-copy" title="Copy all matching timeline items as Markdown" aria-label="Copy all matching timeline items as Markdown" data-ui-icon="copy"></button>
         </div>
 
         <div class="timeline-search" id="timeline-search-panel">
@@ -154,7 +143,7 @@
             </div>
             <div class="timeline-search-actions">
               <span class="timeline-search-hint">Press Enter when done</span>
-              <button type="button" class="btn-primary timeline-search-done" id="timeline-search-done" title="Press Enter when done">Search</button>
+              <button type="button" class="btn-primary timeline-search-done" id="timeline-search-done" title="Press Enter when done" data-ui-icon="search">Search</button>
             </div>
           </div>
         </div>
@@ -169,66 +158,71 @@
   <!-- Exercise edit / add modal -->
   <div class="modal-overlay hidden" id="exercise-modal">
     <div class="modal">
-      <h2 id="modal-title">Edit Exercise</h2>
-
-      <div class="form-row full">
-        <div class="form-field">
-          <label for="field-name">Exercise name</label>
-          <input type="text" id="field-name" placeholder="e.g. Wrist flexion" />
-        </div>
+      <div class="modal-titlebar">
+        <h2 id="modal-title">Edit Exercise</h2>
+        <button class="modal-close" id="exercise-modal-close" type="button" aria-label="Close exercise editor" title="Close" data-ui-icon="x"></button>
       </div>
 
-      <div class="form-row">
-        <div class="form-field">
-          <label for="field-sets">Sets</label>
-          <input type="number" id="field-sets" min="1" max="20" />
+      <div class="modal-body">
+        <div class="form-row full">
+          <div class="form-field">
+            <label for="field-name">Exercise name</label>
+            <input type="text" id="field-name" placeholder="e.g. Wrist flexion" />
+          </div>
         </div>
-        <div class="form-field">
-          <label for="field-reps">Reps</label>
-          <input type="text" id="field-reps" placeholder="e.g. 10 or 10-15" />
-        </div>
-      </div>
 
-      <div class="form-row">
-        <div class="form-field">
-          <label for="field-resistance">Resistance</label>
-          <input type="text" id="field-resistance" placeholder="e.g. 5 lbs, band, elastic" />
+        <div class="form-row">
+          <div class="form-field">
+            <label for="field-sets">Sets</label>
+            <input type="number" id="field-sets" min="1" max="20" />
+          </div>
+          <div class="form-field">
+            <label for="field-reps">Reps</label>
+            <input type="text" id="field-reps" placeholder="e.g. 10 or 10-15" />
+          </div>
         </div>
-        <div class="form-field">
-          <label for="field-frequency">Frequency</label>
-          <input type="text" id="field-frequency" placeholder="e.g. 3x/week, daily" />
+
+        <div class="form-row">
+          <div class="form-field">
+            <label for="field-resistance">Resistance</label>
+            <input type="text" id="field-resistance" placeholder="e.g. 5 lbs, band, elastic" />
+          </div>
+          <div class="form-field">
+            <label for="field-frequency">Frequency</label>
+            <input type="text" id="field-frequency" placeholder="e.g. 3x/week, daily" />
+          </div>
         </div>
-      </div>
 
-      <div class="form-row full">
-        <div class="form-field">
-          <label for="field-group">Group</label>
-          <select id="field-group">
-            <option value="arm-day1">Arm Day 1</option>
-            <option value="arm-day2">Arm Day 2</option>
-            <option value="legs">Legs</option>
-          </select>
+        <div class="form-row full">
+          <div class="form-field">
+            <label for="field-group">Group</label>
+            <select id="field-group">
+              <option value="arm-day1">Arm Day 1</option>
+              <option value="arm-day2">Arm Day 2</option>
+              <option value="legs">Legs</option>
+            </select>
+          </div>
         </div>
-      </div>
 
-      <div class="form-row full">
-        <label class="physio-review-check">
-          <input type="checkbox" id="field-changed-since-physio" />
-          <span>Changed since last physio visit</span>
-        </label>
-      </div>
-
-      <div class="form-row full">
-        <div class="form-field">
-          <label for="field-instructions">Instructions (optional)</label>
-          <textarea id="field-instructions" placeholder="Step-by-step instructions..."></textarea>
+        <div class="form-row full">
+          <label class="physio-review-check">
+            <input type="checkbox" id="field-changed-since-physio" />
+            <span>Changed since last physio visit</span>
+          </label>
         </div>
-      </div>
 
-      <div class="modal-actions">
-        <button class="btn-danger" id="hide-btn" style="display:none">Hide exercise</button>
-        <button class="btn-secondary" id="modal-cancel">Cancel</button>
-        <button class="btn-primary" id="modal-save">Save</button>
+        <div class="form-row full">
+          <div class="form-field">
+            <label for="field-instructions">Instructions (optional)</label>
+            <textarea id="field-instructions" placeholder="Step-by-step instructions..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-danger" id="hide-btn" style="display:none" data-ui-icon="trash">Hide exercise</button>
+          <button class="btn-secondary" id="modal-cancel">Cancel</button>
+          <button class="btn-primary" id="modal-save" data-ui-icon="check">Save</button>
+        </div>
       </div>
     </div>
   </div>
@@ -238,7 +232,7 @@
     <div class="modal settings-preferences" role="dialog" aria-modal="true" aria-labelledby="settings-title">
       <div class="settings-titlebar">
         <h2 id="settings-title">Settings</h2>
-        <button class="settings-close" id="settings-close" type="button" aria-label="Close settings" title="Close">×</button>
+        <button class="settings-close" id="settings-close" type="button" aria-label="Close settings" title="Close" data-ui-icon="x"></button>
       </div>
 
       <div class="settings-layout">
@@ -326,7 +320,7 @@
                   <strong>Physio review</strong>
                   <span>Clear markers for exercises changed since review.</span>
                 </div>
-                <button class="settings-clear-review" id="settings-clear-review" type="button">Clear changed markers</button>
+                  <button class="settings-clear-review" id="settings-clear-review" type="button" data-ui-icon="check">Clear changed markers</button>
               </div>
             </div>
           </div>
@@ -350,14 +344,14 @@
                   <strong>Apply block changes</strong>
                   <span>Save block order, titles, and exercise assignments.</span>
                 </div>
-                <button class="settings-draft-btn settings-apply-btn" id="settings-blocks-apply" type="button">Apply changes</button>
+                <button class="settings-draft-btn settings-apply-btn" id="settings-blocks-apply" type="button" data-ui-icon="check">Apply changes</button>
               </div>
               <div class="settings-action-row">
                 <div class="settings-action-label">
                   <strong>Discard block edits</strong>
                   <span>Return blocks to the last saved layout.</span>
                 </div>
-                <button class="settings-draft-btn" id="settings-blocks-discard" type="button">Discard changes</button>
+                <button class="settings-draft-btn" id="settings-blocks-discard" type="button" data-ui-icon="x">Discard changes</button>
               </div>
             </div>
             <div class="block-settings" id="settings-blocks"></div>
@@ -372,7 +366,7 @@
             <div class="settings-row-group">
               <div class="settings-backup-row settings-folder-row">
                 <div class="settings-folder-field" aria-live="polite">
-                  <span class="settings-folder-icon" aria-hidden="true">▣</span>
+                  <span class="settings-folder-icon" aria-hidden="true"></span>
                   <span class="settings-folder-name" id="settings-auto-backup-folder-name">No folder selected</span>
                 </div>
                 <button class="settings-backup-btn" id="settings-auto-backup-folder" type="button" data-settings-icon="folder">Browse</button>
@@ -409,7 +403,7 @@
                   <strong>Backup history</strong>
                   <span>Review the latest folder backup result and older runs.</span>
                 </div>
-                <button class="auto-backup-history-toggle" id="settings-auto-backup-history-toggle" type="button">Show history</button>
+                <button class="auto-backup-history-toggle" id="settings-auto-backup-history-toggle" type="button" data-ui-icon="search">Show history</button>
               </div>
               <div class="settings-history-row">
                 <div class="auto-backup-history-summary" id="settings-auto-backup-summary"></div>
@@ -627,33 +621,38 @@
   <!-- Timeline event edit modal -->
   <div class="modal-overlay hidden" id="event-modal">
     <div class="modal event-modal">
-      <h2 id="event-modal-title">Edit timeline item</h2>
-
-      <div class="form-row">
-        <div class="form-field">
-          <label for="event-field-date">Date</label>
-          <input type="date" id="event-field-date" />
-        </div>
-        <div class="form-field">
-          <label for="event-field-time">Time</label>
-          <input type="time" id="event-field-time" />
-        </div>
+      <div class="modal-titlebar">
+        <h2 id="event-modal-title">Edit timeline item</h2>
+        <button class="modal-close" id="event-modal-close" type="button" aria-label="Close timeline editor" title="Close" data-ui-icon="x"></button>
       </div>
 
-      <div class="form-row full">
-        <div class="form-field">
-          <label for="event-field-text">Note</label>
-          <textarea id="event-field-text"></textarea>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-field">
+            <label for="event-field-date">Date</label>
+            <input type="date" id="event-field-date" />
+          </div>
+          <div class="form-field">
+            <label for="event-field-time">Time</label>
+            <input type="time" id="event-field-time" />
+          </div>
         </div>
-      </div>
 
-      <div class="event-dose-fields hidden" id="event-dose-fields"></div>
-      <div class="event-detail" id="event-detail"></div>
+        <div class="form-row full">
+          <div class="form-field">
+            <label for="event-field-text">Note</label>
+            <textarea id="event-field-text"></textarea>
+          </div>
+        </div>
 
-      <div class="modal-actions">
-        <button class="btn-danger" id="event-delete-btn">Delete</button>
-        <button class="btn-secondary" id="event-cancel">Cancel</button>
-        <button class="btn-primary" id="event-save">Save</button>
+        <div class="event-dose-fields hidden" id="event-dose-fields"></div>
+        <div class="event-detail" id="event-detail"></div>
+
+        <div class="modal-actions">
+          <button class="btn-danger" id="event-delete-btn" data-ui-icon="trash">Delete</button>
+          <button class="btn-secondary" id="event-cancel">Cancel</button>
+          <button class="btn-primary" id="event-save" data-ui-icon="check">Save</button>
+        </div>
       </div>
     </div>
   </div>
@@ -661,29 +660,34 @@
   <!-- Exercise image source modal -->
   <div class="modal-overlay hidden" id="image-modal">
     <div class="modal">
-      <h2>Exercise Image</h2>
-
-      <div class="form-row full">
-        <div class="form-field">
-          <label for="field-image-url">Paste image or page URL</label>
-          <input
-            type="url"
-            id="field-image-url"
-            placeholder="https://example.com/image.jpg or a page URL"
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <div class="form-help">
-            The app will try the direct image first, then common page previews like og:image.
-          </div>
-        </div>
+      <div class="modal-titlebar">
+        <h2>Exercise image</h2>
+        <button class="modal-close" id="image-modal-close" type="button" aria-label="Close image source" title="Close" data-ui-icon="x"></button>
       </div>
 
-      <div class="modal-actions">
-        <button class="btn-danger" id="image-remove-btn" style="display:none">Remove image</button>
-        <button class="btn-secondary" id="image-file-btn">Choose File</button>
-        <button class="btn-secondary" id="image-cancel">Cancel</button>
-        <button class="btn-primary" id="image-import-btn">Import URL</button>
+      <div class="modal-body">
+        <div class="form-row full">
+          <div class="form-field">
+            <label for="field-image-url">Paste image or page URL</label>
+            <input
+              type="url"
+              id="field-image-url"
+              placeholder="https://example.com/image.jpg or a page URL"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <div class="form-help">
+              The app will try the direct image first, then common page previews like og:image.
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-danger" id="image-remove-btn" style="display:none" data-ui-icon="trash">Remove image</button>
+          <button class="btn-secondary" id="image-file-btn" data-ui-icon="upload">Choose file</button>
+          <button class="btn-secondary" id="image-cancel">Cancel</button>
+          <button class="btn-primary" id="image-import-btn" data-ui-icon="import">Import URL</button>
+        </div>
       </div>
     </div>
   </div>

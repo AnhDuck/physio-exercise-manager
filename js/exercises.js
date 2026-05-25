@@ -339,8 +339,8 @@ function openEditModal(exId) {
   document.getElementById('field-group').value = ex.group;
   document.getElementById('field-changed-since-physio').checked = Boolean(ex.changedSinceLastPhysioVisit);
 
-  document.getElementById('hide-btn').style.display = 'inline-block';
-  document.getElementById('hide-btn').textContent = 'Hide exercise';
+  document.getElementById('hide-btn').style.display = 'inline-flex';
+  setIconButtonContent(document.getElementById('hide-btn'), 'Hide exercise', 'trash');
   showModal();
 }
 

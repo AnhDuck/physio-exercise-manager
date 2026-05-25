@@ -9,11 +9,18 @@ function openSettingsModal() {
   syncSettingsControls();
   renderHiddenExerciseSettings();
   renderBlockSettings();
+  hydrateSettingsFolderIcon();
   hydrateSettingsIconButtons(document.getElementById('settings-modal'));
   renderAutoBackupSettings();
   updateClearReviewButton();
   setSettingsTab(settingsActiveTab, false);
   document.getElementById('settings-modal').classList.remove('hidden');
+}
+
+function hydrateSettingsFolderIcon() {
+  const icon = document.querySelector('#settings-modal .settings-folder-icon');
+  if (!icon || icon.childElementCount) return;
+  icon.appendChild(buildAppIconSvg('folder', 'settings-folder-svg'));
 }
 
 function closeSettingsModal() {
@@ -142,8 +149,10 @@ function buildHiddenExerciseRow(ex) {
   info.appendChild(elText('span', '', hiddenExerciseMeta(ex)));
   row.appendChild(info);
 
-  const restore = elText('button', 'settings-clear-review hidden-exercise-restore', 'Restore');
+  const restore = el('button', 'settings-clear-review hidden-exercise-restore');
   restore.type = 'button';
+  restore.appendChild(buildAppIconSvg('restore'));
+  restore.appendChild(elText('span', 'ui-button-text', 'Restore'));
   restore.addEventListener('click', () => restoreExercise(ex.id));
   row.appendChild(restore);
   return row;
@@ -339,8 +348,10 @@ function buildBlockSettingsGroup(group) {
 
   const header = el('div', 'block-settings-group-header');
   header.appendChild(elText('h4', '', cfg.label));
-  const addBtn = elText('button', 'block-settings-add', '+ Add block');
+  const addBtn = el('button', 'block-settings-add');
   addBtn.type = 'button';
+  addBtn.appendChild(buildAppIconSvg('add'));
+  addBtn.appendChild(elText('span', 'ui-button-text', 'Add block'));
   addBtn.addEventListener('click', () => {
     readBlockSettingsForm({ updateActions: false });
     const block = addDraftBlockDefinition(group);
@@ -386,9 +397,11 @@ function buildBlockSettingsRow(group, block, index, count) {
   row.appendChild(input);
 
   const actions = el('div', 'block-settings-actions');
-  const up = elText('button', 'block-settings-move', '↑');
+  const up = el('button', 'block-settings-move');
   up.type = 'button';
   up.title = 'Move block up';
+  up.setAttribute('aria-label', 'Move block up');
+  up.appendChild(buildAppIconSvg('chevron-up'));
   up.disabled = index === 0;
   up.addEventListener('click', () => {
     readBlockSettingsForm({ updateActions: false });
@@ -397,9 +410,11 @@ function buildBlockSettingsRow(group, block, index, count) {
   });
   actions.appendChild(up);
 
-  const down = elText('button', 'block-settings-move', '↓');
+  const down = el('button', 'block-settings-move');
   down.type = 'button';
   down.title = 'Move block down';
+  down.setAttribute('aria-label', 'Move block down');
+  down.appendChild(buildAppIconSvg('chevron-down'));
   down.disabled = index === count - 1;
   down.addEventListener('click', () => {
     readBlockSettingsForm({ updateActions: false });
@@ -408,9 +423,11 @@ function buildBlockSettingsRow(group, block, index, count) {
   });
   actions.appendChild(down);
 
-  const del = elText('button', 'block-settings-delete', 'Delete');
+  const del = el('button', 'block-settings-delete');
   del.type = 'button';
   del.title = 'Delete block and unassign its exercises';
+  del.appendChild(buildAppIconSvg('trash'));
+  del.appendChild(elText('span', 'ui-button-text', 'Delete'));
   del.addEventListener('click', () => {
     if (!confirm(`Delete ${draftBlockTitleFor(group, block.id)} and unassign its exercises?`)) return;
     readBlockSettingsForm({ updateActions: false });

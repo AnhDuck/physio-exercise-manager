@@ -183,22 +183,34 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 5px;
   margin-left: auto;
   border: 1px solid var(--border);
   border-radius: 5px;
-  background: var(--bg-card);
+  background: var(--ui-control-bg);
   color: var(--text);
   cursor: pointer;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: .3px;
+  letter-spacing: 0;
   line-height: 1;
-  padding: 6px 8px;
-  text-transform: uppercase;
+  min-height: 30px;
+  padding: 0 9px;
+  text-transform: none;
+  transition: background .15s, border-color .15s, color .15s, box-shadow .15s;
 }
 
-.group-add-btn:hover {
-  background: var(--bg-hover);
+.group-add-btn:hover,
+.group-add-btn:focus-visible {
+  background: var(--ui-control-hover);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--exercise-group-color, var(--c-day1)) 14%, transparent);
+}
+
+.group-add-btn .ui-button-icon {
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.4;
 }
 
 .group-dot {

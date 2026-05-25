@@ -22,6 +22,17 @@
   --header-pad-x: 24px;
   --drawer-toggle-size: 34px;
   --notes-panel-w: 360px;
+  --ui-control-h: 32px;
+  --ui-control-radius: 6px;
+  --ui-panel-radius: 8px;
+  --ui-modal-radius: 10px;
+  --ui-panel-bg: rgba(255,255,255,.018);
+  --ui-control-bg: var(--bg-card);
+  --ui-control-hover: var(--bg-hover);
+  --ui-row-border: rgba(255,255,255,.075);
+  --ui-focus-ring: 0 0 0 3px rgba(99,179,255,.14);
+  --ui-danger: #f87171;
+  --ui-danger-soft: #fecaca;
 
   --c-day1: #63b3ff;
   --c-day2: #64d6a3;

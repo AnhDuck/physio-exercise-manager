@@ -664,7 +664,7 @@ function renderAutoBackupSettings() {
   renderBrowserStorageEstimate();
   renderAutoBackupSummary(summary, normalizedHistory);
   toggle.hidden = normalizedHistory.length <= 1;
-  toggle.textContent = autoBackupHistoryExpanded ? 'Hide history' : 'Show history';
+  setIconButtonContent(toggle, autoBackupHistoryExpanded ? 'Hide history' : 'Show history', autoBackupHistoryExpanded ? 'chevron-up' : 'search');
   history.hidden = !autoBackupHistoryExpanded || normalizedHistory.length <= 1;
   renderAutoBackupHistory(history, normalizedHistory);
 }

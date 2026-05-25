@@ -310,7 +310,7 @@ function renderSetTracker() {
   const actions = el('div', 'set-tracker-actions');
   const mainActions = el('div', 'set-tracker-main-actions');
   const completeSet = el('button', 'set-action set-action-primary');
-  completeSet.appendChild(buildIconSvg('check-circle'));
+  completeSet.appendChild(buildAppIconSvg('check-circle'));
   completeSet.appendChild(elText('span', 'set-action-label', 'Complete Set'));
   completeSet.disabled = done || progress.timerCapped || isHistoricalOnly;
   applyTrackerTooltip(completeSet, TRACKER_SHORTCUT_TOOLTIP);
@@ -344,7 +344,7 @@ function buildTrackerIconButton(iconName, label, className, onClick) {
   button.type = 'button';
   button.title = label;
   button.setAttribute('aria-label', label);
-  button.appendChild(buildIconSvg(iconName));
+  button.appendChild(buildAppIconSvg(iconName));
   button.addEventListener('click', onClick);
   return button;
 }
@@ -353,25 +353,6 @@ function applyTrackerTooltip(node, text, options = {}) {
   node.classList.add('tracker-tooltip');
   node.setAttribute('data-tooltip', text);
   if (options.focusable) node.tabIndex = 0;
-}
-
-function buildIconSvg(iconName) {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('focusable', 'false');
-  const paths = {
-    x: ['M6 6l12 12', 'M18 6L6 18'],
-    wrench: ['M14.7 6.3a4 4 0 0 0-5 5L4.5 16.5a2.1 2.1 0 0 0 3 3l5.2-5.2a4 4 0 0 0 5-5l-2.6 2.6-3-3 2.6-2.6z'],
-    trash: ['M4 7h16', 'M9 7V5h6v2', 'M7 7l1 13h8l1-13', 'M10 11v5', 'M14 11v5'],
-    'check-circle': ['M20 11.1V12a8 8 0 1 1-4.7-7.3', 'M7.8 11.7l2.7 2.7L20 5'],
-  };
-  (paths[iconName] || paths.x).forEach(d => {
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', d);
-    svg.appendChild(path);
-  });
-  return svg;
 }
 
 function buildLogEditModal(ex, dateStr, progress) {
@@ -394,7 +375,7 @@ function buildLogEditModal(ex, dateStr, progress) {
   const close = elText('button', 'set-log-modal-close', '');
   close.type = 'button';
   close.setAttribute('aria-label', 'Close log editor');
-  close.appendChild(buildIconSvg('x'));
+  close.appendChild(buildAppIconSvg('x'));
   close.addEventListener('click', closeLogDetails);
   header.appendChild(close);
   modal.appendChild(header);
