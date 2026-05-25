@@ -6,10 +6,33 @@
   <title>Physio Exercise Management</title>
   <link rel="icon" type="image/svg+xml" href="assets/physio-icon.svg" />
   <script>
-    window.PEM_APP_VERSION = '1.0.27';
-    document.write(`<link rel="stylesheet" href="css/styles.css?v=${encodeURIComponent(window.PEM_APP_VERSION)}" />`);
+    window.PEM_APP_VERSION = '1.0.28';
+    const PEM_CSS_FILES = [
+      'css/00-base.css',
+      'css/10-header.css',
+      'css/20-notes-timeline.css',
+      'css/30-grid-exercises.css',
+      'css/40-modals-forms.css',
+      'css/50-settings.css',
+      'css/60-tracker.css',
+      'css/70-images-scrollbar.css',
+      'css/90-responsive.css',
+    ];
+    PEM_CSS_FILES.forEach((src) => {
+      document.write(`<link rel="stylesheet" href="${src}?v=${encodeURIComponent(window.PEM_APP_VERSION)}" />`);
+    });
   </script>
-  <noscript><link rel="stylesheet" href="css/styles.css?v=1.0.27" /></noscript>
+  <noscript>
+    <link rel="stylesheet" href="css/00-base.css?v=1.0.28" />
+    <link rel="stylesheet" href="css/10-header.css?v=1.0.28" />
+    <link rel="stylesheet" href="css/20-notes-timeline.css?v=1.0.28" />
+    <link rel="stylesheet" href="css/30-grid-exercises.css?v=1.0.28" />
+    <link rel="stylesheet" href="css/40-modals-forms.css?v=1.0.28" />
+    <link rel="stylesheet" href="css/50-settings.css?v=1.0.28" />
+    <link rel="stylesheet" href="css/60-tracker.css?v=1.0.28" />
+    <link rel="stylesheet" href="css/70-images-scrollbar.css?v=1.0.28" />
+    <link rel="stylesheet" href="css/90-responsive.css?v=1.0.28" />
+  </noscript>
 </head>
 <body>
 

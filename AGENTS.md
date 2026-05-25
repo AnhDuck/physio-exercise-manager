@@ -4,7 +4,9 @@ Static personal physio tracker. No build step/server/deps; open `index.html` or 
 
 ## Files / load order
 
-`index.html` loads CSS + JS in this order via `PEM_APP_VERSION` cache-busting: `data.js`, `storage.js`, `constants.js`, `state.js`, `dates.js`, `dom.js`, `sessions.js`, `exercises.js`, `grid.js`, `tracker.js`, `timeline.js`, `backup.js`, `auto-backup.js`, `settings.js`, `images.js`, `main.js`. Never load `main.js` before the feature files it binds. `app.js` is only a pointer; app logic lives in feature files. `assets/physio-icon.svg` is the icon.
+`index.html` loads CSS + JS via `PEM_APP_VERSION` cache-busting. CSS order is manual and cascade-sensitive: `00-base.css`, `10-header.css`, `20-notes-timeline.css`, `30-grid-exercises.css`, `40-modals-forms.css`, `50-settings.css`, `60-tracker.css`, `70-images-scrollbar.css`, `90-responsive.css`. Keep `90-responsive.css` last.
+
+JS load order is: `data.js`, `storage.js`, `constants.js`, `state.js`, `dates.js`, `dom.js`, `sessions.js`, `exercises.js`, `grid.js`, `tracker.js`, `timeline-data.js`, `timeline-filters.js`, `timeline-render.js`, `timeline-notes.js`, `timeline-export.js`, `timeline-edit.js`, `timeline.js`, `backup.js`, `auto-backup.js`, `settings.js`, `images.js`, `main.js`. Never load `main.js` before the feature files it binds. `app.js` is only a pointer; app logic lives in feature files. `assets/physio-icon.svg` is the icon.
 
 Module map: `data` defaults/groups; `storage` localStorage + local date helpers; `constants` labels/quotes; `state` mutable globals/migrations; `dates` calendar/schedule; `dom` DOM/toast helpers; `sessions` completion/set progress; `exercises` ordering/blocks/drag/edit; `grid` compact grid/week nav; `tracker` set tracker/timer/log edit/cues/shortcuts; `timeline` notes/events/Markdown/event edit; `backup` JSON import/export/validation; `auto-backup` folder backups; `settings` settings/review/block/backup UI; `images` upload/URL import; `main` bootstrap/static bindings.
 
