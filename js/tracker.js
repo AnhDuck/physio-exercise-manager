@@ -1,52 +1,6 @@
 // Set tracker, timer UI, log editing, and tracker shortcuts.
 
-function isCompletedActionMenuOpen(exId, dateStr) {
-  return completedActionMenu?.exerciseId === exId && completedActionMenu?.dateStr === dateStr;
-}
-
-function openCompletedActionMenu(exId, dateStr) {
-  completedActionMenu = { exerciseId: exId, dateStr };
-  render({ preserveCompletedActionMenu: true });
-}
-
-function closeCompletedActionMenu() {
-  if (!completedActionMenu) return;
-  completedActionMenu = null;
-  render();
-}
-
-function buildCompletedActionMenu(exId, dateStr) {
-  const menu = el('div', 'completed-action-menu');
-  menu.setAttribute('role', 'menu');
-  menu.addEventListener('click', (e) => e.stopPropagation());
-
-  const view = elText('button', 'completed-action completed-action-view', 'View Log');
-  view.type = 'button';
-  view.setAttribute('role', 'menuitem');
-  view.addEventListener('click', () => {
-    completedActionMenu = null;
-    openSetTracker(exId, dateStr);
-  });
-
-  const clear = elText('button', 'completed-action completed-action-clear', 'Clear Log');
-  clear.type = 'button';
-  clear.setAttribute('role', 'menuitem');
-  clear.addEventListener('click', () => {
-    completedActionMenu = null;
-    confirmAndClearExerciseProgress(exId, dateStr);
-  });
-
-  menu.appendChild(view);
-  menu.appendChild(clear);
-  return menu;
-}
-
 function handleSetCellClick(exId, dateStr) {
-  if (isExerciseDone(dateStr, exId) && !(activeTracker?.exerciseId === exId && activeTracker?.dateStr === dateStr)) {
-    openCompletedActionMenu(exId, dateStr);
-    return;
-  }
-  completedActionMenu = null;
   if (activeTracker?.exerciseId === exId && activeTracker?.dateStr === dateStr) {
     completeActiveExercise();
     return;
@@ -823,11 +777,6 @@ function syncQuickNoteDateTime() {
 }
 
 function handleSetTrackerKeydown(e) {
-  if (completedActionMenu && e.key === 'Escape') {
-    e.preventDefault();
-    closeCompletedActionMenu();
-    return;
-  }
   if (!activeTracker) return;
   if (e.key === 'Escape' && activeTracker.detailsOpen) {
     e.preventDefault();

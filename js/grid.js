@@ -1,7 +1,6 @@
 // Calendar grid rendering and week navigation.
 
-function render(options = {}) {
-  if (!options.preserveCompletedActionMenu) completedActionMenu = null;
+function render() {
   const dates = weekDates(currentWeekStart);
   const todayS = todayStr();
   const monthLabel = `${MONTH_NAMES[currentWeekStart.getMonth()]} ${currentWeekStart.getFullYear()}`;
@@ -283,7 +282,7 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber, blockInfo =
     );
 
     const btn = el('button', 'check-btn set-cell-btn' + (done ? ' done' : '') + (progress && !done ? ' in-progress' : ''));
-    btn.title = isActive ? 'Complete all sets' : (done ? 'View or clear log' : 'Track sets');
+    btn.title = isActive ? 'Complete all sets' : (done ? 'Open set tracker' : 'Track sets');
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       handleSetCellClick(ex.id, dateS);
@@ -297,9 +296,6 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber, blockInfo =
     }
 
     cell.appendChild(btn);
-    if (isCompletedActionMenuOpen(ex.id, dateS)) {
-      cell.appendChild(buildCompletedActionMenu(ex.id, dateS));
-    }
     if (doseEvents.length) {
       const marker = elText('button', 'dose-marker', String(doseEvents.length));
       marker.title = 'Dose change logged';

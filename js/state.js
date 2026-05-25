@@ -12,7 +12,6 @@ let imageImportPending = false;
 let editingEventId = null;
 let lastTodayStr = null;
 let activeTracker = null;    // { exerciseId, dateStr }
-let completedActionMenu = null; // { exerciseId, dateStr }
 let lastSetLogAt = 0;
 let cueAudioContext = null;
 let settingsActiveTab = 'general';
