@@ -33,10 +33,6 @@
   pointer-events: none;
 }
 
-.set-tracker.complete::before {
-  background: var(--accent-green);
-}
-
 .set-tracker-main {
   grid-area: info;
   display: grid;
@@ -253,10 +249,11 @@
 .tracker-icon-btn:hover,
 .tracker-icon-btn:focus-visible,
 .set-log-toggle[aria-expanded="true"] {
-  border-color: rgba(99,179,255,.52);
-  background: var(--bg-hover);
-  color: var(--text);
+  border-color: color-mix(in srgb, var(--tracker-color) 58%, var(--border));
+  background: color-mix(in srgb, var(--tracker-color) 14%, var(--bg-hover));
+  color: #fff;
   outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tracker-color) 12%, transparent);
 }
 
 .set-log-clear:hover,
@@ -268,7 +265,9 @@
 .set-tracker-timer {
   grid-area: timer;
   display: grid;
-  grid-template-columns: minmax(190px, .82fr) minmax(138px, .38fr) minmax(0, 1fr);
+  grid-template-columns: max-content minmax(144px, .55fr);
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(220px, 1fr);
   gap: 0;
   min-width: 0;
   overflow: hidden;
@@ -283,8 +282,8 @@
   align-content: center;
   gap: 5px;
   min-width: 0;
-  min-height: 78px;
-  padding: 12px;
+  min-height: 70px;
+  padding: 11px 14px;
   border-right: 1px solid var(--tracker-row-border);
   outline: none;
 }
@@ -295,6 +294,9 @@
 
 .set-tracker-metric-since {
   background: color-mix(in srgb, var(--tracker-color) 8%, transparent);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--tracker-color) 72%, transparent);
+  min-width: 172px;
+  padding-left: 16px;
 }
 
 .set-tracker-timer-label,
@@ -324,7 +326,7 @@
 
 .set-tracker-metric-since .set-tracker-timer-value {
   color: #f8fafc;
-  font-size: 44px;
+  font-size: 42px;
   font-weight: 900;
 }
 
@@ -387,6 +389,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   min-width: 0;
   min-height: 42px;
   border: 1px solid var(--border);
@@ -403,22 +406,49 @@
   transition: background .15s, border-color .15s, color .15s, filter .15s;
 }
 
+.set-action svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+}
+
+.set-action-label {
+  min-width: 0;
+}
+
 .set-action:disabled {
   cursor: not-allowed;
   opacity: .45;
 }
 
 .set-action-primary {
-  border-color: var(--primary-accent-blue);
-  background: var(--primary-accent-blue);
+  border-color: color-mix(in srgb, var(--tracker-color) 82%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--tracker-color) 86%, #fff 6%),
+    color-mix(in srgb, var(--tracker-color) 80%, #000 8%)
+  );
   color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.14);
 }
 
 .set-action-primary:not(:disabled):hover,
 .set-action-primary:not(:disabled):focus-visible {
-  border-color: var(--primary-accent-blue-hover);
-  background: var(--primary-accent-blue-hover);
+  border-color: color-mix(in srgb, var(--tracker-color) 92%, #fff 8%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--tracker-color) 92%, #fff 10%),
+    color-mix(in srgb, var(--tracker-color) 84%, #000 6%)
+  );
   outline: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    0 0 0 3px color-mix(in srgb, var(--tracker-color) 14%, transparent);
 }
 
 .set-action-secondary {
@@ -620,8 +650,8 @@
 
 .set-log-datetime input:focus,
 .set-log-field input:focus {
-  border-color: rgba(99,179,255,.72);
-  box-shadow: 0 0 0 3px rgba(99,179,255,.12);
+  border-color: color-mix(in srgb, var(--tracker-color) 68%, var(--border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tracker-color) 12%, transparent);
 }
 
 .set-log-section-help {

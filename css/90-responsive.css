@@ -123,7 +123,7 @@
   }
 
   .set-tracker-timer {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(172px, max-content) minmax(0, 1fr);
   }
 
   .set-tracker-set-timeline {
@@ -292,7 +292,7 @@
   }
 
   .set-tracker-metric-since .set-tracker-timer-value {
-    font-size: 38px;
+    font-size: 36px;
   }
 
   #settings-modal {
