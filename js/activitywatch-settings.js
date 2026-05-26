@@ -73,14 +73,16 @@ function renderActivityWatchCorsSettings() {
   const rustConfig = document.getElementById('settings-activitywatch-cors-rust');
   const pythonConfig = document.getElementById('settings-activitywatch-cors-python');
   const note = document.getElementById('settings-activitywatch-cors-note');
-  const currentOrigin = window.location.origin === 'null' ? 'file://' : window.location.origin;
-  const configOrigin = window.location.origin === 'null' ? 'http://127.0.0.1:8891' : window.location.origin;
+  const isFileOrigin = window.location.protocol === 'file:';
+  const recommendedOrigin = 'http://127.0.0.1:8895';
+  const currentOrigin = isFileOrigin ? 'file:// (not supported for ActivityWatch sync)' : window.location.origin;
+  const configOrigin = isFileOrigin ? recommendedOrigin : window.location.origin;
   if (origin) origin.textContent = currentOrigin;
   if (rustConfig) rustConfig.textContent = `cors = ["${configOrigin}"]`;
   if (pythonConfig) pythonConfig.textContent = `cors_origins = "${configOrigin}"`;
   if (note) {
-    note.textContent = window.location.protocol === 'file:'
-      ? 'This feature cannot use file:// reliably. Serve PEM from a local static server, then add that http://127.0.0.1 origin to ActivityWatch CORS.'
+    note.textContent = isFileOrigin
+      ? `ActivityWatch sync cannot use file://. Serve PEM from a local static server, open ${recommendedOrigin}/index.html?v=${window.PEM_APP_VERSION}, then add that exact origin to ActivityWatch CORS.`
       : 'After changing ActivityWatch CORS, restart ActivityWatch or aw-server-rust, then refresh here.';
   }
 }

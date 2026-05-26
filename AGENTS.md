@@ -1,14 +1,14 @@
 # Physio Exercise Management - Agent Guide
 
-Static personal physio tracker. No build step/server/deps; open `index.html` or host repo root statically. User data is browser `localStorage`; folder backup also depends on browser-origin-scoped IndexedDB + File System Access permissions. A folder chosen on one origin (`127.0.0.1:8891`, another port, or `file://`) is not connected on another origin; verify backup on the same origin before calling it broken.
+Static personal physio tracker. No build step/server/deps; open `index.html` directly for normal physio tracking or host repo root statically. The ActivityWatch integration is the exception: browser security/CORS means it must run from a local `http://127.0.0.1:<port>` origin, not `file://`. User data is browser `localStorage`; folder backup also depends on browser-origin-scoped IndexedDB + File System Access permissions. A folder chosen on one origin (`127.0.0.1:8891`, another port, or `file://`) is not connected on another origin; verify backup on the same origin before calling it broken.
 
 ## Files / load order
 
-`index.html` loads CSS + JS via `PEM_APP_VERSION` cache-busting. CSS order is manual and cascade-sensitive: `00-base.css`, `10-header.css`, `20-notes-timeline.css`, `30-grid-exercises.css`, `40-modals-forms.css`, `50-settings.css`, `60-tracker.css`, `70-images-scrollbar.css`, `90-responsive.css`. Keep `90-responsive.css` last.
+`index.html` loads CSS + JS via `PEM_APP_VERSION` cache-busting. CSS order is manual and cascade-sensitive: `00-base.css`, `10-header.css`, `20-notes-timeline.css`, `30-grid-exercises.css`, `40-modals-forms.css`, `50-settings.css`, `60-tracker.css`, `65-activitywatch.css`, `70-images-scrollbar.css`, `90-responsive.css`. Keep `90-responsive.css` last.
 
-JS load order is: `data.js`, `storage.js`, `constants.js`, `state.js`, `dates.js`, `dom.js`, `sessions.js`, `exercises.js`, `grid.js`, `tracker.js`, `timeline-data.js`, `timeline-filters.js`, `timeline-render.js`, `timeline-notes.js`, `timeline-export.js`, `timeline-edit.js`, `timeline.js`, `backup.js`, `auto-backup.js`, `settings.js`, `images.js`, `main.js`. Never load `main.js` before the feature files it binds. `app.js` is only a pointer; app logic lives in feature files. `assets/physio-icon.svg` is the icon.
+JS load order is: `data.js`, `storage.js`, `constants.js`, `state.js`, `dates.js`, `dom.js`, `sessions.js`, `exercises.js`, `grid.js`, `tracker.js`, `activitywatch-data.js`, `timeline-data.js`, `timeline-filters.js`, `timeline-render.js`, `timeline-notes.js`, `timeline-export.js`, `timeline-edit.js`, `timeline.js`, `backup.js`, `auto-backup.js`, `settings.js`, `activitywatch-dashboard.js`, `activitywatch-settings.js`, `images.js`, `main.js`. Never load `main.js` before the feature files it binds. `app.js` is only a pointer; app logic lives in feature files. `assets/physio-icon.svg` is the icon.
 
-Module map: `data` defaults/groups; `storage` localStorage + local date helpers; `constants` labels/quotes; `state` mutable globals/migrations; `dates` calendar/schedule; `dom` DOM/toast helpers; `sessions` completion/set progress; `exercises` ordering/blocks/drag/edit; `grid` compact grid/week nav; `tracker` set tracker/timer/log edit/cues/shortcuts; `timeline` notes/events/Markdown/event edit; `backup` JSON import/export/validation; `auto-backup` folder backups; `settings` settings/review/block/backup UI; `images` upload/URL import; `main` bootstrap/static bindings.
+Module map: `data` defaults/groups; `storage` localStorage + local date helpers; `constants` labels/quotes; `state` mutable globals/migrations; `dates` calendar/schedule; `dom` DOM/toast helpers; `sessions` completion/set progress; `exercises` ordering/blocks/drag/edit; `grid` compact grid/week nav; `tracker` set tracker/timer/log edit/cues/shortcuts; `activitywatch-data` local ActivityWatch REST client/query/storage/sync; `activitywatch-dashboard` ActivityWatch category dashboard; `activitywatch-settings` ActivityWatch Settings tab; `timeline` notes/events/Markdown/event edit; `backup` JSON import/export/validation; `auto-backup` folder backups; `settings` settings/review/block/backup UI; `images` upload/URL import; `main` bootstrap/static bindings.
 
 ## Versioning + browser checks
 
@@ -30,7 +30,7 @@ Timeline storage/sorting uses actual calendar dates/times. `personalDayStartTime
 
 ## Data model
 
-localStorage keys: `pem_exercises` array, `pem_sessions` object keyed by `YYYY-MM-DD`, `pem_settings` object, `pem_events` array. `DEFAULT_EXERCISES` only seeds new installs when `pem_exercises` is missing. Hidden exercises remain in `pem_exercises` to preserve linked session/timeline data but are excluded from active calendar.
+localStorage keys: `pem_exercises` array, `pem_sessions` object keyed by `YYYY-MM-DD`, `pem_settings` object, `pem_events` array, and `pem_activitywatch` aggregate ActivityWatch summaries. `DEFAULT_EXERCISES` only seeds new installs when `pem_exercises` is missing. Hidden exercises remain in `pem_exercises` to preserve linked session/timeline data but are excluded from active calendar.
 
 Exercise fields: `id`, `name`, `group`, `sets`, `reps`, `resistance`, `frequency`, `instructions`, `image` (data URL/null), `order`, optional `hiddenAt`, `deletedAt`, `blockId`, `changedSinceLastPhysioVisit`. Legacy per-exercise `blockTitle`, `blockMinGapHours`, `blockPreferredGapHours` are migration-only and should not be reintroduced.
 
@@ -43,6 +43,8 @@ Stored events are `note`, `dose-change`, and `exercise-added` with `id`, `date`,
 Blocks are group-scoped: definitions live in `settings.blocks[group]`; exercises only store `blockId`. Settings uses a draft/apply/discard flow for block edits. Moving an exercise to another group clears invalid `blockId`; block-member drag/drop is constrained to the same block. Do not restore legacy exercise-level block title/gap fields.
 
 Folder auto-backup writes a dated daily file plus `physio-exercise-auto-backup-latest.json`, verifies by reading/validating latest, cleans old dated files, records success/error/missed history, and drives Settings backup status + the backup health banner. Do not treat folder backup as simple JSON download; it needs File System Access support, stored directory handles, permission checks, reconnect state, and same-origin testing.
+
+ActivityWatch data lives in `pem_activitywatch` and must be aggregate-only: daily total active seconds, category totals, hourly category totals, category colors, optional diagnostic app totals, bucket/status metadata, and sync timestamps. Never store raw ActivityWatch titles, URLs, domains, or raw events in PEM. Backups/imports/data-health/storage usage must include `pem_activitywatch`; writes must use the safe-save helper like other app data.
 
 ## Behavior constraints
 
@@ -61,6 +63,12 @@ Security/storage: use `textContent` or DOM helpers for user-controlled strings. 
 All app-data writes must go through the safe-save helper; never call `localStorage.setItem` directly for app keys outside storage internals.
 
 The Backup tab is the data control center. Save-failure status outranks data safety and folder-backup health in the shared backup health banner.
+
+ActivityWatch integration is read-only against the user's local ActivityWatch server, default `http://127.0.0.1:5600`. Do not add a Python helper, build step, dependency, or server-side proxy for it. PEM uses browser `fetch` and therefore needs ActivityWatch CORS configured for the exact PEM origin, for example `cors = ["http://127.0.0.1:8895"]` in `aw-server-rust` config followed by an ActivityWatch restart. `file://` is not a supported origin for ActivityWatch sync; the rest of PEM can still run from `file://`.
+
+ActivityWatch query code should mirror ActivityWatch's canonical desktop query shape: window bucket + AFK bucket, `not-afk` filtering, focused browser bucket events via `split_url_events`, audible browser events counted as active when available, and ActivityWatch category rules/colors from `/api/0/settings`. Use exact bucket IDs with `query_bucket("bucket-id")`; use `find_bucket(...)` only for prefix IDs ending in `_`. PEM waking-day periods are based on `settings.personalDayStartTime`; if ActivityWatch `startOfDay` differs, warn but do not block sync.
+
+ActivityWatch UI priorities: category dashboard first, not top applications. The dashboard uses stacked daily category bars and selected-day category breakdown. Timeline day headers show compact active-time metadata only; do not add separate ActivityWatch rows to the timeline. Settings owns server URL, CORS guidance, watcher bucket state, start-of-day comparison, last sync, and distinct missing-window/missing-AFK/offline/CORS/file-origin states. Startup/dashboard/timeline sync should cover the current waking day plus previous 7 waking days and use a throttle around 60 seconds unless the user manually refreshes.
 
 ## Checks
 
