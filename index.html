@@ -6,7 +6,7 @@
   <title>Physio Exercise Management</title>
   <link rel="icon" type="image/svg+xml" href="assets/physio-icon.svg" />
   <script>
-    window.PEM_APP_VERSION = '1.0.47';
+    window.PEM_APP_VERSION = '1.0.48';
     const PEM_CSS_FILES = [
       'css/00-base.css',
       'css/10-header.css',
@@ -24,16 +24,16 @@
     });
   </script>
   <noscript>
-    <link rel="stylesheet" href="css/00-base.css?v=1.0.47" />
-    <link rel="stylesheet" href="css/10-header.css?v=1.0.47" />
-    <link rel="stylesheet" href="css/20-notes-timeline.css?v=1.0.47" />
-    <link rel="stylesheet" href="css/30-grid-exercises.css?v=1.0.47" />
-    <link rel="stylesheet" href="css/40-modals-forms.css?v=1.0.47" />
-    <link rel="stylesheet" href="css/50-settings.css?v=1.0.47" />
-    <link rel="stylesheet" href="css/60-tracker.css?v=1.0.47" />
-    <link rel="stylesheet" href="css/65-activitywatch.css?v=1.0.47" />
-    <link rel="stylesheet" href="css/70-images-scrollbar.css?v=1.0.47" />
-    <link rel="stylesheet" href="css/90-responsive.css?v=1.0.47" />
+    <link rel="stylesheet" href="css/00-base.css?v=1.0.48" />
+    <link rel="stylesheet" href="css/10-header.css?v=1.0.48" />
+    <link rel="stylesheet" href="css/20-notes-timeline.css?v=1.0.48" />
+    <link rel="stylesheet" href="css/30-grid-exercises.css?v=1.0.48" />
+    <link rel="stylesheet" href="css/40-modals-forms.css?v=1.0.48" />
+    <link rel="stylesheet" href="css/50-settings.css?v=1.0.48" />
+    <link rel="stylesheet" href="css/60-tracker.css?v=1.0.48" />
+    <link rel="stylesheet" href="css/65-activitywatch.css?v=1.0.48" />
+    <link rel="stylesheet" href="css/70-images-scrollbar.css?v=1.0.48" />
+    <link rel="stylesheet" href="css/90-responsive.css?v=1.0.48" />
   </noscript>
 </head>
 <body>
@@ -453,136 +453,151 @@
         <section class="settings-panel" id="settings-panel-activitywatch" role="tabpanel" aria-labelledby="settings-tab-activitywatch" data-settings-panel="activitywatch" hidden>
           <div class="settings-section is-first">
             <div class="settings-section-header">
-              <h3>How this works</h3>
+              <h3>ActivityWatch setup</h3>
+            </div>
+            <div class="activitywatch-origin-note" id="settings-activitywatch-origin-note">
+              <strong id="settings-activitywatch-origin-note-title">Checking PEM address</strong>
+              <span id="settings-activitywatch-origin-note-detail">PEM is checking whether this page is opened from the daily localhost address.</span>
+            </div>
+            <div class="settings-row-group activitywatch-setup-list">
+              <div class="settings-action-row activitywatch-step-row">
+                <span class="activitywatch-step-number">1</span>
+                <div class="settings-action-label">
+                  <strong>Open PEM from localhost</strong>
+                  <span>For daily use with ActivityWatch, open PEM at <code>http://127.0.0.1:8891/index.html</code>. Direct-file mode still works for exercises, but ActivityWatch sync cannot work there.</span>
+                </div>
+                <button class="settings-backup-btn activitywatch-copy-btn" type="button" data-settings-icon="copy" data-activitywatch-copy="production-url">Copy URL</button>
+              </div>
+              <div class="settings-action-row activitywatch-step-row">
+                <span class="activitywatch-step-number">2</span>
+                <div class="settings-action-label">
+                  <strong>Open the ActivityWatch config folder</strong>
+                  <span>Right-click the ActivityWatch tray icon, choose <strong>Open config folder</strong>, then open the <code>aw-server</code> folder.</span>
+                </div>
+              </div>
+              <div class="settings-action-row activitywatch-step-row">
+                <span class="activitywatch-step-number">3</span>
+                <div class="settings-action-label">
+                  <strong>Edit the active server config</strong>
+                  <span>Your tray menu shows <code>aw-server</code> checked. Open <code>aw-server/aw-server.toml</code>. Do not use the rust config unless <code>aw-server-rust</code> is checked instead.</span>
+                </div>
+              </div>
+              <div class="settings-action-row activitywatch-step-row">
+                <span class="activitywatch-step-number">4</span>
+                <div class="settings-action-label">
+                  <strong>Add PEM to allowed browser origins</strong>
+                  <span>Add or update this line in <code>aw-server/aw-server.toml</code> so ActivityWatch allows the daily PEM address.</span>
+                  <code class="activitywatch-config-code activitywatch-inline-code" id="settings-activitywatch-cors-primary">cors_origins = "http://127.0.0.1:8891"</code>
+                </div>
+                <button class="settings-backup-btn activitywatch-copy-btn" type="button" data-settings-icon="copy" data-activitywatch-copy="primary-cors">Copy line</button>
+              </div>
+              <div class="settings-action-row activitywatch-step-row">
+                <span class="activitywatch-step-number">5</span>
+                <div class="settings-action-label">
+                  <strong>Restart ActivityWatch, then refresh PEM</strong>
+                  <span>Quit and reopen ActivityWatch so it reads the config change, then press Refresh now. PEM imports only summarized active-time data.</span>
+                </div>
+                <button class="settings-backup-btn" id="settings-activitywatch-refresh" type="button" data-settings-icon="reconnect">Refresh now</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h3>Connection check</h3>
             </div>
             <div class="settings-row-group">
-              <div class="settings-action-row activitywatch-help-row" title="ActivityWatch runs a small private web service on this computer. PEM asks that service for summarized active-time numbers.">
-                <div class="settings-action-label">
-                  <strong>ActivityWatch runs on this computer</strong>
-                  <span>ActivityWatch keeps its own local service at <code>http://127.0.0.1:5600</code>. 127.0.0.1 means this same PC, not the internet.</span>
-                </div>
-              </div>
-              <div class="settings-action-row activitywatch-help-row" title="PEM also needs to be opened from a local web address so the browser can give it a stable identity.">
-                <div class="settings-action-label">
-                  <strong>PEM needs a local web address for ActivityWatch sync</strong>
-                  <span>Opening PEM as a file still works for exercises, but ActivityWatch sync needs <code>http://127.0.0.1:8891/index.html</code> instead of <code>file://</code>.</span>
-                </div>
-              </div>
-              <label class="settings-action-row" for="setting-activitywatch-server-url" title="This is the local address where ActivityWatch is listening for requests. Most installs use the default.">
+              <label class="settings-action-row" for="setting-activitywatch-server-url">
                 <span class="settings-action-label">
-                  <strong>ActivityWatch local address</strong>
-                  <span>Usually leave this as <code>http://127.0.0.1:5600</code>. This is ActivityWatch running on this PC.</span>
+                  <strong>ActivityWatch API address</strong>
+                  <span>Usually <code>http://127.0.0.1:5600</code>. This is ActivityWatch running on this same PC.</span>
                 </span>
                 <input type="url" id="setting-activitywatch-server-url" spellcheck="false" autocomplete="off" />
               </label>
-              <div class="settings-action-row" title="This tells you whether PEM could talk to ActivityWatch and save summarized active-time data.">
+              <div class="settings-action-row">
                 <div class="settings-action-label">
                   <strong id="settings-activitywatch-state">ActivityWatch waiting</strong>
                   <span id="settings-activitywatch-detail">ActivityWatch has not synced yet.</span>
                 </div>
                 <span class="settings-status-pill is-muted" id="settings-activitywatch-pill">Waiting</span>
               </div>
-              <div class="settings-action-row" title="Use this after changing ActivityWatch settings, restarting ActivityWatch, or checking whether a connection problem is fixed.">
+              <div class="settings-action-row">
                 <div class="settings-action-label">
-                  <strong>Manual refresh</strong>
-                  <span>Refreshes the current waking day plus the previous 7 waking days.</span>
-                </div>
-                <button class="settings-backup-btn" id="settings-activitywatch-refresh" type="button" data-settings-icon="reconnect">Refresh now</button>
-              </div>
-            </div>
-            <div class="settings-status-grid activitywatch-status-grid">
-              <div class="settings-status-item" title="Computer name reported by ActivityWatch after PEM connects.">
-                <span>Host</span>
-                <strong id="settings-activitywatch-host">Unknown</strong>
-              </div>
-              <div class="settings-status-item" title="ActivityWatch version reported by the local ActivityWatch service.">
-                <span>Version</span>
-                <strong id="settings-activitywatch-version">Unknown</strong>
-              </div>
-              <div class="settings-status-item" title="When PEM last saved ActivityWatch summary data into this browser.">
-                <span>Last sync</span>
-                <strong id="settings-activitywatch-last-sync">Never</strong>
-              </div>
-              <div class="settings-status-item" title="PEM and ActivityWatch should use the same waking-day start time so dates line up.">
-                <span>Day starts</span>
-                <strong id="settings-activitywatch-day-start">Unknown</strong>
-              </div>
-              <div class="settings-status-item" title="Warns if PEM and ActivityWatch define the day boundary differently. Sync still works, but date labels may be confusing.">
-                <span>Day-start match</span>
-                <span class="settings-status-pill is-muted" id="settings-activitywatch-day-start-pill">Waiting</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="settings-section">
-            <div class="settings-section-header">
-              <h3>Permission setup (CORS)</h3>
-            </div>
-            <div class="settings-row-group">
-              <div class="settings-action-row activitywatch-help-row" title="CORS is the browser asking ActivityWatch whether this PEM page is allowed to read ActivityWatch data.">
-                <div class="settings-action-label">
-                  <strong>What CORS means here</strong>
-                  <span>Your browser blocks random websites from reading ActivityWatch. Adding PEM's local address to ActivityWatch is you saying: this local PEM app is allowed.</span>
-                </div>
-              </div>
-              <div class="settings-action-row activitywatch-help-row" title="ActivityWatch has a tray menu. Use Open config folder there to find the file this setting lives in.">
-                <div class="settings-action-label">
-                  <strong>Where to change it</strong>
-                  <span>Right-click the ActivityWatch tray icon, choose <strong>Open config folder</strong>, then open <code>aw-server-rust/config.toml</code>.</span>
-                </div>
-              </div>
-              <div class="settings-action-row" title="This is the exact identity of the PEM page currently open in your browser. ActivityWatch has to allow this identity.">
-                <div class="settings-action-label">
-                  <strong>Current PEM origin</strong>
-                  <span>This is the browser identity ActivityWatch sees. For your real PEM app, use <code>http://127.0.0.1:8891</code>.</span>
-                </div>
-                <code class="activitywatch-config-code" id="settings-activitywatch-origin">http://127.0.0.1</code>
-              </div>
-              <div class="settings-action-row activitywatch-config-row" title="Most current ActivityWatch installs use aw-server-rust. Paste or edit this line in config.toml.">
-                <div class="settings-action-label">
-                  <strong>Line to put in aw-server-rust config.toml</strong>
-                  <span>Windows path is usually <code>%LOCALAPPDATA%\activitywatch\aw-server-rust\config.toml</code>.</span>
-                </div>
-                <code class="activitywatch-config-code" id="settings-activitywatch-cors-rust">cors = []</code>
-              </div>
-              <div class="settings-action-row activitywatch-config-row" title="Only older ActivityWatch installs use this format. Most users can ignore it.">
-                <div class="settings-action-label">
-                  <strong>Older aw-server-python line</strong>
-                  <span>Only use this if your install is the older Python server.</span>
-                </div>
-                <code class="activitywatch-config-code" id="settings-activitywatch-cors-python">cors_origins = ""</code>
-              </div>
-              <div class="settings-action-row" title="After ActivityWatch reads the new config, PEM can ask for summarized active-time data from the browser.">
-                <div class="settings-action-label">
-                  <strong>Plain-English setup steps</strong>
-                  <span id="settings-activitywatch-cors-note">After changing ActivityWatch CORS, restart ActivityWatch, then refresh here.</span>
+                  <strong>Official ActivityWatch docs</strong>
+                  <span class="activitywatch-doc-links">
+                    <a href="https://docs.activitywatch.net/en/latest/configuration.html" target="_blank" rel="noopener noreferrer">Configuration</a>
+                    <a href="https://docs.activitywatch.net/en/latest/directories.html" target="_blank" rel="noopener noreferrer">Config folders</a>
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
           <div class="settings-section">
-            <div class="settings-section-header">
-              <h3>Buckets &amp; cache</h3>
-            </div>
-            <div class="settings-status-grid">
-              <div class="settings-status-item" title="ActivityWatch bucket that records which desktop app/window is active. Required.">
-                <span>Window bucket</span>
-                <strong id="settings-activitywatch-window-bucket">Not found</strong>
+            <details class="settings-disclosure activitywatch-advanced-disclosure">
+              <summary>
+                <span class="settings-disclosure-title">Advanced details</span>
+                <span class="settings-disclosure-meta" id="settings-activitywatch-advanced-summary">Buckets, sync metadata, and rust-server fallback.</span>
+              </summary>
+              <div class="settings-status-grid activitywatch-status-grid">
+                <div class="settings-status-item">
+                  <span>PEM address ActivityWatch must allow</span>
+                  <strong id="settings-activitywatch-origin">http://127.0.0.1:8891</strong>
+                </div>
+                <div class="settings-status-item">
+                  <span>Host</span>
+                  <strong id="settings-activitywatch-host">Unknown</strong>
+                </div>
+                <div class="settings-status-item">
+                  <span>Version</span>
+                  <strong id="settings-activitywatch-version">Unknown</strong>
+                </div>
+                <div class="settings-status-item">
+                  <span>Last sync</span>
+                  <strong id="settings-activitywatch-last-sync">Never</strong>
+                </div>
+                <div class="settings-status-item">
+                  <span>Day starts</span>
+                  <strong id="settings-activitywatch-day-start">Unknown</strong>
+                </div>
+                <div class="settings-status-item">
+                  <span>Day-start match</span>
+                  <span class="settings-status-pill is-muted" id="settings-activitywatch-day-start-pill">Waiting</span>
+                </div>
+                <div class="settings-status-item">
+                  <span>Window bucket</span>
+                  <strong id="settings-activitywatch-window-bucket">Not found</strong>
+                </div>
+                <div class="settings-status-item">
+                  <span>AFK bucket</span>
+                  <strong id="settings-activitywatch-afk-bucket">Not found</strong>
+                </div>
+                <div class="settings-status-item">
+                  <span>Browser buckets</span>
+                  <strong id="settings-activitywatch-browser-buckets">Not found</strong>
+                </div>
+                <div class="settings-status-item">
+                  <span>Cached days</span>
+                  <strong id="settings-activitywatch-storage-days">0</strong>
+                </div>
               </div>
-              <div class="settings-status-item" title="ActivityWatch bucket that records whether you are away from the computer. Required for active-time totals.">
-                <span>AFK bucket</span>
-                <strong id="settings-activitywatch-afk-bucket">Not found</strong>
+              <div class="settings-row-group activitywatch-advanced-group">
+                <div class="settings-action-row">
+                  <div class="settings-action-label">
+                    <strong>Rust server alternative</strong>
+                    <span>Only use this if your ActivityWatch tray menu has <code>aw-server-rust</code> checked instead of <code>aw-server</code>.</span>
+                    <code class="activitywatch-config-code activitywatch-inline-code" id="settings-activitywatch-cors-rust">cors = ["http://127.0.0.1:8891"]</code>
+                  </div>
+                  <button class="settings-backup-btn activitywatch-copy-btn" type="button" data-settings-icon="copy" data-activitywatch-copy="rust-cors">Copy rust line</button>
+                </div>
+                <div class="settings-action-row">
+                  <div class="settings-action-label">
+                    <strong>Codex/dev port</strong>
+                    <span>Codex should test on <code>http://127.0.0.1:8895</code>. Add that origin to ActivityWatch only when testing sync from the dev copy.</span>
+                  </div>
+                </div>
               </div>
-              <div class="settings-status-item" title="Optional browser buckets improve categories like YouTube, GitHub, or health sites.">
-                <span>Browser buckets</span>
-                <strong id="settings-activitywatch-browser-buckets">Not found</strong>
-              </div>
-              <div class="settings-status-item" title="Number of waking days of ActivityWatch summary data currently saved inside PEM.">
-                <span>Cached days</span>
-                <strong id="settings-activitywatch-storage-days">0</strong>
-              </div>
-            </div>
+            </details>
           </div>
         </section>
 

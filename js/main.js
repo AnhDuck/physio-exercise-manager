@@ -144,6 +144,7 @@ function bindStaticEvents() {
   document.getElementById('setting-auto-backup-time').addEventListener('change', autosaveAutoBackupTime);
   document.getElementById('setting-activitywatch-server-url')?.addEventListener('change', saveActivityWatchServerUrlSetting);
   document.getElementById('settings-activitywatch-refresh')?.addEventListener('click', refreshActivityWatchFromSettings);
+  document.getElementById('settings-panel-activitywatch')?.addEventListener('click', handleActivityWatchSettingsClick);
   document.addEventListener('keydown', handleSettingsKeydown);
   document.getElementById('settings-modal').addEventListener('click', (e) => {
     if (e.target === document.getElementById('settings-modal')) closeSettingsModal();

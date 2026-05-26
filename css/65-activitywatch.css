@@ -319,6 +319,71 @@
   font-size: 12px;
 }
 
+.activitywatch-origin-note {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(245,196,90,.32);
+  border-radius: var(--ui-panel-radius);
+  background: rgba(245,196,90,.08);
+  color: #f8e3ae;
+}
+
+.activitywatch-origin-note.is-ok {
+  border-color: rgba(121,214,189,.34);
+  background: rgba(121,214,189,.08);
+  color: #c7f7ea;
+}
+
+.activitywatch-origin-note.is-issue {
+  border-color: rgba(248,113,113,.42);
+  background: rgba(248,113,113,.1);
+  color: #fecaca;
+}
+
+.activitywatch-origin-note strong {
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.activitywatch-origin-note span {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.activitywatch-step-row {
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.activitywatch-step-row .settings-backup-btn {
+  align-self: center;
+}
+
+.activitywatch-step-number {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(99,179,255,.34);
+  border-radius: 999px;
+  background: rgba(99,179,255,.09);
+  color: #cfe8ff;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.activitywatch-inline-code {
+  justify-self: start;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 5px;
+}
+
 .activitywatch-help-row code,
 .settings-action-label code {
   padding: 1px 4px;
@@ -353,6 +418,35 @@
   margin-top: 10px;
 }
 
+.activitywatch-doc-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+
+.activitywatch-doc-links a {
+  color: #cfe8ff;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.activitywatch-doc-links a:hover,
+.activitywatch-doc-links a:focus-visible {
+  text-decoration: underline;
+}
+
+.activitywatch-advanced-disclosure .activitywatch-status-grid,
+.activitywatch-advanced-group {
+  margin-top: 0;
+  border-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.activitywatch-advanced-group {
+  border-top: 1px solid var(--settings-row-border);
+}
+
 @media (max-width: 900px) {
   .activitywatch-dashboard-summary {
     grid-template-columns: 1fr;
@@ -366,6 +460,15 @@
   .activitywatch-config-code {
     justify-self: start;
   }
+
+  .activitywatch-step-row {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .activitywatch-step-row .settings-backup-btn {
+    grid-column: 2;
+    justify-self: start;
+  }
 }
 
 @media (max-width: 700px) {
@@ -375,8 +478,13 @@
 
   .activitywatch-section-heading,
   .activitywatch-status-row,
-  .activitywatch-category-row {
+  .activitywatch-category-row,
+  .activitywatch-step-row {
     grid-template-columns: 1fr;
+  }
+
+  .activitywatch-step-row .settings-backup-btn {
+    grid-column: 1;
   }
 
   .activitywatch-stacked-chart {

@@ -1,5 +1,11 @@
 // ActivityWatch Settings tab rendering and controls.
 
+const ACTIVITYWATCH_PEM_PRODUCTION_ORIGIN = 'http://127.0.0.1:8891';
+const ACTIVITYWATCH_PEM_DEV_ORIGIN = 'http://127.0.0.1:8895';
+const ACTIVITYWATCH_PEM_PRODUCTION_URL = `${ACTIVITYWATCH_PEM_PRODUCTION_ORIGIN}/index.html`;
+const ACTIVITYWATCH_PRIMARY_CORS_LINE = `cors_origins = "${ACTIVITYWATCH_PEM_PRODUCTION_ORIGIN}"`;
+const ACTIVITYWATCH_RUST_CORS_LINE = `cors = ["${ACTIVITYWATCH_PEM_PRODUCTION_ORIGIN}"]`;
+
 function syncActivityWatchSettingsControls() {
   const input = document.getElementById('setting-activitywatch-server-url');
   if (input) input.value = getActivityWatchServerUrl();
@@ -21,8 +27,8 @@ function renderActivityWatchSettings() {
   const panel = document.getElementById('settings-panel-activitywatch');
   if (!panel) return;
   syncActivityWatchSettingsControls();
+  renderActivityWatchSetupSettings();
   renderActivityWatchConnectionSettings();
-  renderActivityWatchCorsSettings();
   renderActivityWatchBucketSettings();
 }
 
@@ -37,6 +43,7 @@ function renderActivityWatchConnectionSettings() {
   const dayStart = document.getElementById('settings-activitywatch-day-start');
   const dayStartPill = document.getElementById('settings-activitywatch-day-start-pill');
   const refreshBtn = document.getElementById('settings-activitywatch-refresh');
+  const advancedSummary = document.getElementById('settings-activitywatch-advanced-summary');
 
   if (state) {
     state.textContent = activityWatchStatusTitle(status);
@@ -66,25 +73,97 @@ function renderActivityWatchConnectionSettings() {
     refreshBtn.disabled = status.code === 'syncing';
     setSettingsButtonContent(refreshBtn, status.code === 'syncing' ? 'Syncing...' : 'Refresh now', 'reconnect');
   }
+  if (advancedSummary) {
+    advancedSummary.textContent = activityWatchData.lastSyncAt
+      ? `Last sync ${formatAutoBackupDateTime(activityWatchData.lastSyncAt)}.`
+      : 'Buckets, sync metadata, and rust-server fallback.';
+  }
 }
 
-function renderActivityWatchCorsSettings() {
+function renderActivityWatchSetupSettings() {
+  renderActivityWatchOriginNote();
   const origin = document.getElementById('settings-activitywatch-origin');
+  const primaryConfig = document.getElementById('settings-activitywatch-cors-primary');
   const rustConfig = document.getElementById('settings-activitywatch-cors-rust');
-  const pythonConfig = document.getElementById('settings-activitywatch-cors-python');
-  const note = document.getElementById('settings-activitywatch-cors-note');
-  const isFileOrigin = window.location.protocol === 'file:';
-  const recommendedOrigin = 'http://127.0.0.1:8891';
-  const currentOrigin = isFileOrigin ? 'file:// (not supported for ActivityWatch sync)' : window.location.origin;
-  const configOrigin = isFileOrigin ? recommendedOrigin : window.location.origin;
-  if (origin) origin.textContent = currentOrigin;
-  if (rustConfig) rustConfig.textContent = `cors = ["${configOrigin}"]`;
-  if (pythonConfig) pythonConfig.textContent = `cors_origins = "${configOrigin}"`;
-  if (note) {
-    note.textContent = isFileOrigin
-      ? `ActivityWatch sync cannot use file://. Double-click Start PEM Localhost.bat, open ${recommendedOrigin}/index.html?v=${window.PEM_APP_VERSION}, add ${recommendedOrigin} to ActivityWatch CORS, restart ActivityWatch, then refresh here.`
-      : `If refresh says CORS is blocked: right-click ActivityWatch in the tray, open the config folder, edit aw-server-rust/config.toml so it includes ${window.location.origin}, save, fully restart ActivityWatch, then press Refresh now.`;
+  if (origin) origin.textContent = activityWatchCurrentPemOriginLabel();
+  if (primaryConfig) primaryConfig.textContent = ACTIVITYWATCH_PRIMARY_CORS_LINE;
+  if (rustConfig) rustConfig.textContent = ACTIVITYWATCH_RUST_CORS_LINE;
+}
+
+function renderActivityWatchOriginNote() {
+  const note = document.getElementById('settings-activitywatch-origin-note');
+  const title = document.getElementById('settings-activitywatch-origin-note-title');
+  const detail = document.getElementById('settings-activitywatch-origin-note-detail');
+  if (!note || !title || !detail) return;
+
+  const info = activityWatchOriginInfo();
+  note.classList.toggle('is-ok', info.level === 'ok');
+  note.classList.toggle('is-warning', info.level === 'warning');
+  note.classList.toggle('is-issue', info.level === 'issue');
+  title.textContent = info.title;
+  detail.textContent = info.detail;
+}
+
+function activityWatchOriginInfo() {
+  if (window.location.protocol === 'file:') {
+    return {
+      level: 'issue',
+      title: 'ActivityWatch sync is disabled in direct-file mode',
+      detail: 'Use Start PEM Localhost.bat, then open http://127.0.0.1:8891/index.html for ActivityWatch sync.',
+    };
   }
+  if (window.location.origin === ACTIVITYWATCH_PEM_PRODUCTION_ORIGIN) {
+    return {
+      level: 'ok',
+      title: 'Daily PEM address',
+      detail: 'This is the real local PEM origin for your daily data and ActivityWatch setup.',
+    };
+  }
+  if (window.location.origin === ACTIVITYWATCH_PEM_DEV_ORIGIN) {
+    return {
+      level: 'warning',
+      title: 'Codex/dev test address',
+      detail: 'This browser data is separate from daily 8891 data. Use it for testing only.',
+    };
+  }
+  return {
+    level: 'warning',
+    title: 'Non-standard PEM address',
+    detail: `This origin (${window.location.origin}) has separate browser data. Daily PEM should use ${ACTIVITYWATCH_PEM_PRODUCTION_ORIGIN}.`,
+  };
+}
+
+function activityWatchCurrentPemOriginLabel() {
+  return window.location.protocol === 'file:'
+    ? `file:// (use ${ACTIVITYWATCH_PEM_PRODUCTION_ORIGIN} for ActivityWatch)`
+    : window.location.origin;
+}
+
+async function handleActivityWatchSettingsClick(e) {
+  const button = e.target.closest('[data-activitywatch-copy]');
+  if (!button) return;
+  const text = activityWatchCopyText(button.dataset.activitywatchCopy);
+  if (!text) return;
+  const copied = typeof writeTextToClipboard === 'function'
+    ? await writeTextToClipboard(text)
+    : false;
+  if (!copied) {
+    showToast('Could not copy ActivityWatch setup text.');
+    return;
+  }
+  const originalLabel = button.dataset.settingsLabel || button.textContent || 'Copy';
+  setSettingsButtonContent(button, 'Copied', button.dataset.settingsIcon || 'copy');
+  window.setTimeout(() => {
+    setSettingsButtonContent(button, originalLabel, button.dataset.settingsIcon || 'copy');
+  }, 1400);
+  showToast('Copied ActivityWatch setup text.');
+}
+
+function activityWatchCopyText(kind) {
+  if (kind === 'production-url') return ACTIVITYWATCH_PEM_PRODUCTION_URL;
+  if (kind === 'primary-cors') return ACTIVITYWATCH_PRIMARY_CORS_LINE;
+  if (kind === 'rust-cors') return ACTIVITYWATCH_RUST_CORS_LINE;
+  return '';
 }
 
 function renderActivityWatchBucketSettings() {
