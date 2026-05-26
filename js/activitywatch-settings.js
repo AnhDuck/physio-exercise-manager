@@ -74,7 +74,7 @@ function renderActivityWatchCorsSettings() {
   const pythonConfig = document.getElementById('settings-activitywatch-cors-python');
   const note = document.getElementById('settings-activitywatch-cors-note');
   const isFileOrigin = window.location.protocol === 'file:';
-  const recommendedOrigin = 'http://127.0.0.1:8895';
+  const recommendedOrigin = 'http://127.0.0.1:8891';
   const currentOrigin = isFileOrigin ? 'file:// (not supported for ActivityWatch sync)' : window.location.origin;
   const configOrigin = isFileOrigin ? recommendedOrigin : window.location.origin;
   if (origin) origin.textContent = currentOrigin;
@@ -82,8 +82,8 @@ function renderActivityWatchCorsSettings() {
   if (pythonConfig) pythonConfig.textContent = `cors_origins = "${configOrigin}"`;
   if (note) {
     note.textContent = isFileOrigin
-      ? `ActivityWatch sync cannot use file://. Serve PEM from a local static server, open ${recommendedOrigin}/index.html?v=${window.PEM_APP_VERSION}, then add that exact origin to ActivityWatch CORS.`
-      : 'After changing ActivityWatch CORS, restart ActivityWatch or aw-server-rust, then refresh here.';
+      ? `ActivityWatch sync cannot use file://. Double-click Start PEM Localhost.bat, open ${recommendedOrigin}/index.html?v=${window.PEM_APP_VERSION}, add ${recommendedOrigin} to ActivityWatch CORS, restart ActivityWatch, then refresh here.`
+      : `If refresh says CORS is blocked: right-click ActivityWatch in the tray, open the config folder, edit aw-server-rust/config.toml so it includes ${window.location.origin}, save, fully restart ActivityWatch, then press Refresh now.`;
   }
 }
 

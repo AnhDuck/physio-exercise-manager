@@ -319,6 +319,22 @@
   font-size: 12px;
 }
 
+.activitywatch-help-row code,
+.settings-action-label code {
+  padding: 1px 4px;
+  border: 1px solid rgba(160,164,173,.22);
+  border-radius: 4px;
+  background: rgba(255,255,255,.05);
+  color: #dbeafe;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.activitywatch-help-row .settings-action-label span {
+  max-width: 620px;
+}
+
 .activitywatch-config-code {
   justify-self: end;
   max-width: min(100%, 360px);
