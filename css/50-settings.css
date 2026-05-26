@@ -584,12 +584,10 @@
   flex: 0 0 16px;
   width: 16px;
   height: 16px;
-  transform: translateY(1px);
 }
 
 .hidden-exercise-restore .ui-button-text {
   line-height: 1;
-  transform: translateY(1px);
 }
 
 .settings-grid .form-field {

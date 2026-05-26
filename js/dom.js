@@ -67,7 +67,7 @@ function buildAppIconSvg(iconName, className = 'ui-button-icon') {
       'M17 15.5a6 6 0 0 1-9.6 1.6L5.5 15',
       'M5.5 18.5V15H9',
     ],
-    restore: ['M8 7H5v-3', 'M5 7a7 7 0 1 1 1.9 4.8'],
+    restore: ['M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8', 'M3 3v5h5'],
     search: ['M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14z', 'm16.5 16.5 4 4'],
     trash: ['M4 7h16', 'M9 7V5h6v2', 'M7 7l1 13h8l1-13', 'M10 11v5', 'M14 11v5'],
     upload: ['M12 19V8', 'M8.5 11.5L12 8l3.5 3.5', 'M5 19h14'],
