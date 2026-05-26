@@ -178,7 +178,7 @@ function renderActivityWatchDashboardControls(days) {
   }
 }
 
-function buildActivityWatchSyncProgress(progress) {
+function buildActivityWatchSyncProgressLegacy(progress) {
   const total = Math.max(1, Number(progress.totalDays) || 1);
   const completed = Math.min(total, Math.max(0, Number(progress.completedDays) || 0));
   const wrap = el('div', 'activitywatch-sync-progress');
@@ -192,6 +192,42 @@ function buildActivityWatchSyncProgress(progress) {
   track.appendChild(fill);
   wrap.appendChild(track);
   return wrap;
+}
+
+function buildActivityWatchSyncProgress(progress) {
+  const total = Math.max(1, Number(progress.totalDays) || 1);
+  const completed = Math.min(total, Math.max(0, Number(progress.completedDays) || 0));
+  const wrap = el('div', 'activitywatch-sync-progress');
+  const range = activityWatchProgressDateRange(progress);
+  const label = progress.mode === 'fallback'
+    ? activityWatchFallbackProgressLabel(progress, completed, total, range)
+    : `Requesting ${formatNumber(total)} days at once${range ? ` - ${range}` : ''}`;
+  wrap.appendChild(elText('span', '', label));
+  const track = el('div', 'activitywatch-sync-progress-track');
+  const fill = el('span', '');
+  if (progress.mode === 'fallback') {
+    fill.style.width = `${Math.max(3, (completed / total) * 100)}%`;
+  } else {
+    track.classList.add('is-indeterminate');
+  }
+  track.appendChild(fill);
+  wrap.appendChild(track);
+  return wrap;
+}
+
+function activityWatchFallbackProgressLabel(progress, completed, total, range) {
+  if (completed <= 0) {
+    return `Full request did not finish; retrying 14-day batches${range ? ` - ${range}` : ''}`;
+  }
+  return `Retrying in 14-day batches - ${formatNumber(completed)} of ${formatNumber(total)} days synced${range ? ` - latest batch ${range}` : ''}`;
+}
+
+function activityWatchProgressDateRange(progress) {
+  if (!progress.currentDate) return '';
+  if (!progress.currentEndDate || progress.currentEndDate === progress.currentDate) {
+    return formatEventDate(progress.currentDate);
+  }
+  return `${formatEventDate(progress.currentDate)} to ${formatEventDate(progress.currentEndDate)}`;
 }
 
 function renderActivityWatchDashboardSummary(days) {
@@ -454,6 +490,7 @@ function activityWatchDayNumberLabel(dateStr) {
 
 function activityWatchDashboardStatusTitle(status, progress) {
   if (progress.active && progress.totalDays) {
+    if (progress.mode === 'single') return 'Syncing ActivityWatch';
     return `Syncing ActivityWatch ${formatNumber(progress.completedDays)} / ${formatNumber(progress.totalDays)}`;
   }
   return activityWatchStatusTitle(status);
@@ -464,6 +501,12 @@ function activityWatchDashboardStatusDetail(status, progress) {
     ? `Last sync ${formatAutoBackupDateTime(activityWatchData.lastSyncAt)}`
     : 'Last sync never';
   if (progress.active) {
+    if (progress.mode === 'single') {
+      return `${lastSync}. Requesting the selected range in one ActivityWatch call.`;
+    }
+    if (progress.mode === 'fallback') {
+      return `${lastSync}. Full-range sync fell back to 14-day batches.`;
+    }
     return `${lastSync}. Routine refresh covers the latest ${formatNumber(ACTIVITYWATCH_RECENT_SYNC_DAYS)} waking days.`;
   }
   const message = status.message || 'ActivityWatch has not synced yet.';

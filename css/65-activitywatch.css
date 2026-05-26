@@ -178,6 +178,21 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   transition: width .2s ease;
 }
 
+.activitywatch-sync-progress-track.is-indeterminate span {
+  width: 36%;
+  animation: activitywatch-sync-sweep 1.05s ease-in-out infinite;
+}
+
+@keyframes activitywatch-sync-sweep {
+  0% {
+    transform: translateX(-110%);
+  }
+
+  100% {
+    transform: translateX(280%);
+  }
+}
+
 .activitywatch-warning {
   margin-top: 6px;
   padding: 7px 10px;

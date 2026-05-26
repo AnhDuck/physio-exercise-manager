@@ -7,7 +7,7 @@ const ACTIVITYWATCH_RECENT_SYNC_DAYS = 3;
 const ACTIVITYWATCH_DASHBOARD_DAYS = 30;
 const ACTIVITYWATCH_QUERY_VERSION = 2;
 const ACTIVITYWATCH_QUERY_CHUNK_DAYS = 14;
-const ACTIVITYWATCH_FETCH_TIMEOUT_MS = 12000;
+const ACTIVITYWATCH_FETCH_TIMEOUT_MS = 16000;
 const ACTIVITYWATCH_CATEGORY_JOINER = ' > ';
 const ACTIVITYWATCH_FALLBACK_COLORS = [
   '#63b3ff',
@@ -72,6 +72,9 @@ function defaultActivityWatchSyncProgress() {
     totalDays: 0,
     completedDays: 0,
     currentDate: '',
+    currentEndDate: '',
+    mode: '',
+    fallbackReason: '',
     startedAt: '',
   };
 }
@@ -353,10 +356,13 @@ async function runActivityWatchDateSync(trigger, dateStrings, options = {}) {
     trigger,
     totalDays: syncDates.length,
     completedDays: 0,
-    currentDate: syncDates[0] || '',
+    currentDate: '',
+    currentEndDate: '',
+    mode: 'single',
+    fallbackReason: '',
     startedAt: new Date().toISOString(),
   });
-  recordActivityWatchStatus('syncing', `Preparing to sync ${formatNumber(syncDates.length)} ActivityWatch days...`, []);
+  recordActivityWatchStatus('syncing', `Syncing ${formatNumber(syncDates.length)} ActivityWatch days in one request...`, []);
   renderActivityWatchSurfaces();
 
   const serverUrl = getActivityWatchServerUrl();
@@ -420,15 +426,13 @@ async function runActivityWatchDateSync(trigger, dateStrings, options = {}) {
 
   let rawResults;
   try {
-    rawResults = await activityWatchPostQueryForPeriods(serverUrl, query, periods, (completedDays, totalDays, currentDate) => {
+    rawResults = await activityWatchPostQueryForPeriods(serverUrl, query, periods, (progress) => {
       updateActivityWatchSyncProgress({
         active: true,
         trigger,
-        totalDays,
-        completedDays,
-        currentDate,
+        ...progress,
       });
-      recordActivityWatchStatus('syncing', `Synced ${formatNumber(completedDays)} of ${formatNumber(totalDays)} ActivityWatch days...`, warnings);
+      recordActivityWatchStatus('syncing', activityWatchSyncProgressMessage(progress), warnings);
       renderActivityWatchSurfaces();
     });
   } catch (err) {
@@ -526,11 +530,53 @@ async function activityWatchPostQuery(serverUrl, query, timeperiods) {
 }
 
 async function activityWatchPostQueryForPeriods(serverUrl, query, periods, onDayComplete) {
-  const results = [];
   const totalDays = new Set(periods.map(period => period.date)).size;
+  if (!periods.length) return [];
+
+  if (typeof onDayComplete === 'function') {
+    onDayComplete({
+      mode: 'single',
+      totalDays,
+      completedDays: 0,
+      currentDate: periods[0]?.date || '',
+      currentEndDate: periods[periods.length - 1]?.date || '',
+      fallbackReason: '',
+    });
+  }
+
+  try {
+    return normalizeActivityWatchQueryResults(await activityWatchPostQuery(
+      serverUrl,
+      query,
+      periods.map(period => period.timeperiod),
+    ));
+  } catch (err) {
+    if (periods.length <= ACTIVITYWATCH_QUERY_CHUNK_DAYS) throw err;
+    if (typeof onDayComplete === 'function') {
+      onDayComplete({
+        mode: 'fallback',
+        totalDays,
+        completedDays: 0,
+        currentDate: periods[0]?.date || '',
+        currentEndDate: periods[Math.min(ACTIVITYWATCH_QUERY_CHUNK_DAYS, periods.length) - 1]?.date || '',
+        fallbackReason: activityWatchErrorMessage(err),
+      });
+    }
+  }
+
+  const results = [];
   let completedDays = 0;
   for (let start = 0; start < periods.length; start += ACTIVITYWATCH_QUERY_CHUNK_DAYS) {
     const chunk = periods.slice(start, start + ACTIVITYWATCH_QUERY_CHUNK_DAYS);
+    if (typeof onDayComplete === 'function') {
+      onDayComplete({
+        mode: 'fallback',
+        totalDays,
+        completedDays,
+        currentDate: chunk[0]?.date || '',
+        currentEndDate: chunk[chunk.length - 1]?.date || '',
+      });
+    }
     const chunkResults = normalizeActivityWatchQueryResults(await activityWatchPostQuery(
       serverUrl,
       query,
@@ -541,10 +587,26 @@ async function activityWatchPostQueryForPeriods(serverUrl, query, periods, onDay
     });
     completedDays = Math.min(totalDays, completedDays + new Set(chunk.map(period => period.date)).size);
     if (typeof onDayComplete === 'function') {
-      onDayComplete(completedDays, totalDays, chunk[chunk.length - 1]?.date || '');
+      onDayComplete({
+        mode: 'fallback',
+        totalDays,
+        completedDays,
+        currentDate: chunk[0]?.date || '',
+        currentEndDate: chunk[chunk.length - 1]?.date || '',
+      });
     }
   }
   return results;
+}
+
+function activityWatchSyncProgressMessage(progress = {}) {
+  const total = Math.max(0, Number(progress.totalDays) || 0);
+  const completed = Math.max(0, Number(progress.completedDays) || 0);
+  if (progress.mode === 'fallback') {
+    if (!completed) return 'Full sync did not finish; retrying in 14-day batches...';
+    return `Synced ${formatNumber(completed)} of ${formatNumber(total)} ActivityWatch days in fallback batches...`;
+  }
+  return `Syncing ${formatNumber(total)} ActivityWatch days in one request...`;
 }
 
 async function diagnoseActivityWatchFetchFailure(serverUrl) {
