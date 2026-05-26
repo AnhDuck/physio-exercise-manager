@@ -239,7 +239,6 @@ function renderActivityWatchDashboardSummary(days) {
   const average = syncedDays.length ? total / syncedDays.length : 0;
   root.appendChild(buildActivityWatchSummaryCard('Total active', formatActivityWatchDuration(total), activityWatchDashboardRangeLabel(activityWatchDashboardRangeDays)));
   root.appendChild(buildActivityWatchSummaryCard('Daily average', formatActivityWatchDuration(average), `${formatNumber(syncedDays.length)} days with data`));
-  root.appendChild(buildActivityWatchSummaryCard('Last sync', activityWatchData.lastSyncAt ? formatAutoBackupDateTime(activityWatchData.lastSyncAt) : 'Never', activityWatchData.lastSyncTrigger || 'Waiting'));
 }
 
 function buildActivityWatchSummaryCard(label, value, detail) {

@@ -204,7 +204,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(310px, .8fr);
+  grid-template-columns: minmax(0, 1fr) minmax(310px, 420px);
   gap: 14px;
   align-items: start;
 }
@@ -216,7 +216,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-dashboard-summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -276,8 +276,8 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-stacked-chart {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
-  gap: 8px;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 4px;
   height: 340px;
   padding: 10px 10px 8px 8px;
   border: 1px solid var(--border);
@@ -879,7 +879,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   }
 
   .activitywatch-stacked-chart {
-    grid-template-columns: 34px minmax(0, 1fr);
+    grid-template-columns: 18px minmax(0, 1fr);
     height: 260px;
     padding-left: 6px;
   }
