@@ -3,7 +3,7 @@
 const ACTIVITYWATCH_STORE_VERSION = 1;
 const ACTIVITYWATCH_DEFAULT_SERVER_URL = 'http://127.0.0.1:5600';
 const ACTIVITYWATCH_SYNC_THROTTLE_MS = 60 * 1000;
-const ACTIVITYWATCH_RECENT_SYNC_DAYS = 8;
+const ACTIVITYWATCH_RECENT_SYNC_DAYS = 3;
 const ACTIVITYWATCH_DASHBOARD_DAYS = 30;
 const ACTIVITYWATCH_QUERY_VERSION = 1;
 const ACTIVITYWATCH_FETCH_TIMEOUT_MS = 12000;
@@ -62,6 +62,18 @@ const ACTIVITYWATCH_BROWSER_APPNAME_REGEX = {
 
 let activityWatchData = defaultActivityWatchData();
 let activityWatchSyncPromise = null;
+let activityWatchSyncProgress = defaultActivityWatchSyncProgress();
+
+function defaultActivityWatchSyncProgress() {
+  return {
+    active: false,
+    trigger: '',
+    totalDays: 0,
+    completedDays: 0,
+    currentDate: '',
+    startedAt: '',
+  };
+}
 
 function defaultActivityWatchData() {
   return {
@@ -266,17 +278,41 @@ function formatActivityWatchDuration(seconds) {
   return total ? '<1m' : '0m';
 }
 
+function getActivityWatchSyncProgress() {
+  return {
+    ...activityWatchSyncProgress,
+  };
+}
+
+function updateActivityWatchSyncProgress(update = {}) {
+  activityWatchSyncProgress = {
+    ...activityWatchSyncProgress,
+    ...update,
+  };
+}
+
+function clearActivityWatchSyncProgress() {
+  activityWatchSyncProgress = defaultActivityWatchSyncProgress();
+}
+
 function maybeSyncActivityWatchRecent(trigger = 'auto', options = {}) {
+  return maybeSyncActivityWatchRange(trigger, ACTIVITYWATCH_RECENT_SYNC_DAYS, options);
+}
+
+function maybeSyncActivityWatchRange(trigger = 'manual', count = ACTIVITYWATCH_RECENT_SYNC_DAYS, options = {}) {
   if (!activityWatchData || !activityWatchData.version) loadActivityWatchData();
+  const dayCount = Math.max(1, Math.min(90, Number.parseInt(count, 10) || ACTIVITYWATCH_RECENT_SYNC_DAYS));
   const force = Boolean(options.force);
   const lastSyncMs = activityWatchData.lastSyncAt ? new Date(activityWatchData.lastSyncAt).getTime() : 0;
-  if (!force && lastSyncMs && Date.now() - lastSyncMs < ACTIVITYWATCH_SYNC_THROTTLE_MS) {
+  if (!force && dayCount === ACTIVITYWATCH_RECENT_SYNC_DAYS && lastSyncMs && Date.now() - lastSyncMs < ACTIVITYWATCH_SYNC_THROTTLE_MS) {
     return Promise.resolve(activityWatchData);
   }
   if (activityWatchSyncPromise) return activityWatchSyncPromise;
 
-  activityWatchSyncPromise = Promise.resolve().then(() => runActivityWatchRecentSync(trigger, { force }))
+  const syncDates = activityWatchRecentDateStrings(dayCount);
+  activityWatchSyncPromise = Promise.resolve().then(() => runActivityWatchDateSync(trigger, syncDates, { force }))
     .catch(err => {
+      clearActivityWatchSyncProgress();
       recordActivityWatchStatus('query-error', activityWatchErrorMessage(err), []);
       try {
         saveActivityWatchData();
@@ -292,15 +328,28 @@ function maybeSyncActivityWatchRecent(trigger = 'auto', options = {}) {
   return activityWatchSyncPromise;
 }
 
-async function runActivityWatchRecentSync(trigger, options = {}) {
+async function runActivityWatchDateSync(trigger, dateStrings, options = {}) {
+  const syncDates = Array.from(new Set((Array.isArray(dateStrings) ? dateStrings : [])
+    .filter(activityWatchIsValidDate)));
+  if (!syncDates.length) return activityWatchData;
+
   if (window.location.protocol === 'file:') {
+    clearActivityWatchSyncProgress();
     recordActivityWatchStatus('file-origin', 'ActivityWatch sync needs PEM served from a local http://127.0.0.1 origin. file:// cannot be configured for CORS.', []);
     saveActivityWatchData();
     renderActivityWatchSurfaces();
     return activityWatchData;
   }
 
-  recordActivityWatchStatus('syncing', 'Checking ActivityWatch...', []);
+  updateActivityWatchSyncProgress({
+    active: true,
+    trigger,
+    totalDays: syncDates.length,
+    completedDays: 0,
+    currentDate: syncDates[0] || '',
+    startedAt: new Date().toISOString(),
+  });
+  recordActivityWatchStatus('syncing', `Preparing to sync ${formatNumber(syncDates.length)} ActivityWatch days...`, []);
   renderActivityWatchSurfaces();
 
   const serverUrl = getActivityWatchServerUrl();
@@ -315,6 +364,7 @@ async function runActivityWatchRecentSync(trigger, options = {}) {
     ]);
   } catch (err) {
     const diagnosis = await diagnoseActivityWatchFetchFailure(serverUrl);
+    clearActivityWatchSyncProgress();
     recordActivityWatchStatus(diagnosis.code, diagnosis.message, []);
     activityWatchData.lastError = diagnosis.message;
     activityWatchData.lastErrorAt = new Date().toISOString();
@@ -326,6 +376,7 @@ async function runActivityWatchRecentSync(trigger, options = {}) {
   const discovered = discoverActivityWatchBuckets(buckets, info?.hostname || '');
   const warnings = [];
   if (!discovered.window) {
+    clearActivityWatchSyncProgress();
     recordActivityWatchStatus('missing-window', 'ActivityWatch window watcher bucket was not found.', []);
     activityWatchData.lastError = activityWatchData.status.message;
     activityWatchData.lastErrorAt = new Date().toISOString();
@@ -334,6 +385,7 @@ async function runActivityWatchRecentSync(trigger, options = {}) {
     return activityWatchData;
   }
   if (!discovered.afk) {
+    clearActivityWatchSyncProgress();
     recordActivityWatchStatus('missing-afk', 'ActivityWatch AFK watcher bucket was not found.', []);
     activityWatchData.lastError = activityWatchData.status.message;
     activityWatchData.lastErrorAt = new Date().toISOString();
@@ -351,7 +403,6 @@ async function runActivityWatchRecentSync(trigger, options = {}) {
     warnings.push(`ActivityWatch starts days at ${awStartOfDay}; PEM starts days at ${pemStart}. PEM query periods are used for sync.`);
   }
 
-  const syncDates = activityWatchRecentDateStrings(ACTIVITYWATCH_RECENT_SYNC_DAYS);
   const periods = buildActivityWatchSyncPeriods(syncDates);
   const query = buildActivityWatchQuery({
     windowBucket: discovered.window,
@@ -362,8 +413,19 @@ async function runActivityWatchRecentSync(trigger, options = {}) {
 
   let rawResults;
   try {
-    rawResults = await activityWatchPostQueryForPeriods(serverUrl, query, periods);
+    rawResults = await activityWatchPostQueryForPeriods(serverUrl, query, periods, (completedDays, totalDays, currentDate) => {
+      updateActivityWatchSyncProgress({
+        active: true,
+        trigger,
+        totalDays,
+        completedDays,
+        currentDate,
+      });
+      recordActivityWatchStatus('syncing', `Synced ${formatNumber(completedDays)} of ${formatNumber(totalDays)} ActivityWatch days...`, warnings);
+      renderActivityWatchSurfaces();
+    });
   } catch (err) {
+    clearActivityWatchSyncProgress();
     recordActivityWatchStatus('query-error', `ActivityWatch query failed: ${activityWatchErrorMessage(err)}`, warnings);
     activityWatchData.lastError = activityWatchData.status.message;
     activityWatchData.lastErrorAt = new Date().toISOString();
@@ -414,6 +476,7 @@ async function runActivityWatchRecentSync(trigger, options = {}) {
   activityWatchData.lastSyncTrigger = trigger;
   activityWatchData.lastError = '';
   activityWatchData.lastErrorAt = '';
+  clearActivityWatchSyncProgress();
   recordActivityWatchStatus(warnings.length ? 'warning' : 'ok', `Synced ${formatNumber(syncDates.length)} ActivityWatch days.`, warnings);
   saveActivityWatchData();
   renderActivityWatchSurfaces();
@@ -455,7 +518,7 @@ async function activityWatchPostQuery(serverUrl, query, timeperiods) {
   });
 }
 
-async function activityWatchPostQueryForPeriods(serverUrl, query, periods) {
+async function activityWatchPostQueryForPeriods(serverUrl, query, periods, onDayComplete) {
   const results = [];
   const periodsByDay = new Map();
   periods.forEach((period, index) => {
@@ -464,6 +527,8 @@ async function activityWatchPostQueryForPeriods(serverUrl, query, periods) {
     periodsByDay.set(period.date, dayPeriods);
   });
 
+  const totalDays = periodsByDay.size;
+  let completedDays = 0;
   for (const dayPeriods of periodsByDay.values()) {
     const dayResults = normalizeActivityWatchQueryResults(await activityWatchPostQuery(
       serverUrl,
@@ -473,6 +538,10 @@ async function activityWatchPostQueryForPeriods(serverUrl, query, periods) {
     dayPeriods.forEach((item, dayIndex) => {
       results[item.index] = dayResults[dayIndex] || {};
     });
+    completedDays += 1;
+    if (typeof onDayComplete === 'function') {
+      onDayComplete(completedDays, totalDays, dayPeriods[0]?.period?.date || '');
+    }
   }
   return results;
 }
