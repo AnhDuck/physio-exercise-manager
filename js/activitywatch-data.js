@@ -485,7 +485,7 @@ async function diagnoseActivityWatchFetchFailure(serverUrl) {
     });
     return {
       code: 'cors-blocked',
-      message: 'ActivityWatch is reachable, but its CORS settings do not allow this PEM origin.',
+      message: 'ActivityWatch is reachable, but PEM is not allowed yet. In aw-server/aw-server.toml, make sure the [server] line says exactly cors_origins = "http://127.0.0.1:8891" with no #, then restart ActivityWatch.',
     };
   } catch (_) {
     return {

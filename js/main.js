@@ -78,7 +78,9 @@ function bindStaticEvents() {
     }
   });
   document.addEventListener('keydown', handleSetTrackerKeydown);
-  document.addEventListener('click', () => closeCompletedActionMenu());
+  if (typeof closeCompletedActionMenu === 'function') {
+    document.addEventListener('click', () => closeCompletedActionMenu());
+  }
   window.addEventListener('scroll', updateCompactHeader, { passive: true });
 
   document.getElementById('modal-cancel').addEventListener('click', closeModal);

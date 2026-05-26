@@ -3,8 +3,26 @@
 const ACTIVITYWATCH_PEM_PRODUCTION_ORIGIN = 'http://127.0.0.1:8891';
 const ACTIVITYWATCH_PEM_DEV_ORIGIN = 'http://127.0.0.1:8895';
 const ACTIVITYWATCH_PEM_PRODUCTION_URL = `${ACTIVITYWATCH_PEM_PRODUCTION_ORIGIN}/index.html`;
+const ACTIVITYWATCH_DISABLED_CORS_LINE = '#cors_origins = ""';
 const ACTIVITYWATCH_PRIMARY_CORS_LINE = `cors_origins = "${ACTIVITYWATCH_PEM_PRODUCTION_ORIGIN}"`;
 const ACTIVITYWATCH_RUST_CORS_LINE = `cors = ["${ACTIVITYWATCH_PEM_PRODUCTION_ORIGIN}"]`;
+const ACTIVITYWATCH_PRIMARY_TOML_EXAMPLE = [
+  '[server]',
+  '#host = "localhost"',
+  '#port = "5600"',
+  '#storage = "peewee"',
+  ACTIVITYWATCH_PRIMARY_CORS_LINE,
+  '',
+  '[server.custom_static]',
+  '',
+  '[server-testing]',
+  '#host = "localhost"',
+  '#port = "5666"',
+  '#storage = "peewee"',
+  '#cors_origins = ""',
+  '',
+  '[server-testing.custom_static]',
+].join('\n');
 
 function syncActivityWatchSettingsControls() {
   const input = document.getElementById('setting-activitywatch-server-url');
@@ -90,10 +108,14 @@ function renderActivityWatchConnectionSettings() {
 function renderActivityWatchSetupSettings() {
   renderActivityWatchOriginNote();
   const origin = document.getElementById('settings-activitywatch-origin');
+  const disabledConfig = document.getElementById('settings-activitywatch-cors-disabled');
   const primaryConfig = document.getElementById('settings-activitywatch-cors-primary');
+  const tomlExample = document.getElementById('settings-activitywatch-toml-example');
   const rustConfig = document.getElementById('settings-activitywatch-cors-rust');
   if (origin) origin.textContent = activityWatchCurrentPemOriginLabel();
+  if (disabledConfig) disabledConfig.textContent = ACTIVITYWATCH_DISABLED_CORS_LINE;
   if (primaryConfig) primaryConfig.textContent = ACTIVITYWATCH_PRIMARY_CORS_LINE;
+  if (tomlExample) tomlExample.textContent = ACTIVITYWATCH_PRIMARY_TOML_EXAMPLE;
   if (rustConfig) rustConfig.textContent = ACTIVITYWATCH_RUST_CORS_LINE;
 }
 
@@ -147,6 +169,12 @@ function activityWatchCurrentPemOriginLabel() {
 }
 
 async function handleActivityWatchSettingsClick(e) {
+  const closeButton = e.target.closest('[data-activitywatch-copy-close]');
+  if (closeButton) {
+    hideActivityWatchManualCopy();
+    return;
+  }
+
   const button = e.target.closest('[data-activitywatch-copy]');
   if (!button) return;
   const text = activityWatchCopyText(button.dataset.activitywatchCopy);
@@ -155,8 +183,8 @@ async function handleActivityWatchSettingsClick(e) {
     ? await writeTextToClipboard(text)
     : false;
   if (!copied) {
-    showToast('Clipboard was blocked. Copy the text from the popup.');
-    window.prompt('Copy this ActivityWatch setup text:', text);
+    showActivityWatchManualCopy(text, activityWatchCopyLabel(button.dataset.activitywatchCopy));
+    showToast('Clipboard was blocked. Use the manual copy box.');
     return;
   }
   const originalLabel = button.dataset.settingsLabel || button.textContent || 'Copy';
@@ -170,8 +198,38 @@ async function handleActivityWatchSettingsClick(e) {
 function activityWatchCopyText(kind) {
   if (kind === 'production-url') return ACTIVITYWATCH_PEM_PRODUCTION_URL;
   if (kind === 'primary-cors') return ACTIVITYWATCH_PRIMARY_CORS_LINE;
+  if (kind === 'primary-toml') return ACTIVITYWATCH_PRIMARY_TOML_EXAMPLE;
   if (kind === 'rust-cors') return ACTIVITYWATCH_RUST_CORS_LINE;
   return '';
+}
+
+function activityWatchCopyLabel(kind) {
+  if (kind === 'production-url') return 'Manual copy: production URL';
+  if (kind === 'primary-cors') return 'Manual copy: replacement line';
+  if (kind === 'primary-toml') return 'Manual copy: full aw-server.toml example';
+  if (kind === 'rust-cors') return 'Manual copy: rust line';
+  return 'Manual copy';
+}
+
+function showActivityWatchManualCopy(text, titleText) {
+  const box = document.getElementById('settings-activitywatch-manual-copy');
+  const title = document.getElementById('settings-activitywatch-manual-copy-title');
+  const textarea = document.getElementById('settings-activitywatch-manual-copy-text');
+  if (!box || !textarea) return;
+  if (title) title.textContent = titleText || 'Manual copy';
+  textarea.value = text;
+  box.hidden = false;
+  window.setTimeout(() => {
+    textarea.focus();
+    textarea.select();
+  }, 0);
+}
+
+function hideActivityWatchManualCopy() {
+  const box = document.getElementById('settings-activitywatch-manual-copy');
+  const textarea = document.getElementById('settings-activitywatch-manual-copy-text');
+  if (textarea) textarea.value = '';
+  if (box) box.hidden = true;
 }
 
 function renderActivityWatchBucketSettings() {

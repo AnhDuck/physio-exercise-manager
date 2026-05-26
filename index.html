@@ -6,7 +6,7 @@
   <title>Physio Exercise Management</title>
   <link rel="icon" type="image/svg+xml" href="assets/physio-icon.svg" />
   <script>
-    window.PEM_APP_VERSION = '1.0.50';
+    window.PEM_APP_VERSION = '1.0.52';
     const PEM_CSS_FILES = [
       'css/00-base.css',
       'css/10-header.css',
@@ -24,16 +24,16 @@
     });
   </script>
   <noscript>
-    <link rel="stylesheet" href="css/00-base.css?v=1.0.50" />
-    <link rel="stylesheet" href="css/10-header.css?v=1.0.50" />
-    <link rel="stylesheet" href="css/20-notes-timeline.css?v=1.0.50" />
-    <link rel="stylesheet" href="css/30-grid-exercises.css?v=1.0.50" />
-    <link rel="stylesheet" href="css/40-modals-forms.css?v=1.0.50" />
-    <link rel="stylesheet" href="css/50-settings.css?v=1.0.50" />
-    <link rel="stylesheet" href="css/60-tracker.css?v=1.0.50" />
-    <link rel="stylesheet" href="css/65-activitywatch.css?v=1.0.50" />
-    <link rel="stylesheet" href="css/70-images-scrollbar.css?v=1.0.50" />
-    <link rel="stylesheet" href="css/90-responsive.css?v=1.0.50" />
+    <link rel="stylesheet" href="css/00-base.css?v=1.0.52" />
+    <link rel="stylesheet" href="css/10-header.css?v=1.0.52" />
+    <link rel="stylesheet" href="css/20-notes-timeline.css?v=1.0.52" />
+    <link rel="stylesheet" href="css/30-grid-exercises.css?v=1.0.52" />
+    <link rel="stylesheet" href="css/40-modals-forms.css?v=1.0.52" />
+    <link rel="stylesheet" href="css/50-settings.css?v=1.0.52" />
+    <link rel="stylesheet" href="css/60-tracker.css?v=1.0.52" />
+    <link rel="stylesheet" href="css/65-activitywatch.css?v=1.0.52" />
+    <link rel="stylesheet" href="css/70-images-scrollbar.css?v=1.0.52" />
+    <link rel="stylesheet" href="css/90-responsive.css?v=1.0.52" />
   </noscript>
 </head>
 <body>
@@ -486,10 +486,43 @@
                 <span class="activitywatch-step-number">4</span>
                 <div class="settings-action-label">
                   <strong>Add PEM to allowed browser origins</strong>
-                  <span>In the <code>[server]</code> section, change <code>#cors_origins = ""</code> to the line below. Leave <code>#port = "5600"</code> alone; 8891 is PEM's address, not ActivityWatch's port.</span>
+                  <span>In the <code>[server]</code> section, replace this disabled line:</span>
+                  <code class="activitywatch-config-code activitywatch-inline-code" id="settings-activitywatch-cors-disabled">#cors_origins = ""</code>
+                  <span>With this active line:</span>
                   <code class="activitywatch-config-code activitywatch-inline-code" id="settings-activitywatch-cors-primary">cors_origins = "http://127.0.0.1:8891"</code>
+                  <span>A line starting with <code>#</code> is turned off. Leave <code>#port = "5600"</code> alone; 8891 is PEM's address, not ActivityWatch's port.</span>
+                  <div class="activitywatch-example-block">
+                    <strong>Complete <code>aw-server.toml</code> example</strong>
+                    <pre class="activitywatch-config-code activitywatch-toml-example"><code id="settings-activitywatch-toml-example">[server]
+#host = "localhost"
+#port = "5600"
+#storage = "peewee"
+cors_origins = "http://127.0.0.1:8891"
+
+[server.custom_static]
+
+[server-testing]
+#host = "localhost"
+#port = "5666"
+#storage = "peewee"
+#cors_origins = ""
+
+[server-testing.custom_static]</code></pre>
+                  </div>
+                  <div class="activitywatch-fail-examples">
+                    <strong>These will still fail</strong>
+                    <ul>
+                      <li><code>#cors_origins = "http://127.0.0.1:8891"</code> because it is still commented out.</li>
+                      <li><code>#cors_origins = "cors_origins = ..."</code> because the copied line was pasted inside another value.</li>
+                      <li><code>cors_origins = "http://127.0.0.1:8891/index.html"</code> because ActivityWatch needs only the origin, not the page path.</li>
+                      <li>Editing <code>[server-testing]</code> because PEM uses the normal <code>[server]</code> section.</li>
+                    </ul>
+                  </div>
                 </div>
-                <button class="settings-backup-btn activitywatch-copy-btn" type="button" data-settings-icon="copy" data-activitywatch-copy="primary-cors">Copy line</button>
+                <div class="activitywatch-copy-stack">
+                  <button class="settings-backup-btn activitywatch-copy-btn" type="button" data-settings-icon="copy" data-activitywatch-copy="primary-cors">Copy replacement line</button>
+                  <button class="settings-backup-btn activitywatch-copy-btn" type="button" data-settings-icon="copy" data-activitywatch-copy="primary-toml">Copy full example</button>
+                </div>
               </div>
               <div class="settings-action-row activitywatch-step-row">
                 <span class="activitywatch-step-number">5</span>
@@ -499,6 +532,13 @@
                 </div>
                 <button class="settings-backup-btn" id="settings-activitywatch-refresh" type="button" data-settings-icon="reconnect">Refresh now</button>
               </div>
+            </div>
+            <div class="activitywatch-manual-copy" id="settings-activitywatch-manual-copy" hidden>
+              <div class="activitywatch-manual-copy-header">
+                <strong id="settings-activitywatch-manual-copy-title">Manual copy</strong>
+                <button class="settings-backup-btn" type="button" data-settings-icon="x" data-activitywatch-copy-close>Close</button>
+              </div>
+              <textarea id="settings-activitywatch-manual-copy-text" readonly spellcheck="false"></textarea>
             </div>
           </div>
 

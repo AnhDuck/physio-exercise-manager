@@ -363,6 +363,17 @@
   align-self: center;
 }
 
+.activitywatch-copy-stack {
+  display: grid;
+  gap: 8px;
+  align-self: center;
+  justify-items: end;
+}
+
+.activitywatch-copy-stack .settings-backup-btn {
+  justify-self: stretch;
+}
+
 .activitywatch-step-number {
   display: inline-grid;
   place-items: center;
@@ -382,6 +393,65 @@
   width: fit-content;
   max-width: 100%;
   margin-top: 5px;
+}
+
+.activitywatch-example-block,
+.activitywatch-fail-examples {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.activitywatch-fail-examples ul {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.activitywatch-manual-copy {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(99,179,255,.32);
+  border-radius: var(--ui-panel-radius);
+  background: rgba(99,179,255,.06);
+}
+
+.activitywatch-manual-copy[hidden] {
+  display: none;
+}
+
+.activitywatch-manual-copy-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.activitywatch-manual-copy-header strong {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.activitywatch-manual-copy textarea {
+  width: 100%;
+  min-height: 118px;
+  resize: vertical;
+  padding: 8px 9px;
+  border: 1px solid rgba(160,164,173,.28);
+  border-radius: 5px;
+  background: rgba(255,255,255,.045);
+  color: #dbeafe;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .activitywatch-help-row code,
@@ -412,6 +482,20 @@
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 11px;
   line-height: 1.35;
+}
+
+.activitywatch-config-code.activitywatch-toml-example {
+  justify-self: stretch;
+  width: 100%;
+  max-width: 620px;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.activitywatch-toml-example code {
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .activitywatch-status-grid {
@@ -469,6 +553,15 @@
     grid-column: 2;
     justify-self: start;
   }
+
+  .activitywatch-copy-stack {
+    grid-column: 2;
+    justify-items: start;
+  }
+
+  .activitywatch-copy-stack .settings-backup-btn {
+    grid-column: auto;
+  }
 }
 
 @media (max-width: 700px) {
@@ -485,6 +578,18 @@
 
   .activitywatch-step-row .settings-backup-btn {
     grid-column: 1;
+  }
+
+  .activitywatch-copy-stack {
+    grid-column: 1;
+  }
+
+  .activitywatch-copy-stack .settings-backup-btn {
+    grid-column: auto;
+  }
+
+  .activitywatch-manual-copy-header {
+    grid-template-columns: 1fr;
   }
 
   .activitywatch-stacked-chart {
