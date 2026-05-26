@@ -509,7 +509,6 @@ function saveActiveLogDetails() {
       detailsOpen: false,
     };
     currentWeekStart = getMonday(dateFromStr(targetDate));
-    selectedDateStr = targetDate;
   } else {
     activeTracker.detailsOpen = false;
     saveSession(dateStr, session);
@@ -703,7 +702,6 @@ function syncRealtimeFields() {
   if (lastTodayStr && nowToday !== lastTodayStr) {
     lastTodayStr = nowToday;
     currentWeekStart = getMonday(new Date());
-    selectedDateStr = nowToday;
     render();
     return;
   }

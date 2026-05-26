@@ -275,7 +275,6 @@ function buildTimelineItem(ev) {
 function openExerciseLogFromTimeline(ev) {
   if (!ev?.exerciseId || !ev.sessionDate) return;
   currentWeekStart = getMonday(dateFromStr(ev.sessionDate));
-  selectedDateStr = ev.sessionDate;
   openSetTracker(ev.exerciseId, ev.sessionDate, {
     readOnly: Boolean(ev.hidden || ev.deleted || ev.missing),
     detailsOpen: Boolean(ev.hidden || ev.deleted || ev.missing),
