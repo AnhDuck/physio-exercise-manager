@@ -362,7 +362,7 @@ async function runActivityWatchRecentSync(trigger, options = {}) {
 
   let rawResults;
   try {
-    rawResults = await activityWatchPostQuery(serverUrl, query, periods.map(period => period.timeperiod));
+    rawResults = await activityWatchPostQueryForPeriods(serverUrl, query, periods);
   } catch (err) {
     recordActivityWatchStatus('query-error', `ActivityWatch query failed: ${activityWatchErrorMessage(err)}`, warnings);
     activityWatchData.lastError = activityWatchData.status.message;
@@ -453,6 +453,28 @@ async function activityWatchPostQuery(serverUrl, query, timeperiods) {
       query: query.split('\n').filter(line => line.trim()),
     }),
   });
+}
+
+async function activityWatchPostQueryForPeriods(serverUrl, query, periods) {
+  const results = [];
+  const periodsByDay = new Map();
+  periods.forEach((period, index) => {
+    const dayPeriods = periodsByDay.get(period.date) || [];
+    dayPeriods.push({ period, index });
+    periodsByDay.set(period.date, dayPeriods);
+  });
+
+  for (const dayPeriods of periodsByDay.values()) {
+    const dayResults = normalizeActivityWatchQueryResults(await activityWatchPostQuery(
+      serverUrl,
+      query,
+      dayPeriods.map(item => item.period.timeperiod),
+    ));
+    dayPeriods.forEach((item, dayIndex) => {
+      results[item.index] = dayResults[dayIndex] || {};
+    });
+  }
+  return results;
 }
 
 async function diagnoseActivityWatchFetchFailure(serverUrl) {
