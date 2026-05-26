@@ -6,7 +6,7 @@
   <title>Physio Exercise Management</title>
   <link rel="icon" type="image/svg+xml" href="assets/physio-icon.svg" />
   <script>
-    window.PEM_APP_VERSION = '1.0.48';
+    window.PEM_APP_VERSION = '1.0.49';
     const PEM_CSS_FILES = [
       'css/00-base.css',
       'css/10-header.css',
@@ -24,16 +24,16 @@
     });
   </script>
   <noscript>
-    <link rel="stylesheet" href="css/00-base.css?v=1.0.48" />
-    <link rel="stylesheet" href="css/10-header.css?v=1.0.48" />
-    <link rel="stylesheet" href="css/20-notes-timeline.css?v=1.0.48" />
-    <link rel="stylesheet" href="css/30-grid-exercises.css?v=1.0.48" />
-    <link rel="stylesheet" href="css/40-modals-forms.css?v=1.0.48" />
-    <link rel="stylesheet" href="css/50-settings.css?v=1.0.48" />
-    <link rel="stylesheet" href="css/60-tracker.css?v=1.0.48" />
-    <link rel="stylesheet" href="css/65-activitywatch.css?v=1.0.48" />
-    <link rel="stylesheet" href="css/70-images-scrollbar.css?v=1.0.48" />
-    <link rel="stylesheet" href="css/90-responsive.css?v=1.0.48" />
+    <link rel="stylesheet" href="css/00-base.css?v=1.0.49" />
+    <link rel="stylesheet" href="css/10-header.css?v=1.0.49" />
+    <link rel="stylesheet" href="css/20-notes-timeline.css?v=1.0.49" />
+    <link rel="stylesheet" href="css/30-grid-exercises.css?v=1.0.49" />
+    <link rel="stylesheet" href="css/40-modals-forms.css?v=1.0.49" />
+    <link rel="stylesheet" href="css/50-settings.css?v=1.0.49" />
+    <link rel="stylesheet" href="css/60-tracker.css?v=1.0.49" />
+    <link rel="stylesheet" href="css/65-activitywatch.css?v=1.0.49" />
+    <link rel="stylesheet" href="css/70-images-scrollbar.css?v=1.0.49" />
+    <link rel="stylesheet" href="css/90-responsive.css?v=1.0.49" />
   </noscript>
 </head>
 <body>
@@ -486,7 +486,7 @@
                 <span class="activitywatch-step-number">4</span>
                 <div class="settings-action-label">
                   <strong>Add PEM to allowed browser origins</strong>
-                  <span>Add or update this line in <code>aw-server/aw-server.toml</code> so ActivityWatch allows the daily PEM address.</span>
+                  <span>In the <code>[server]</code> section, change <code>#cors_origins = ""</code> to the line below. Leave <code>#port = "5600"</code> alone; 8891 is PEM's address, not ActivityWatch's port.</span>
                   <code class="activitywatch-config-code activitywatch-inline-code" id="settings-activitywatch-cors-primary">cors_origins = "http://127.0.0.1:8891"</code>
                 </div>
                 <button class="settings-backup-btn activitywatch-copy-btn" type="button" data-settings-icon="copy" data-activitywatch-copy="primary-cors">Copy line</button>

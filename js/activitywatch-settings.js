@@ -26,10 +26,17 @@ function refreshActivityWatchFromSettings() {
 function renderActivityWatchSettings() {
   const panel = document.getElementById('settings-panel-activitywatch');
   if (!panel) return;
+  bindActivityWatchSettingsEvents(panel);
   syncActivityWatchSettingsControls();
   renderActivityWatchSetupSettings();
   renderActivityWatchConnectionSettings();
   renderActivityWatchBucketSettings();
+}
+
+function bindActivityWatchSettingsEvents(panel) {
+  if (!panel || panel.dataset.activitywatchEventsBound === 'true') return;
+  panel.dataset.activitywatchEventsBound = 'true';
+  panel.addEventListener('click', handleActivityWatchSettingsClick);
 }
 
 function renderActivityWatchConnectionSettings() {
@@ -148,7 +155,8 @@ async function handleActivityWatchSettingsClick(e) {
     ? await writeTextToClipboard(text)
     : false;
   if (!copied) {
-    showToast('Could not copy ActivityWatch setup text.');
+    showToast('Clipboard was blocked. Copy the text from the popup.');
+    window.prompt('Copy this ActivityWatch setup text:', text);
     return;
   }
   const originalLabel = button.dataset.settingsLabel || button.textContent || 'Copy';
