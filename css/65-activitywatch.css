@@ -1,0 +1,369 @@
+/* ActivityWatch dashboard, settings, and timeline summaries. */
+
+.header-actions .btn-activitywatch {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+}
+
+.btn-activitywatch .ui-button-icon {
+  width: 17px;
+  height: 17px;
+  stroke-width: 2;
+}
+
+.timeline-day-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+
+.timeline-day-title {
+  min-width: 0;
+}
+
+.timeline-day-activitywatch {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 3px 7px;
+  border: 1px solid rgba(99,179,255,.32);
+  border-radius: 999px;
+  background: rgba(99,179,255,.08);
+  color: #cfe8ff;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.activitywatch-dashboard-modal {
+  width: min(1040px, calc(100vw - 32px));
+}
+
+.activitywatch-dashboard-titlebar {
+  align-items: flex-start;
+}
+
+.activitywatch-dashboard-subtitle {
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.activitywatch-dashboard-body {
+  display: grid;
+  gap: 16px;
+}
+
+.activitywatch-dashboard-status,
+.activitywatch-dashboard-summary,
+.activitywatch-chart-section,
+.activitywatch-selected-day {
+  min-width: 0;
+}
+
+.activitywatch-status-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255,255,255,.025);
+}
+
+.activitywatch-status-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.activitywatch-status-copy strong {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.activitywatch-status-copy span,
+.activitywatch-warning {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.activitywatch-warning {
+  margin-top: 6px;
+  padding: 7px 10px;
+  border-left: 3px solid #f5c45a;
+  border-radius: 5px;
+  background: rgba(245,196,90,.08);
+  color: #f8e3ae;
+}
+
+.activitywatch-dashboard-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.activitywatch-summary-card {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255,255,255,.025);
+}
+
+.activitywatch-summary-card span,
+.activitywatch-summary-card small {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.activitywatch-summary-card strong {
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+.activitywatch-section-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.activitywatch-section-heading h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.activitywatch-refresh-btn {
+  min-height: 32px;
+}
+
+.activitywatch-stacked-chart {
+  display: grid;
+  grid-template-columns: repeat(30, minmax(14px, 1fr));
+  align-items: end;
+  gap: 4px;
+  height: 230px;
+  padding: 12px 8px 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background:
+    linear-gradient(to top, rgba(255,255,255,.07) 1px, transparent 1px) 0 0 / 100% 25%,
+    rgba(255,255,255,.018);
+}
+
+.activitywatch-day-bar {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 18px;
+  align-items: end;
+  gap: 6px;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+}
+
+.activitywatch-day-bar:focus-visible {
+  outline: 2px solid rgba(99,179,255,.82);
+  outline-offset: 2px;
+}
+
+.activitywatch-day-bar-stack {
+  display: flex;
+  flex-direction: column-reverse;
+  width: 100%;
+  min-height: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 4px 4px 2px 2px;
+  background: rgba(255,255,255,.055);
+}
+
+.activitywatch-day-bar.is-selected .activitywatch-day-bar-stack {
+  border-color: rgba(99,179,255,.85);
+  box-shadow: 0 0 0 2px rgba(99,179,255,.18);
+}
+
+.activitywatch-day-bar-segment {
+  display: block;
+  width: 100%;
+  min-height: 2px;
+}
+
+.activitywatch-day-bar-empty {
+  display: block;
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,.08);
+}
+
+.activitywatch-day-bar-label {
+  overflow: hidden;
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1;
+  text-align: center;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.activitywatch-day-bar.is-selected .activitywatch-day-bar-label {
+  color: var(--text);
+}
+
+.activitywatch-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 10px;
+  margin-top: 10px;
+}
+
+.activitywatch-legend-item,
+.activitywatch-category-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.activitywatch-legend-swatch {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255,255,255,.32);
+  border-radius: 2px;
+}
+
+.activitywatch-category-list {
+  display: grid;
+  gap: 7px;
+}
+
+.activitywatch-category-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  align-items: center;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: rgba(255,255,255,.02);
+}
+
+.activitywatch-category-row strong {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.activitywatch-category-meter {
+  grid-column: 1 / -1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.075);
+}
+
+.activitywatch-category-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.activitywatch-empty {
+  padding: 12px 0;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+#setting-activitywatch-server-url {
+  width: min(260px, 100%);
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg-card);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}
+
+.activitywatch-config-code {
+  justify-self: end;
+  max-width: min(100%, 360px);
+  overflow-wrap: anywhere;
+  padding: 6px 8px;
+  border: 1px solid rgba(160,164,173,.28);
+  border-radius: 5px;
+  background: rgba(255,255,255,.045);
+  color: #dbeafe;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.activitywatch-status-grid {
+  margin-top: 10px;
+}
+
+@media (max-width: 900px) {
+  .activitywatch-dashboard-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .activitywatch-stacked-chart {
+    grid-template-columns: repeat(30, minmax(18px, 1fr));
+    overflow-x: auto;
+  }
+
+  .activitywatch-config-code {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 700px) {
+  .activitywatch-dashboard-modal {
+    width: calc(100vw - 16px);
+  }
+
+  .activitywatch-section-heading,
+  .activitywatch-status-row,
+  .activitywatch-category-row {
+    grid-template-columns: 1fr;
+  }
+
+  .activitywatch-stacked-chart {
+    height: 200px;
+  }
+}

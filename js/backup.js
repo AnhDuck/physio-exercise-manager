@@ -15,7 +15,7 @@ function exportFullBackup() {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-  showToast(`Downloaded JSON with ${formatNumber(backup.summary.exerciseCount)} exercises, ${formatNumber(backup.summary.sessionDateCount)} session days, and ${formatNumber(backup.summary.timelineEventCount)} timeline items.`);
+  showToast(`Downloaded JSON with ${formatNumber(backup.summary.exerciseCount)} exercises, ${formatNumber(backup.summary.sessionDateCount)} session days, ${formatNumber(backup.summary.timelineEventCount)} timeline items, and ${formatNumber(backup.summary.activityWatchDayCount)} ActivityWatch days.`);
 }
 
 function buildFullBackup() {
@@ -24,6 +24,9 @@ function buildFullBackup() {
     sessions: deepClone(sessions),
     settings: deepClone(sanitizeLegacySettings(settings)),
     events: deepClone(events),
+    activityWatch: typeof getActivityWatchBackupData === 'function'
+      ? deepClone(getActivityWatchBackupData())
+      : deepClone(typeof defaultActivityWatchData === 'function' ? defaultActivityWatchData() : {}),
   };
 
   return {
@@ -54,6 +57,9 @@ function buildBackupSummary(data) {
     exerciseCount: Array.isArray(data.exercises) ? data.exercises.length : 0,
     sessionDateCount: sessionDates.length,
     timelineEventCount: Array.isArray(data.events) ? data.events.length : 0,
+    activityWatchDayCount: data.activityWatch?.daysByDate && typeof data.activityWatch.daysByDate === 'object'
+      ? Object.keys(data.activityWatch.daysByDate).length
+      : 0,
     customImageCount: Array.isArray(data.exercises) ? data.exercises.filter(ex => Boolean(ex.image)).length : 0,
     sessionDateRange,
   };
@@ -110,6 +116,7 @@ function importBackupJson(jsonText) {
     `Exercises: ${formatNumber(summary.exerciseCount || 0)}`,
     `Session days: ${formatNumber(summary.sessionDateCount || 0)}`,
     `Timeline items: ${formatNumber(summary.timelineEventCount || 0)}`,
+    `ActivityWatch days: ${formatNumber(summary.activityWatchDayCount || 0)}`,
   ].join('\n');
 
   if (confirm('Download current data before replacing it?')) {
@@ -127,6 +134,7 @@ function importBackupJson(jsonText) {
     safeSetLocalStorageItem(KEYS.SESSIONS, JSON.stringify(backup.data.sessions), STORAGE_LABELS[KEYS.SESSIONS]);
     safeSetLocalStorageItem(KEYS.SETTINGS, JSON.stringify(sanitizeLegacySettings(backup.data.settings)), STORAGE_LABELS[KEYS.SETTINGS]);
     safeSetLocalStorageItem(KEYS.EVENTS, JSON.stringify(backup.data.events), STORAGE_LABELS[KEYS.EVENTS]);
+    safeSetLocalStorageItem(KEYS.ACTIVITYWATCH, JSON.stringify(normalizeActivityWatchDataForStorage(backup.data.activityWatch)), STORAGE_LABELS[KEYS.ACTIVITYWATCH]);
   } catch (err) {
     restoreAppStorageValues(originalValues);
     alert(`Import failed:\n\n- The backup was valid, but browser storage could not save it.\n- Your previous browser data was restored.\n- ${storageErrorMessage(err)}`);
@@ -153,6 +161,9 @@ function validateBackup(backup) {
   if (!isPlainObject(backup.data.sessions)) errors.push('data.sessions must be an object.');
   if (!isPlainObject(backup.data.settings)) errors.push('data.settings must be an object.');
   if (!Array.isArray(backup.data.events)) errors.push('data.events must be an array.');
+  if (backup.data.activityWatch !== undefined && !isPlainObject(backup.data.activityWatch)) {
+    errors.push('data.activityWatch must be an object when present.');
+  }
   return errors;
 }
 
@@ -185,6 +196,7 @@ function getDataSafetyReport(data = {}) {
   const dataSessions = data.sessions ?? sessions;
   const dataSettings = data.settings ?? settings;
   const dataEvents = data.events ?? events;
+  const dataActivityWatch = data.activityWatch ?? (typeof getActivityWatchBackupData === 'function' ? getActivityWatchBackupData() : {});
   const issues = [];
   const checkedAt = new Date().toISOString();
 
@@ -192,6 +204,7 @@ function getDataSafetyReport(data = {}) {
   if (!isPlainObject(dataSessions)) issues.push('Sessions are not saved as an object.');
   if (!isPlainObject(dataSettings)) issues.push('Settings are not saved as an object.');
   if (!Array.isArray(dataEvents)) issues.push('Timeline items are not saved as a list.');
+  if (!isPlainObject(dataActivityWatch)) issues.push('ActivityWatch summaries are not saved as an object.');
   if (issues.length) return { ok: false, issues, checkedAt, summary: null };
 
   const exerciseIds = new Set();
@@ -246,6 +259,7 @@ function getDataSafetyReport(data = {}) {
       sessions: dataSessions,
       settings: dataSettings,
       events: dataEvents,
+      activityWatch: dataActivityWatch,
     }),
   };
 }

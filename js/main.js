@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   sessions  = loadSessions();
   settings  = loadSettings();
   events    = loadEvents();
+  if (typeof loadActivityWatchData === 'function') loadActivityWatchData();
   runMigrations();
   currentWeekStart = getMonday(new Date());
   lastTodayStr = todayStr();
@@ -19,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderNotesPanel();
   startRealtimeUpdates();
   initializeAutoBackup();
+  if (typeof maybeSyncActivityWatchRecent === 'function') maybeSyncActivityWatchRecent('startup');
   markStorageTestsReadyForUserActions();
 });
 function bindStaticEvents() {
@@ -109,6 +111,7 @@ function bindStaticEvents() {
   });
 
   document.getElementById('btn-settings').addEventListener('click', openSettingsModal);
+  document.getElementById('btn-activitywatch')?.addEventListener('click', openActivityWatchDashboard);
   document.getElementById('settings-close').addEventListener('click', closeSettingsModal);
   document.querySelectorAll('#settings-modal [data-settings-tab]').forEach(tab => {
     tab.addEventListener('click', () => setSettingsTab(tab.dataset.settingsTab, true));
@@ -139,6 +142,8 @@ function bindStaticEvents() {
   document.getElementById('setting-cue-speech-volume').addEventListener('input', handleSpeechVolumeInput);
   document.getElementById('setting-cue-speech').addEventListener('change', autosaveGeneralSettings);
   document.getElementById('setting-auto-backup-time').addEventListener('change', autosaveAutoBackupTime);
+  document.getElementById('setting-activitywatch-server-url')?.addEventListener('change', saveActivityWatchServerUrlSetting);
+  document.getElementById('settings-activitywatch-refresh')?.addEventListener('click', refreshActivityWatchFromSettings);
   document.addEventListener('keydown', handleSettingsKeydown);
   document.getElementById('settings-modal').addEventListener('click', (e) => {
     if (e.target === document.getElementById('settings-modal')) closeSettingsModal();

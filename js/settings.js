@@ -1,6 +1,6 @@
 // Settings modal, review markers, cue settings, and block settings UI.
 
-const SETTINGS_TABS = ['general', 'blocks', 'backup', 'data-health'];
+const SETTINGS_TABS = ['general', 'blocks', 'backup', 'activitywatch', 'data-health'];
 
 function openSettingsModal() {
   ensureBlockSettings();
@@ -12,6 +12,7 @@ function openSettingsModal() {
   hydrateSettingsFolderIcon();
   hydrateSettingsIconButtons(document.getElementById('settings-modal'));
   renderAutoBackupSettings();
+  if (typeof renderActivityWatchSettings === 'function') renderActivityWatchSettings();
   updateClearReviewButton();
   setSettingsTab(settingsActiveTab, false);
   document.getElementById('settings-modal').classList.remove('hidden');
@@ -84,6 +85,7 @@ function syncSettingsControls() {
   document.getElementById('setting-cue-vibrate').checked = settings.setCueVibrate !== false;
   document.getElementById('setting-cue-speech').checked = Boolean(settings.setCueSpeech);
   document.getElementById('setting-auto-backup-time').value = getAutoBackupSettings().time;
+  if (typeof syncActivityWatchSettingsControls === 'function') syncActivityWatchSettingsControls();
   syncSpeechVolumeControl();
 }
 

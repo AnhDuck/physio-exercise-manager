@@ -45,6 +45,7 @@ function buildAppIconSvg(iconName, className = 'ui-button-icon') {
       'M8 6V3.5h8V6',
       'M8.5 12.4l2.1 2.1 4.9-5',
     ],
+    chart: ['M4 19h16', 'M7 16V9', 'M12 16V5', 'M17 16v-8'],
     check: ['M5 12.5l4.2 4.2L19 7'],
     'check-circle': ['M20 11.1V12a8 8 0 1 1-4.7-7.3', 'M7.8 11.7l2.7 2.7L20 5'],
     'chevron-down': ['M7 10l5 5 5-5'],

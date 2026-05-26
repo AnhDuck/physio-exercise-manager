@@ -3,6 +3,7 @@ const KEYS = {
   SESSIONS:  'pem_sessions',
   SETTINGS:  'pem_settings',
   EVENTS:    'pem_events',
+  ACTIVITYWATCH: 'pem_activitywatch',
 };
 
 const STORAGE_LABELS = {
@@ -10,6 +11,7 @@ const STORAGE_LABELS = {
   [KEYS.SESSIONS]: 'Session logs',
   [KEYS.SETTINGS]: 'Settings',
   [KEYS.EVENTS]: 'Timeline',
+  [KEYS.ACTIVITYWATCH]: 'ActivityWatch',
 };
 const APP_STORAGE_KEYS = Object.values(KEYS);
 const STORAGE_TIER_GROWING_BYTES = 2 * 1024 * 1024;

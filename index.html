@@ -6,7 +6,7 @@
   <title>Physio Exercise Management</title>
   <link rel="icon" type="image/svg+xml" href="assets/physio-icon.svg" />
   <script>
-    window.PEM_APP_VERSION = '1.0.42';
+    window.PEM_APP_VERSION = '1.0.45';
     const PEM_CSS_FILES = [
       'css/00-base.css',
       'css/10-header.css',
@@ -15,6 +15,7 @@
       'css/40-modals-forms.css',
       'css/50-settings.css',
       'css/60-tracker.css',
+      'css/65-activitywatch.css',
       'css/70-images-scrollbar.css',
       'css/90-responsive.css',
     ];
@@ -23,15 +24,16 @@
     });
   </script>
   <noscript>
-    <link rel="stylesheet" href="css/00-base.css?v=1.0.42" />
-    <link rel="stylesheet" href="css/10-header.css?v=1.0.42" />
-    <link rel="stylesheet" href="css/20-notes-timeline.css?v=1.0.42" />
-    <link rel="stylesheet" href="css/30-grid-exercises.css?v=1.0.42" />
-    <link rel="stylesheet" href="css/40-modals-forms.css?v=1.0.42" />
-    <link rel="stylesheet" href="css/50-settings.css?v=1.0.42" />
-    <link rel="stylesheet" href="css/60-tracker.css?v=1.0.42" />
-    <link rel="stylesheet" href="css/70-images-scrollbar.css?v=1.0.42" />
-    <link rel="stylesheet" href="css/90-responsive.css?v=1.0.42" />
+    <link rel="stylesheet" href="css/00-base.css?v=1.0.45" />
+    <link rel="stylesheet" href="css/10-header.css?v=1.0.45" />
+    <link rel="stylesheet" href="css/20-notes-timeline.css?v=1.0.45" />
+    <link rel="stylesheet" href="css/30-grid-exercises.css?v=1.0.45" />
+    <link rel="stylesheet" href="css/40-modals-forms.css?v=1.0.45" />
+    <link rel="stylesheet" href="css/50-settings.css?v=1.0.45" />
+    <link rel="stylesheet" href="css/60-tracker.css?v=1.0.45" />
+    <link rel="stylesheet" href="css/65-activitywatch.css?v=1.0.45" />
+    <link rel="stylesheet" href="css/70-images-scrollbar.css?v=1.0.45" />
+    <link rel="stylesheet" href="css/90-responsive.css?v=1.0.45" />
   </noscript>
 </head>
 <body>
@@ -51,6 +53,7 @@
     </span>
     <div class="header-actions">
       <span id="app-version" class="app-version" aria-label="App version"></span>
+      <button id="btn-activitywatch" class="btn-activitywatch" title="ActivityWatch" aria-label="Open ActivityWatch dashboard" data-ui-icon="chart"></button>
       <button id="btn-settings" class="btn-settings" title="Settings" aria-label="Settings" data-ui-icon="gear"></button>
     </div>
   </header>
@@ -267,6 +270,17 @@
             </span>
             <span>Backup</span>
           </button>
+          <button class="settings-tab" id="settings-tab-activitywatch" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-activitywatch" data-settings-tab="activitywatch">
+            <span class="settings-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M4 19h16"></path>
+                <path d="M7 16V9"></path>
+                <path d="M12 16V5"></path>
+                <path d="M17 16v-8"></path>
+              </svg>
+            </span>
+            <span>ActivityWatch</span>
+          </button>
           <button class="settings-tab" id="settings-tab-data-health" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-data-health" data-settings-tab="data-health">
             <span class="settings-tab-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
@@ -420,7 +434,7 @@
               <div class="settings-backup-row">
                 <div class="settings-action-label">
                   <strong>Download full backup</strong>
-                  <span>Exercises, sessions, settings, and timeline.</span>
+                  <span>Exercises, sessions, settings, timeline, and ActivityWatch summaries.</span>
                 </div>
                 <button class="settings-backup-btn" id="settings-export-json" type="button" data-settings-icon="backup-download">Download JSON</button>
               </div>
@@ -431,6 +445,118 @@
                 </div>
                 <button class="settings-backup-btn settings-import-btn" id="settings-import-json" type="button" data-settings-icon="backup-import">Import JSON</button>
                 <input id="settings-import-file" type="file" accept="application/json,.json" hidden />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-panel" id="settings-panel-activitywatch" role="tabpanel" aria-labelledby="settings-tab-activitywatch" data-settings-panel="activitywatch" hidden>
+          <div class="settings-section is-first">
+            <div class="settings-section-header">
+              <h3>Connection</h3>
+            </div>
+            <div class="settings-row-group">
+              <label class="settings-action-row" for="setting-activitywatch-server-url">
+                <span class="settings-action-label">
+                  <strong>Server URL</strong>
+                  <span>Keep this local unless you intentionally run ActivityWatch elsewhere.</span>
+                </span>
+                <input type="url" id="setting-activitywatch-server-url" spellcheck="false" autocomplete="off" />
+              </label>
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <strong id="settings-activitywatch-state">ActivityWatch waiting</strong>
+                  <span id="settings-activitywatch-detail">ActivityWatch has not synced yet.</span>
+                </div>
+                <span class="settings-status-pill is-muted" id="settings-activitywatch-pill">Waiting</span>
+              </div>
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <strong>Manual refresh</strong>
+                  <span>Refreshes the current waking day plus the previous 7 waking days.</span>
+                </div>
+                <button class="settings-backup-btn" id="settings-activitywatch-refresh" type="button" data-settings-icon="reconnect">Refresh now</button>
+              </div>
+            </div>
+            <div class="settings-status-grid activitywatch-status-grid">
+              <div class="settings-status-item">
+                <span>Host</span>
+                <strong id="settings-activitywatch-host">Unknown</strong>
+              </div>
+              <div class="settings-status-item">
+                <span>Version</span>
+                <strong id="settings-activitywatch-version">Unknown</strong>
+              </div>
+              <div class="settings-status-item">
+                <span>Last sync</span>
+                <strong id="settings-activitywatch-last-sync">Never</strong>
+              </div>
+              <div class="settings-status-item">
+                <span>Day starts</span>
+                <strong id="settings-activitywatch-day-start">Unknown</strong>
+              </div>
+              <div class="settings-status-item">
+                <span>Day-start match</span>
+                <span class="settings-status-pill is-muted" id="settings-activitywatch-day-start-pill">Waiting</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h3>CORS setup</h3>
+            </div>
+            <div class="settings-row-group">
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <strong>Current PEM origin</strong>
+                  <span>Add this origin to ActivityWatch CORS, then restart ActivityWatch.</span>
+                </div>
+                <code class="activitywatch-config-code" id="settings-activitywatch-origin">http://127.0.0.1</code>
+              </div>
+              <div class="settings-action-row activitywatch-config-row">
+                <div class="settings-action-label">
+                  <strong>aw-server-rust config.toml</strong>
+                  <span>Windows path is usually %LOCALAPPDATA%\activitywatch\aw-server-rust\config.toml.</span>
+                </div>
+                <code class="activitywatch-config-code" id="settings-activitywatch-cors-rust">cors = []</code>
+              </div>
+              <div class="settings-action-row activitywatch-config-row">
+                <div class="settings-action-label">
+                  <strong>aw-server-python</strong>
+                  <span>Only use this if your install is the older Python server.</span>
+                </div>
+                <code class="activitywatch-config-code" id="settings-activitywatch-cors-python">cors_origins = ""</code>
+              </div>
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <strong>Setup note</strong>
+                  <span id="settings-activitywatch-cors-note">After changing ActivityWatch CORS, restart ActivityWatch, then refresh here.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h3>Buckets &amp; cache</h3>
+            </div>
+            <div class="settings-status-grid">
+              <div class="settings-status-item">
+                <span>Window bucket</span>
+                <strong id="settings-activitywatch-window-bucket">Not found</strong>
+              </div>
+              <div class="settings-status-item">
+                <span>AFK bucket</span>
+                <strong id="settings-activitywatch-afk-bucket">Not found</strong>
+              </div>
+              <div class="settings-status-item">
+                <span>Browser buckets</span>
+                <strong id="settings-activitywatch-browser-buckets">Not found</strong>
+              </div>
+              <div class="settings-status-item">
+                <span>Cached days</span>
+                <strong id="settings-activitywatch-storage-days">0</strong>
               </div>
             </div>
           </div>
@@ -521,6 +647,10 @@
                 <div class="settings-status-item">
                   <span>Timeline</span>
                   <strong id="settings-storage-events">0 B</strong>
+                </div>
+                <div class="settings-status-item">
+                  <span>ActivityWatch</span>
+                  <strong id="settings-storage-activitywatch">0 B</strong>
                 </div>
                 <div class="settings-status-item settings-storage-total-row">
                   <span>Total app data</span>
@@ -711,6 +841,7 @@
       'js/exercises.js',
       'js/grid.js',
       'js/tracker.js',
+      'js/activitywatch-data.js',
       'js/timeline-data.js',
       'js/timeline-filters.js',
       'js/timeline-render.js',
@@ -721,6 +852,8 @@
       'js/backup.js',
       'js/auto-backup.js',
       'js/settings.js',
+      'js/activitywatch-dashboard.js',
+      'js/activitywatch-settings.js',
       'js/images.js',
       'js/main.js',
     ].forEach((src) => {

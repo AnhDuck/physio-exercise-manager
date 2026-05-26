@@ -136,7 +136,14 @@ function buildTimelineLoadControls(view) {
 
 function buildTimelineDay(group) {
   const section = el('section', 'timeline-day');
-  const header = elText('div', 'timeline-day-header', formatEventDateShort(group.date));
+  const header = el('div', 'timeline-day-header');
+  header.appendChild(elText('span', 'timeline-day-title', formatEventDateShort(group.date)));
+  const activityWatchSummary = typeof getActivityWatchTimelineSummary === 'function'
+    ? getActivityWatchTimelineSummary(group.date)
+    : '';
+  if (activityWatchSummary) {
+    header.appendChild(elText('span', 'timeline-day-activitywatch', activityWatchSummary));
+  }
   header.title = formatEventDate(group.date);
   section.appendChild(header);
 

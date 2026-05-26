@@ -4,6 +4,9 @@ function setNotesPanelOpen(open, shouldFocus = false) {
   settings.notesOpen = open;
   saveSettings(settings);
   renderNotesPanel();
+  if (open && typeof maybeSyncActivityWatchRecent === 'function') {
+    maybeSyncActivityWatchRecent('timeline-open');
+  }
   if (shouldFocus && open) {
     window.setTimeout(() => document.getElementById('quick-note-text')?.focus(), 0);
   }
@@ -39,4 +42,7 @@ function renderNotesPanel() {
   const view = getTimelineVisibleItems();
   renderTimelineSearchControls(view);
   renderTimelineList(view);
+  if (isOpen && typeof maybeSyncActivityWatchRecent === 'function') {
+    maybeSyncActivityWatchRecent('timeline-render');
+  }
 }

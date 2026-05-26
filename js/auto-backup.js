@@ -789,6 +789,7 @@ function renderStorageSettings(health) {
     [KEYS.SESSIONS]: 'settings-storage-sessions',
     [KEYS.SETTINGS]: 'settings-storage-settings',
     [KEYS.EVENTS]: 'settings-storage-events',
+    [KEYS.ACTIVITYWATCH]: 'settings-storage-activitywatch',
   };
 
   if (saveState && saveDetail) {
@@ -1052,7 +1053,10 @@ function verifiedBackupReceiptText(auto) {
 }
 
 function backupSummaryText(summary) {
-  return `${formatNumber(summary.exerciseCount || 0)} exercises, ${formatNumber(summary.sessionDateCount || 0)} session days, ${formatNumber(summary.timelineEventCount || 0)} timeline items`;
+  const activityWatchText = summary.activityWatchDayCount
+    ? `, ${formatNumber(summary.activityWatchDayCount)} ActivityWatch days`
+    : '';
+  return `${formatNumber(summary.exerciseCount || 0)} exercises, ${formatNumber(summary.sessionDateCount || 0)} session days, ${formatNumber(summary.timelineEventCount || 0)} timeline items${activityWatchText}`;
 }
 
 function autoBackupErrorMessage(err) {
