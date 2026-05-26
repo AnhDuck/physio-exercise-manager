@@ -5,7 +5,8 @@ const ACTIVITYWATCH_DEFAULT_SERVER_URL = 'http://127.0.0.1:5600';
 const ACTIVITYWATCH_SYNC_THROTTLE_MS = 60 * 1000;
 const ACTIVITYWATCH_RECENT_SYNC_DAYS = 3;
 const ACTIVITYWATCH_DASHBOARD_DAYS = 30;
-const ACTIVITYWATCH_QUERY_VERSION = 1;
+const ACTIVITYWATCH_QUERY_VERSION = 2;
+const ACTIVITYWATCH_QUERY_CHUNK_DAYS = 14;
 const ACTIVITYWATCH_FETCH_TIMEOUT_MS = 12000;
 const ACTIVITYWATCH_CATEGORY_JOINER = ' > ';
 const ACTIVITYWATCH_FALLBACK_COLORS = [
@@ -304,12 +305,18 @@ function maybeSyncActivityWatchRange(trigger = 'manual', count = ACTIVITYWATCH_R
   const dayCount = Math.max(1, Math.min(90, Number.parseInt(count, 10) || ACTIVITYWATCH_RECENT_SYNC_DAYS));
   const force = Boolean(options.force);
   const lastSyncMs = activityWatchData.lastSyncAt ? new Date(activityWatchData.lastSyncAt).getTime() : 0;
-  if (!force && dayCount === ACTIVITYWATCH_RECENT_SYNC_DAYS && lastSyncMs && Date.now() - lastSyncMs < ACTIVITYWATCH_SYNC_THROTTLE_MS) {
+  const requestedDates = activityWatchRecentDateStrings(dayCount);
+  const hasStaleQueryData = requestedDates.some(dateStr => {
+    const day = activityWatchData.daysByDate?.[dateStr];
+    return day?.syncedAt && day.queryVersion !== ACTIVITYWATCH_QUERY_VERSION;
+  });
+  if (!force && !hasStaleQueryData && dayCount === ACTIVITYWATCH_RECENT_SYNC_DAYS && lastSyncMs && Date.now() - lastSyncMs < ACTIVITYWATCH_SYNC_THROTTLE_MS) {
     return Promise.resolve(activityWatchData);
   }
   if (activityWatchSyncPromise) return activityWatchSyncPromise;
 
-  const syncDates = activityWatchRecentDateStrings(dayCount);
+  const syncDates = activityWatchDatesNeedingSync(requestedDates, { force });
+  if (!syncDates.length) return Promise.resolve(activityWatchData);
   activityWatchSyncPromise = Promise.resolve().then(() => runActivityWatchDateSync(trigger, syncDates, { force }))
     .catch(err => {
       clearActivityWatchSyncProgress();
@@ -520,27 +527,21 @@ async function activityWatchPostQuery(serverUrl, query, timeperiods) {
 
 async function activityWatchPostQueryForPeriods(serverUrl, query, periods, onDayComplete) {
   const results = [];
-  const periodsByDay = new Map();
-  periods.forEach((period, index) => {
-    const dayPeriods = periodsByDay.get(period.date) || [];
-    dayPeriods.push({ period, index });
-    periodsByDay.set(period.date, dayPeriods);
-  });
-
-  const totalDays = periodsByDay.size;
+  const totalDays = new Set(periods.map(period => period.date)).size;
   let completedDays = 0;
-  for (const dayPeriods of periodsByDay.values()) {
-    const dayResults = normalizeActivityWatchQueryResults(await activityWatchPostQuery(
+  for (let start = 0; start < periods.length; start += ACTIVITYWATCH_QUERY_CHUNK_DAYS) {
+    const chunk = periods.slice(start, start + ACTIVITYWATCH_QUERY_CHUNK_DAYS);
+    const chunkResults = normalizeActivityWatchQueryResults(await activityWatchPostQuery(
       serverUrl,
       query,
-      dayPeriods.map(item => item.period.timeperiod),
+      chunk.map(period => period.timeperiod),
     ));
-    dayPeriods.forEach((item, dayIndex) => {
-      results[item.index] = dayResults[dayIndex] || {};
+    chunk.forEach((period, chunkIndex) => {
+      results[start + chunkIndex] = chunkResults[chunkIndex] || {};
     });
-    completedDays += 1;
+    completedDays = Math.min(totalDays, completedDays + new Set(chunk.map(period => period.date)).size);
     if (typeof onDayComplete === 'function') {
-      onDayComplete(completedDays, totalDays, dayPeriods[0]?.period?.date || '');
+      onDayComplete(completedDays, totalDays, chunk[chunk.length - 1]?.date || '');
     }
   }
   return results;
@@ -695,37 +696,39 @@ function activityWatchQueryString(value) {
 }
 
 function buildActivityWatchSyncPeriods(dateStrings) {
-  const periods = [];
-  dateStrings.forEach(dateStr => {
-    const dayStart = activityWatchWakingDayStart(dateStr);
-    const dayEnd = new Date(dayStart);
-    dayEnd.setDate(dayEnd.getDate() + 1);
-    const dayStartIso = activityWatchLocalIso(dayStart);
-    const dayEndIso = activityWatchLocalIso(dayEnd);
-    periods.push({
-      type: 'day',
-      date: dateStr,
-      hourIndex: null,
-      dayStartIso,
-      dayEndIso,
-      timeperiod: `${dayStartIso}/${dayEndIso}`,
-    });
-    for (let hourIndex = 0; hourIndex < 24; hourIndex++) {
-      const hourStart = new Date(dayStart);
-      hourStart.setHours(hourStart.getHours() + hourIndex);
-      const hourEnd = new Date(hourStart);
-      hourEnd.setHours(hourEnd.getHours() + 1);
-      periods.push({
-        type: 'hour',
-        date: dateStr,
-        hourIndex,
-        dayStartIso,
-        dayEndIso,
-        timeperiod: `${activityWatchLocalIso(hourStart)}/${activityWatchLocalIso(hourEnd)}`,
-      });
-    }
+  return dateStrings.map(buildActivityWatchSyncPeriod);
+}
+
+function buildActivityWatchSyncPeriod(dateStr) {
+  const dayStart = activityWatchWakingDayStart(dateStr);
+  const dayEnd = new Date(dayStart);
+  dayEnd.setDate(dayEnd.getDate() + 1);
+  const dayStartIso = activityWatchLocalIso(dayStart);
+  const dayEndIso = activityWatchLocalIso(dayEnd);
+  return {
+    type: 'day',
+    date: dateStr,
+    hourIndex: null,
+    dayStartIso,
+    dayEndIso,
+    timeperiod: `${dayStartIso}/${dayEndIso}`,
+  };
+}
+
+function activityWatchDatesNeedingSync(dateStrings, options = {}) {
+  const dates = Array.from(new Set((Array.isArray(dateStrings) ? dateStrings : [])
+    .filter(activityWatchIsValidDate)));
+  if (options.force) return dates;
+
+  const current = activityWatchCurrentWakingDateStr();
+  return dates.filter(dateStr => {
+    if (dateStr === current) return true;
+    const existing = activityWatchData.daysByDate?.[dateStr];
+    if (!existing || !existing.syncedAt || existing.queryVersion !== ACTIVITYWATCH_QUERY_VERSION) return true;
+
+    const period = buildActivityWatchSyncPeriod(dateStr);
+    return existing.periodStart !== period.dayStartIso || existing.periodEnd !== period.dayEndIso;
   });
-  return periods;
 }
 
 function activityWatchRecentDateStrings(count) {
