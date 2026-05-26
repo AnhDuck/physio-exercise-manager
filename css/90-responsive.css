@@ -266,6 +266,14 @@
     justify-self: start;
   }
 
+  .hidden-exercise-row {
+    grid-template-columns: 1fr;
+  }
+
+  .hidden-exercise-restore {
+    justify-self: start;
+  }
+
   .settings-status-pill {
     justify-self: start;
   }

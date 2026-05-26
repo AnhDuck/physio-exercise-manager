@@ -144,10 +144,14 @@ function renderHiddenExerciseSettings() {
 
 function buildHiddenExerciseRow(ex) {
   const row = el('div', 'settings-action-row hidden-exercise-row');
-  const info = el('div', 'settings-action-label');
+  const content = el('div', 'hidden-exercise-content');
+  content.appendChild(buildHiddenExerciseImage(ex));
+
+  const info = el('div', 'settings-action-label hidden-exercise-label');
   info.appendChild(elText('strong', '', ex.name));
   info.appendChild(elText('span', '', hiddenExerciseMeta(ex)));
-  row.appendChild(info);
+  content.appendChild(info);
+  row.appendChild(content);
 
   const restore = el('button', 'settings-clear-review hidden-exercise-restore');
   restore.type = 'button';
@@ -156,6 +160,19 @@ function buildHiddenExerciseRow(ex) {
   restore.addEventListener('click', () => restoreExercise(ex.id));
   row.appendChild(restore);
   return row;
+}
+
+function buildHiddenExerciseImage(ex) {
+  const frame = el('div', 'hidden-exercise-image');
+  if (ex.image) {
+    const img = document.createElement('img');
+    img.src = ex.image;
+    img.alt = ex.name;
+    frame.appendChild(img);
+  } else {
+    frame.appendChild(buildAppIconSvg('file', 'hidden-exercise-image-placeholder'));
+  }
+  return frame;
 }
 
 function buildHiddenExerciseEmptyRow() {
