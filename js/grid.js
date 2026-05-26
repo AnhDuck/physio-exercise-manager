@@ -1,15 +1,24 @@
 // Calendar grid rendering and week navigation.
 
+const GRID_PHONE_MEDIA = '(max-width: 700px)';
+const GRID_MODE_THREE_DAY = 'three-day';
+const GRID_MODE_WEEK = 'week';
+
 function render() {
-  const dates = weekDates(currentWeekStart);
+  ensureSelectedDate();
+  const viewMode = effectiveGridViewMode();
+  const dates = visibleGridDates(viewMode);
   const todayS = todayStr();
-  const monthLabel = `${MONTH_NAMES[currentWeekStart.getMonth()]} ${currentWeekStart.getFullYear()}`;
+  const monthLabel = gridDateRangeLabel(dates);
 
   const app = document.getElementById('app');
   app.innerHTML = '';
+  app.dataset.gridMode = viewMode;
+  app.style.setProperty('--visible-day-count', String(dates.length));
+  document.body.dataset.gridMode = viewMode;
   document.body.classList.toggle('set-tracker-open', Boolean(activeTracker));
 
-  app.appendChild(buildColHeaders(dates, todayS, monthLabel));
+  app.appendChild(buildColHeaders(dates, todayS, monthLabel, viewMode));
 
   let exerciseNumber = 1;
   for (const group of GROUP_ORDER) {
@@ -26,22 +35,29 @@ function render() {
 }
 
 // ── Column headers ────────────────────────────────────────────────
-function buildColHeaders(dates, todayS, monthLabel) {
+function buildColHeaders(dates, todayS, monthLabel, viewMode) {
   const row = el('div', 'col-header-row');
+  row.dataset.gridMode = viewMode;
   const spacer = el('div', 'spacer');
-  spacer.appendChild(buildWeekNav(monthLabel));
+  spacer.appendChild(buildWeekNav(monthLabel, viewMode));
   row.appendChild(spacer);
 
-  dates.forEach((date, i) => {
+  dates.forEach((date) => {
     const dateS = toDateStr(date);
     const isToday = dateS === todayS;
+    const isSelected = viewMode === GRID_MODE_THREE_DAY && dateS === selectedDateStr;
     const cell = el('div', 'day-header' + (isToday ? ' today' : ''));
+    if (isSelected) cell.classList.add('selected-day');
+    if (viewMode === GRID_MODE_THREE_DAY) {
+      cell.title = isSelected ? 'Selected day' : 'Tap to center this day';
+      cell.addEventListener('click', () => selectGridDate(dateS));
+    }
 
     const dow = date.getDay();
     const isArmDay  = dow === 1 || dow === 3 || dow === 5;
     const dayTags = [];
 
-    cell.appendChild(elText('div', 'day-name', DAY_NAMES[i]));
+    cell.appendChild(elText('div', 'day-name', dayNameForDate(date)));
     cell.appendChild(elText('div', 'day-date', String(date.getDate())));
 
     if (isArmDay) {
@@ -66,7 +82,7 @@ function buildColHeaders(dates, todayS, monthLabel) {
   return row;
 }
 
-function buildWeekNav(monthLabel) {
+function buildWeekNav(monthLabel, viewMode) {
   const nav = el('nav', 'week-nav');
 
   const today = elText('button', 'today-btn', 'Today');
@@ -77,16 +93,16 @@ function buildWeekNav(monthLabel) {
   const prev = elText('button', 'nav-arrow-btn', '\u2039');
   prev.id = 'btn-prev-week';
   prev.type = 'button';
-  prev.setAttribute('aria-label', 'Previous week');
-  prev.title = 'Previous week';
-  prev.addEventListener('click', prevWeek);
+  prev.setAttribute('aria-label', viewMode === GRID_MODE_THREE_DAY ? 'Previous day' : 'Previous week');
+  prev.title = viewMode === GRID_MODE_THREE_DAY ? 'Previous day' : 'Previous week';
+  prev.addEventListener('click', prevGridPeriod);
   
   const next = elText('button', 'nav-arrow-btn', '\u203A');
   next.id = 'btn-next-week';
   next.type = 'button';
-  next.setAttribute('aria-label', 'Next week');
-  next.title = 'Next week';
-  next.addEventListener('click', nextWeek);
+  next.setAttribute('aria-label', viewMode === GRID_MODE_THREE_DAY ? 'Next day' : 'Next week');
+  next.title = viewMode === GRID_MODE_THREE_DAY ? 'Next day' : 'Next week';
+  next.addEventListener('click', nextGridPeriod);
 
   const label = elText('span', 'week-label', monthLabel);
   label.id = 'week-label';
@@ -95,7 +111,32 @@ function buildWeekNav(monthLabel) {
   nav.appendChild(prev);
   nav.appendChild(next);
   nav.appendChild(label);
+  nav.appendChild(buildGridViewToggle(viewMode));
   return nav;
+}
+
+function buildGridViewToggle(viewMode) {
+  const toggle = el('div', 'grid-view-toggle');
+  toggle.setAttribute('role', 'group');
+  toggle.setAttribute('aria-label', 'Grid view');
+
+  const three = elText('button', 'grid-view-option', '3 days');
+  three.type = 'button';
+  three.dataset.gridView = GRID_MODE_THREE_DAY;
+  three.setAttribute('aria-pressed', String(viewMode === GRID_MODE_THREE_DAY));
+  three.classList.toggle('is-active', viewMode === GRID_MODE_THREE_DAY);
+  three.addEventListener('click', () => setGridViewMode(GRID_MODE_THREE_DAY));
+
+  const week = elText('button', 'grid-view-option', 'Week');
+  week.type = 'button';
+  week.dataset.gridView = GRID_MODE_WEEK;
+  week.setAttribute('aria-pressed', String(viewMode === GRID_MODE_WEEK));
+  week.classList.toggle('is-active', viewMode === GRID_MODE_WEEK);
+  week.addEventListener('click', () => setGridViewMode(GRID_MODE_WEEK));
+
+  toggle.appendChild(three);
+  toggle.appendChild(week);
+  return toggle;
 }
 
 // ── Group section ────────────────────────────────────────────────
@@ -347,21 +388,105 @@ function buildBlockHeader(blockInfo) {
   header.appendChild(elText('span', 'block-title', blockInfo.title));
   return header;
 }
-function prevWeek() {
+function prevGridPeriod() {
+  if (effectiveGridViewMode() === GRID_MODE_THREE_DAY) {
+    moveSelectedGridDate(-1);
+    return;
+  }
   currentWeekStart = new Date(currentWeekStart);
   currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+  selectedDateStr = toDateStr(currentWeekStart);
   render();
 }
 
-function nextWeek() {
+function nextGridPeriod() {
+  if (effectiveGridViewMode() === GRID_MODE_THREE_DAY) {
+    moveSelectedGridDate(1);
+    return;
+  }
   currentWeekStart = new Date(currentWeekStart);
   currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+  selectedDateStr = toDateStr(currentWeekStart);
   render();
 }
 
 function goToToday() {
   currentWeekStart = getMonday(new Date());
+  selectedDateStr = todayStr();
   render();
+}
+
+function ensureSelectedDate() {
+  if (!isValidDateStr(selectedDateStr)) selectedDateStr = todayStr();
+  if (!currentWeekStart) currentWeekStart = getMonday(dateFromStr(selectedDateStr));
+}
+
+function isPhoneGridViewport() {
+  return Boolean(window.matchMedia?.(GRID_PHONE_MEDIA).matches);
+}
+
+function effectiveGridViewMode() {
+  if (!isPhoneGridViewport()) return GRID_MODE_WEEK;
+  return gridViewModeOverride === GRID_MODE_WEEK ? GRID_MODE_WEEK : GRID_MODE_THREE_DAY;
+}
+
+function visibleGridDates(viewMode = effectiveGridViewMode()) {
+  if (viewMode === GRID_MODE_WEEK) return weekDates(currentWeekStart);
+  const selected = dateFromStr(selectedDateStr || todayStr());
+  return [-1, 0, 1].map(offset => {
+    const date = new Date(selected);
+    date.setDate(date.getDate() + offset);
+    return date;
+  });
+}
+
+function selectGridDate(dateStr) {
+  if (!isValidDateStr(dateStr)) return;
+  selectedDateStr = dateStr;
+  currentWeekStart = getMonday(dateFromStr(dateStr));
+  render();
+}
+
+function moveSelectedGridDate(offsetDays) {
+  ensureSelectedDate();
+  const date = dateFromStr(selectedDateStr);
+  date.setDate(date.getDate() + offsetDays);
+  selectGridDate(toDateStr(date));
+}
+
+function setGridViewMode(mode) {
+  gridViewModeOverride = mode === GRID_MODE_WEEK ? GRID_MODE_WEEK : GRID_MODE_THREE_DAY;
+  if (gridViewModeOverride === GRID_MODE_WEEK) {
+    currentWeekStart = getMonday(dateFromStr(selectedDateStr || todayStr()));
+  }
+  render();
+}
+
+function bindGridViewportListener() {
+  const query = window.matchMedia?.(GRID_PHONE_MEDIA);
+  if (!query) return;
+  const handleChange = () => render();
+  if (typeof query.addEventListener === 'function') {
+    query.addEventListener('change', handleChange);
+  } else if (typeof query.addListener === 'function') {
+    query.addListener(handleChange);
+  }
+}
+
+function dayNameForDate(date) {
+  return DAY_NAMES[(date.getDay() + 6) % 7];
+}
+
+function gridDateRangeLabel(dates) {
+  if (!dates.length) return '';
+  const first = dates[0];
+  const last = dates[dates.length - 1];
+  const sameMonth = first.getMonth() === last.getMonth() && first.getFullYear() === last.getFullYear();
+  if (sameMonth) return `${MONTH_NAMES[first.getMonth()]} ${first.getFullYear()}`;
+  if (first.getFullYear() === last.getFullYear()) {
+    return `${MONTH_ABBR[first.getMonth()]}-${MONTH_ABBR[last.getMonth()]} ${first.getFullYear()}`;
+  }
+  return `${MONTH_ABBR[first.getMonth()]} ${first.getFullYear()}-${MONTH_ABBR[last.getMonth()]} ${last.getFullYear()}`;
 }
 
 // ── Compact col-header on scroll ──────────────────────────────────

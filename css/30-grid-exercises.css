@@ -1,7 +1,7 @@
 /* ── Column header row (day labels) ──────────────────────────────── */
 .col-header-row {
   display: grid;
-  grid-template-columns: var(--label-col-w) repeat(7, var(--day-col-w));
+  grid-template-columns: var(--label-col-w) repeat(var(--visible-day-count, 7), var(--day-col-w));
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
@@ -44,6 +44,45 @@
   min-width: 0;
   overflow: visible;
   flex-wrap: nowrap;
+}
+
+.grid-view-toggle {
+  display: none;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(255,255,255,.028);
+}
+
+.grid-view-option {
+  min-height: 28px;
+  border: 0;
+  border-left: 1px solid rgba(255,255,255,.075);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0 9px;
+}
+
+.grid-view-option:first-child {
+  border-left: 0;
+}
+
+.grid-view-option:hover,
+.grid-view-option:focus-visible {
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  outline: none;
+}
+
+.grid-view-option.is-active {
+  background: rgba(99,179,255,.18);
+  color: #dceeff;
 }
 
 .col-header-row .week-label {
@@ -155,7 +194,7 @@
 /* ── Group section header ────────────────────────────────────────── */
 .group-header {
   display: grid;
-  grid-template-columns: var(--label-col-w) repeat(7, var(--day-col-w));
+  grid-template-columns: var(--label-col-w) repeat(var(--visible-day-count, 7), var(--day-col-w));
   border-top: 3px solid var(--border);
   margin-top: 6px;
   background: rgba(255,255,255,.025);
@@ -230,7 +269,7 @@
 /* ── Exercise row ────────────────────────────────────────────────── */
 .exercise-row {
   display: grid;
-  grid-template-columns: var(--label-col-w) repeat(7, var(--day-col-w));
+  grid-template-columns: var(--label-col-w) repeat(var(--visible-day-count, 7), var(--day-col-w));
   border-top: 1px solid var(--border);
   transition: background .1s;
 }
@@ -667,7 +706,7 @@
 
 .instruction-row.open {
   display: grid;
-  grid-template-columns: var(--label-col-w) repeat(7, var(--day-col-w));
+  grid-template-columns: var(--label-col-w) repeat(var(--visible-day-count, 7), var(--day-col-w));
   border-top: 1px solid rgba(255,255,255,.045);
   background: rgba(255,255,255,.018);
 }

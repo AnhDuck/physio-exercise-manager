@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   runMigrations();
   currentWeekStart = getMonday(new Date());
   lastTodayStr = todayStr();
+  selectedDateStr = lastTodayStr;
   try {
     restoreActiveTracker();
   } catch (err) {
@@ -78,6 +79,7 @@ function bindStaticEvents() {
   document.addEventListener('keydown', handleSetTrackerKeydown);
   document.addEventListener('click', () => closeCompletedActionMenu());
   window.addEventListener('scroll', updateCompactHeader, { passive: true });
+  bindGridViewportListener();
 
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
   document.getElementById('exercise-modal-close').addEventListener('click', closeModal);
