@@ -316,6 +316,14 @@ function maybeSyncActivityWatchRange(trigger = 'manual', count = ACTIVITYWATCH_R
   if (!force && !hasStaleQueryData && dayCount === ACTIVITYWATCH_RECENT_SYNC_DAYS && lastSyncMs && Date.now() - lastSyncMs < ACTIVITYWATCH_SYNC_THROTTLE_MS) {
     return Promise.resolve(activityWatchData);
   }
+  return maybeSyncActivityWatchDateStrings(trigger, requestedDates, options);
+}
+
+function maybeSyncActivityWatchDateStrings(trigger = 'manual', dateStrings = [], options = {}) {
+  if (!activityWatchData || !activityWatchData.version) loadActivityWatchData();
+  const force = Boolean(options.force);
+  const requestedDates = Array.from(new Set((Array.isArray(dateStrings) ? dateStrings : [])
+    .filter(activityWatchIsValidDate)));
   if (activityWatchSyncPromise) return activityWatchSyncPromise;
 
   const syncDates = activityWatchDatesNeedingSync(requestedDates, { force });
