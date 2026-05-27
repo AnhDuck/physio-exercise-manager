@@ -12,7 +12,7 @@ const ACTIVITYWATCH_DASHBOARD_OTHER_CATEGORY = 'Other';
 const ACTIVITYWATCH_DASHBOARD_CATEGORY_COLORS = {
   YouTube: '#d96b6b',
   Health: '#66bfa3',
-  Games: '#b990e8',
+  Games: '#f59e0b',
   Codex: '#6baee8',
   ChatGPT: '#77c6bd',
   IM: '#e0b95f',
@@ -435,6 +435,7 @@ function renderActivityWatchStackedChart(days) {
     barButton.title = `${formatEventDate(day.date)} - ${formatActivityWatchDuration(day.totalActiveSeconds)}`;
     barButton.addEventListener('click', () => {
       activityWatchDashboardState.selectedDate = day.date;
+      activityWatchDashboardState.detailMode = 'day';
       activityWatchDashboardState.showAllCategories = false;
       activityWatchDashboardState.hoveredCategory = '';
       renderActivityWatchDashboard();
@@ -459,13 +460,6 @@ function renderActivityWatchStackedChart(days) {
       segment.style.height = `${Math.max(2, (seconds / stackTotal) * 100)}%`;
       segment.style.background = activityWatchDashboardCategoryColor(category);
       segment.title = `${category}: ${formatActivityWatchDuration(seconds)}`;
-      if (category !== ACTIVITYWATCH_DASHBOARD_OTHER_CATEGORY) {
-        segment.addEventListener('click', (event) => {
-          event.stopPropagation();
-          handleActivityWatchSegmentClick(day.date, category);
-        });
-        addActivityWatchCategoryPreviewHandlers(segment, category);
-      }
       stack.appendChild(segment);
     });
     if (!plottedSeconds) {
@@ -478,17 +472,6 @@ function renderActivityWatchStackedChart(days) {
   });
   plot.appendChild(bars);
   root.appendChild(plot);
-}
-
-function handleActivityWatchSegmentClick(dateStr, category) {
-  if (dateStr !== activityWatchDashboardState.selectedDate) {
-    activityWatchDashboardState.selectedDate = dateStr;
-    activityWatchDashboardState.showAllCategories = false;
-    activityWatchDashboardState.hoveredCategory = '';
-    renderActivityWatchDashboard();
-    return;
-  }
-  lockActivityWatchDashboardCategory(category, { toggle: false });
 }
 
 function activityWatchDashboardChartCategories(days) {
@@ -757,6 +740,7 @@ function activityWatchFormatHourTick(value) {
 
 function activityWatchBarTotalLabel(day, plottedSeconds, index, dayCount) {
   if (!plottedSeconds) return '';
+  if (dayCount > 14) return '';
   if (dayCount <= 14 || day.date === activityWatchDashboardState.selectedDate || index === 0 || index === dayCount - 1) {
     return formatActivityWatchChartDuration(plottedSeconds, dayCount > 30);
   }
