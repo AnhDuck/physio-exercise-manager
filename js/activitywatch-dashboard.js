@@ -30,6 +30,10 @@ const activityWatchDashboardState = {
   hoveredCategory: '',
   detailMode: 'day',
   showAllCategories: false,
+  advancedSyncOpen: false,
+  advancedSyncMode: '',
+  advancedSyncCustomStart: '',
+  advancedSyncCustomEnd: '',
 };
 
 function openActivityWatchDashboard() {
@@ -160,6 +164,9 @@ function renderActivityWatchDashboardControls(days) {
   row.appendChild(buildActivityWatchControlActions(days, isSyncing));
   root.appendChild(row);
 
+  if (activityWatchDashboardState.advancedSyncOpen) {
+    root.appendChild(buildActivityWatchAdvancedSyncPanel(days, isSyncing));
+  }
   if (isSyncing) {
     root.appendChild(buildActivityWatchSyncProgress(progress));
   }
@@ -213,20 +220,8 @@ function buildActivityWatchControlActions(days, isSyncing) {
   refresh.addEventListener('click', () => {
     maybeSyncActivityWatchRecent('dashboard-manual', { force: true });
   });
-  setSettingsButtonContent(refresh, isSyncing ? 'Syncing...' : 'Refresh recent', 'reconnect');
+  setSettingsButtonContent(refresh, isSyncing ? 'Syncing...' : 'Refresh', 'reconnect');
   actions.appendChild(refresh);
-
-  const resyncHistory = el('button', 'settings-backup-btn activitywatch-resync-history-btn');
-  resyncHistory.id = 'activitywatch-dashboard-resync-history';
-  resyncHistory.type = 'button';
-  resyncHistory.dataset.settingsIcon = 'restore';
-  resyncHistory.disabled = isSyncing;
-  resyncHistory.title = 'Force-refresh stored ActivityWatch dates after category or rule changes';
-  resyncHistory.addEventListener('click', () => {
-    maybeSyncActivityWatchDateStrings('dashboard-history-manual', activityWatchDashboardHistorySyncDates(days), { force: true });
-  });
-  setSettingsButtonContent(resyncHistory, isSyncing ? 'Resyncing...' : 'Resync history', 'restore');
-  actions.appendChild(resyncHistory);
 
   const pager = el('div', 'activitywatch-range-pager');
 
@@ -238,9 +233,9 @@ function buildActivityWatchControlActions(days, isSyncing) {
   next.disabled = isSyncing || activityWatchDashboardState.rangeEndDate >= activityWatchCurrentWakingDateStr();
   pager.appendChild(next);
 
-  const latest = buildActivityWatchPagerButton('Latest range', 'restore', () => showLatestActivityWatchDashboardRange());
-  latest.disabled = activityWatchDashboardState.rangeEndDate === activityWatchCurrentWakingDateStr();
-  pager.appendChild(latest);
+  const today = buildActivityWatchTodayButton(() => showLatestActivityWatchDashboardRange());
+  today.disabled = activityWatchDashboardState.rangeEndDate === activityWatchCurrentWakingDateStr();
+  pager.appendChild(today);
   actions.appendChild(pager);
 
   const rangeLabel = el('label', 'activitywatch-range-control');
@@ -262,6 +257,19 @@ function buildActivityWatchControlActions(days, isSyncing) {
   });
   rangeLabel.appendChild(select);
   actions.appendChild(rangeLabel);
+
+  const advanced = el('button', 'activitywatch-advanced-sync-toggle');
+  advanced.type = 'button';
+  advanced.title = 'Advanced ActivityWatch sync';
+  advanced.setAttribute('aria-label', 'Advanced ActivityWatch sync');
+  advanced.setAttribute('aria-expanded', activityWatchDashboardState.advancedSyncOpen ? 'true' : 'false');
+  advanced.appendChild(buildAppIconSvg('wrench'));
+  advanced.addEventListener('click', () => {
+    activityWatchDashboardState.advancedSyncOpen = !activityWatchDashboardState.advancedSyncOpen;
+    ensureActivityWatchAdvancedSyncDefaults(days);
+    renderActivityWatchDashboard();
+  });
+  actions.appendChild(advanced);
   return actions;
 }
 
@@ -275,12 +283,180 @@ function buildActivityWatchPagerButton(title, iconName, onClick) {
   return button;
 }
 
+function buildActivityWatchTodayButton(onClick) {
+  const button = el('button', 'activitywatch-pager-btn activitywatch-today-btn');
+  button.type = 'button';
+  button.title = 'Today';
+  button.textContent = 'Today';
+  button.addEventListener('click', onClick);
+  return button;
+}
+
 function buildActivityWatchSummaryCard(label, value, detail) {
   const card = el('div', 'activitywatch-summary-card');
   card.appendChild(elText('span', '', label));
   card.appendChild(elText('strong', '', value));
   card.appendChild(elText('small', '', detail));
   return card;
+}
+
+function buildActivityWatchAdvancedSyncPanel(days, isSyncing) {
+  ensureActivityWatchAdvancedSyncDefaults(days);
+  const panel = el('section', 'activitywatch-advanced-sync-panel');
+  const header = el('div', 'activitywatch-advanced-sync-header');
+  const copy = el('div', '');
+  copy.appendChild(elText('strong', '', 'Advanced sync'));
+  copy.appendChild(elText('span', '', 'Use this after ActivityWatch category rules change. Choose the dates first; routine dashboard updates should use Refresh.'));
+  header.appendChild(copy);
+  const close = el('button', 'activitywatch-advanced-sync-close');
+  close.type = 'button';
+  close.title = 'Close advanced sync';
+  close.setAttribute('aria-label', 'Close advanced sync');
+  close.appendChild(buildAppIconSvg('x'));
+  close.addEventListener('click', () => {
+    activityWatchDashboardState.advancedSyncOpen = false;
+    renderActivityWatchDashboard();
+  });
+  header.appendChild(close);
+  panel.appendChild(header);
+
+  const form = el('div', 'activitywatch-advanced-sync-form');
+  const modeLabel = el('label', 'activitywatch-advanced-sync-field');
+  modeLabel.appendChild(elText('span', '', 'Dates'));
+  const mode = el('select', '');
+  mode.id = 'activitywatch-advanced-sync-mode';
+  activityWatchAdvancedSyncOptions(days).forEach(option => {
+    const item = document.createElement('option');
+    item.value = option.value;
+    item.textContent = option.label;
+    mode.appendChild(item);
+  });
+  mode.value = activityWatchDashboardState.advancedSyncMode;
+  mode.addEventListener('change', () => {
+    activityWatchDashboardState.advancedSyncMode = mode.value;
+    renderActivityWatchDashboard();
+  });
+  modeLabel.appendChild(mode);
+  form.appendChild(modeLabel);
+
+  if (activityWatchDashboardState.advancedSyncMode === 'custom') {
+    form.appendChild(buildActivityWatchAdvancedSyncDateInput('Start', 'activitywatch-advanced-sync-start', 'advancedSyncCustomStart'));
+    form.appendChild(buildActivityWatchAdvancedSyncDateInput('End', 'activitywatch-advanced-sync-end', 'advancedSyncCustomEnd'));
+  }
+
+  const syncDates = activityWatchAdvancedSyncDateStrings(days);
+  const count = syncDates.length;
+  const summary = el('div', 'activitywatch-advanced-sync-summary');
+  summary.appendChild(elText('strong', '', count ? `${formatNumber(count)} waking days` : 'No dates selected'));
+  summary.appendChild(elText('span', '', activityWatchAdvancedSyncSummary(syncDates)));
+  form.appendChild(summary);
+
+  const run = el('button', 'settings-backup-btn activitywatch-advanced-sync-run');
+  run.type = 'button';
+  run.dataset.settingsIcon = 'restore';
+  run.disabled = isSyncing || !count;
+  run.title = count ? `Resync ${formatNumber(count)} selected waking days` : 'Choose dates before resyncing';
+  run.addEventListener('click', () => {
+    maybeSyncActivityWatchDateStrings('dashboard-advanced-manual', syncDates, { force: true });
+  });
+  setSettingsButtonContent(run, isSyncing ? 'Syncing...' : 'Resync selected', 'restore');
+  form.appendChild(run);
+  panel.appendChild(form);
+
+  if (count > 90) {
+    panel.appendChild(elText('div', 'activitywatch-advanced-sync-warning', 'Large resyncs can take a while. Last 30 days or the visible range is usually enough after small category edits.'));
+  }
+  return panel;
+}
+
+function buildActivityWatchAdvancedSyncDateInput(label, id, stateKey) {
+  const field = el('label', 'activitywatch-advanced-sync-field');
+  field.appendChild(elText('span', '', label));
+  const input = el('input', '');
+  input.type = 'date';
+  input.id = id;
+  input.max = activityWatchCurrentWakingDateStr();
+  input.value = activityWatchDashboardState[stateKey];
+  input.addEventListener('change', () => {
+    activityWatchDashboardState[stateKey] = input.value;
+    renderActivityWatchDashboard();
+  });
+  field.appendChild(input);
+  return field;
+}
+
+function ensureActivityWatchAdvancedSyncDefaults(days) {
+  const current = activityWatchCurrentWakingDateStr();
+  if (!activityWatchDashboardState.advancedSyncMode) {
+    activityWatchDashboardState.advancedSyncMode = activityWatchStoredDateStrings().length ? 'visible' : 'last30';
+  }
+  if (!activityWatchDashboardState.advancedSyncCustomEnd) {
+    activityWatchDashboardState.advancedSyncCustomEnd = days[days.length - 1]?.date || current;
+  }
+  if (!activityWatchDashboardState.advancedSyncCustomStart) {
+    const start = dateFromStr(activityWatchDashboardState.advancedSyncCustomEnd);
+    start.setDate(start.getDate() - 29);
+    activityWatchDashboardState.advancedSyncCustomStart = toDateStr(start);
+  }
+}
+
+function activityWatchAdvancedSyncOptions(days) {
+  const options = [
+    { value: 'visible', label: `Visible range (${formatNumber(days.length)} days)` },
+    { value: 'last30', label: 'Last 30 days' },
+    { value: 'last90', label: 'Last 90 days' },
+  ];
+  const stored = activityWatchStoredDateStrings();
+  if (stored.length) {
+    options.push({ value: 'stored', label: `Stored days (${formatNumber(stored.length)} days)` });
+  }
+  options.push({ value: 'custom', label: 'Custom dates' });
+  if (!options.some(option => option.value === activityWatchDashboardState.advancedSyncMode)) {
+    activityWatchDashboardState.advancedSyncMode = options[0].value;
+  }
+  return options;
+}
+
+function activityWatchAdvancedSyncDateStrings(days) {
+  const mode = activityWatchDashboardState.advancedSyncMode;
+  if (mode === 'visible') return days.map(day => day.date).filter(activityWatchIsValidDate);
+  if (mode === 'last30') return activityWatchRecentDateStrings(30);
+  if (mode === 'last90') return activityWatchRecentDateStrings(90);
+  if (mode === 'stored') return activityWatchStoredDateStrings();
+  if (mode === 'custom') return activityWatchDateStringsBetween(activityWatchDashboardState.advancedSyncCustomStart, activityWatchDashboardState.advancedSyncCustomEnd);
+  return [];
+}
+
+function activityWatchAdvancedSyncSummary(dateStrings) {
+  if (!dateStrings.length) return 'Choose a valid start and end date.';
+  const first = dateStrings[0];
+  const last = dateStrings[dateStrings.length - 1];
+  return first === last
+    ? formatEventDate(first)
+    : `${formatEventDate(first)} to ${formatEventDate(last)}`;
+}
+
+function activityWatchStoredDateStrings() {
+  return Object.keys(activityWatchData.daysByDate || {})
+    .filter(activityWatchIsValidDate)
+    .sort();
+}
+
+function activityWatchDateStringsBetween(startDate, endDate) {
+  if (!activityWatchIsValidDate(startDate) || !activityWatchIsValidDate(endDate)) return [];
+  const current = activityWatchCurrentWakingDateStr();
+  const start = startDate <= endDate ? startDate : endDate;
+  let end = startDate <= endDate ? endDate : startDate;
+  if (start > current) return [];
+  if (end > current) end = current;
+  const dates = [];
+  const cursor = dateFromStr(start);
+  const endObj = dateFromStr(end);
+  while (cursor <= endObj) {
+    dates.push(toDateStr(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return dates;
 }
 
 function shiftActivityWatchDashboardRange(direction) {
@@ -600,15 +776,6 @@ function activityWatchAggregateCategoryRows(days) {
   });
   return Object.entries(totals)
     .sort((a, b) => b[1] - a[1]);
-}
-
-function activityWatchDashboardHistorySyncDates(days) {
-  const storedDates = Object.keys(activityWatchData.daysByDate || {});
-  return Array.from(new Set([
-    ...storedDates,
-    ...days.map(day => day.date),
-    ...activityWatchRecentDateStrings(ACTIVITYWATCH_RECENT_SYNC_DAYS),
-  ].filter(activityWatchIsValidDate))).sort();
 }
 
 function lockActivityWatchDashboardCategory(category, options = {}) {

@@ -157,6 +157,8 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   display: inline-grid;
   place-items: center;
   width: 34px;
+  min-width: 34px;
+  height: 32px;
   min-height: 32px;
   padding: 0;
   border: 0;
@@ -165,12 +167,23 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   color: var(--text);
   cursor: pointer;
   font: inherit;
+  line-height: 1;
 }
 
 .activitywatch-pager-btn .ui-button-icon {
+  display: block;
   width: 16px;
   height: 16px;
   stroke-width: 2.2;
+}
+
+.activitywatch-today-btn {
+  width: auto;
+  min-width: 54px;
+  padding: 0 11px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 850;
 }
 
 .activitywatch-pager-btn:last-child {
@@ -353,8 +366,139 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   background: rgba(99,179,255,.18);
 }
 
-.activitywatch-resync-history-btn {
+.activitywatch-advanced-sync-toggle,
+.activitywatch-advanced-sync-close {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--ui-control-bg);
   color: var(--text-muted);
+  cursor: pointer;
+}
+
+.activitywatch-advanced-sync-toggle:hover,
+.activitywatch-advanced-sync-toggle:focus-visible,
+.activitywatch-advanced-sync-toggle[aria-expanded="true"],
+.activitywatch-advanced-sync-close:hover,
+.activitywatch-advanced-sync-close:focus-visible {
+  border-color: rgba(99,179,255,.72);
+  background: var(--ui-control-hover);
+  color: var(--text);
+  outline: none;
+}
+
+.activitywatch-advanced-sync-toggle .ui-button-icon,
+.activitywatch-advanced-sync-close .ui-button-icon {
+  display: block;
+  width: 15px;
+  height: 15px;
+  stroke-width: 2.2;
+}
+
+.activitywatch-advanced-sync-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid rgba(160,164,173,.26);
+  border-radius: 8px;
+  background: rgba(255,255,255,.025);
+}
+
+.activitywatch-advanced-sync-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+}
+
+.activitywatch-advanced-sync-header > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.activitywatch-advanced-sync-header strong,
+.activitywatch-advanced-sync-summary strong {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.activitywatch-advanced-sync-header span,
+.activitywatch-advanced-sync-summary span,
+.activitywatch-advanced-sync-warning {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.activitywatch-advanced-sync-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+}
+
+.activitywatch-advanced-sync-field {
+  display: grid;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.activitywatch-advanced-sync-field select,
+.activitywatch-advanced-sync-field input {
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--ui-control-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.activitywatch-advanced-sync-field select {
+  min-width: 180px;
+  padding-right: 28px;
+}
+
+.activitywatch-advanced-sync-field input {
+  width: 146px;
+}
+
+.activitywatch-advanced-sync-field select:focus,
+.activitywatch-advanced-sync-field input:focus {
+  border-color: rgba(99,179,255,.82);
+  outline: none;
+  box-shadow: var(--ui-focus-ring);
+}
+
+.activitywatch-advanced-sync-summary {
+  display: grid;
+  gap: 2px;
+  min-width: 170px;
+  padding: 5px 0;
+}
+
+.activitywatch-advanced-sync-run {
+  min-height: 32px;
+}
+
+.activitywatch-advanced-sync-warning {
+  padding: 7px 9px;
+  border-left: 3px solid #f5c45a;
+  border-radius: 5px;
+  background: rgba(245,196,90,.08);
+  color: #f8e3ae;
 }
 
 .activitywatch-stacked-chart {
