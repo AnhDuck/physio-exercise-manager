@@ -637,6 +637,32 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   filter: saturate(1.18) brightness(1.08);
 }
 
+.activitywatch-chart-tooltip {
+  position: fixed;
+  z-index: 320;
+  max-width: min(260px, calc(100vw - 16px));
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #111;
+  color: var(--text);
+  box-shadow: 0 8px 18px rgba(0,0,0,.32);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.activitywatch-chart-tooltip.is-visible {
+  opacity: 1;
+}
+
+.activitywatch-chart-tooltip[hidden] {
+  display: none;
+}
+
 .activitywatch-day-bar-empty {
   display: block;
   width: 100%;

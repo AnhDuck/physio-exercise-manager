@@ -50,6 +50,7 @@ function openActivityWatchDashboard() {
 }
 
 function closeActivityWatchDashboard() {
+  hideActivityWatchChartTooltip();
   document.getElementById('activitywatch-dashboard-modal')?.classList.add('hidden');
 }
 
@@ -534,6 +535,7 @@ function activityWatchProgressDateRange(progress) {
 function renderActivityWatchStackedChart(days) {
   const root = document.getElementById('activitywatch-stacked-chart');
   if (!root) return;
+  hideActivityWatchChartTooltip();
   root.innerHTML = '';
   root.classList.toggle('is-dense-range', days.length > 30);
   root.classList.toggle('is-month-range', days.length >= 30);
@@ -564,7 +566,7 @@ function renderActivityWatchStackedChart(days) {
     barButton.type = 'button';
     barButton.dataset.awDate = day.date;
     barButton.classList.toggle('is-selected', day.date === activityWatchDashboardState.selectedDate);
-    barButton.title = `${formatEventDate(day.date)} - ${formatActivityWatchDuration(day.totalActiveSeconds)}`;
+    barButton.setAttribute('aria-label', `${formatEventDate(day.date)} - ${formatActivityWatchDuration(day.totalActiveSeconds)}`);
     barButton.addEventListener('click', () => {
       activityWatchDashboardState.selectedDate = day.date;
       activityWatchDashboardState.detailMode = 'day';
@@ -591,7 +593,8 @@ function renderActivityWatchStackedChart(days) {
       segment.dataset.awCategory = category;
       segment.style.height = `${Math.max(2, (seconds / stackTotal) * 100)}%`;
       segment.style.background = activityWatchDashboardCategoryColor(category);
-      segment.title = `${category}: ${formatActivityWatchDuration(seconds)}`;
+      segment.setAttribute('aria-label', `${category}: ${formatActivityWatchDuration(seconds)}`);
+      addActivityWatchBarSegmentTooltipHandlers(segment, category, seconds);
       stack.appendChild(segment);
     });
     if (!plottedSeconds) {
@@ -604,6 +607,62 @@ function renderActivityWatchStackedChart(days) {
   });
   plot.appendChild(bars);
   root.appendChild(plot);
+}
+
+function addActivityWatchBarSegmentTooltipHandlers(segment, category, seconds) {
+  addActivityWatchCategoryPreviewHandlers(segment, category);
+  segment.addEventListener('pointerenter', (event) => {
+    showActivityWatchChartTooltip(event, category, seconds);
+  });
+  segment.addEventListener('pointermove', (event) => {
+    positionActivityWatchChartTooltip(event);
+  });
+  segment.addEventListener('pointerleave', hideActivityWatchChartTooltip);
+  segment.addEventListener('pointercancel', hideActivityWatchChartTooltip);
+}
+
+function ensureActivityWatchChartTooltip() {
+  let tooltip = document.getElementById('activitywatch-chart-tooltip');
+  if (tooltip) return tooltip;
+  tooltip = el('div', 'activitywatch-chart-tooltip');
+  tooltip.id = 'activitywatch-chart-tooltip';
+  tooltip.setAttribute('role', 'tooltip');
+  tooltip.hidden = true;
+  document.body.appendChild(tooltip);
+  return tooltip;
+}
+
+function showActivityWatchChartTooltip(event, category, seconds) {
+  const tooltip = ensureActivityWatchChartTooltip();
+  tooltip.textContent = `${category}: ${formatActivityWatchDuration(seconds)}`;
+  tooltip.hidden = false;
+  tooltip.classList.add('is-visible');
+  positionActivityWatchChartTooltip(event);
+}
+
+function positionActivityWatchChartTooltip(event) {
+  const tooltip = document.getElementById('activitywatch-chart-tooltip');
+  if (!tooltip || tooltip.hidden) return;
+  const offset = 12;
+  const margin = 8;
+  const rect = tooltip.getBoundingClientRect();
+  let left = event.clientX + offset;
+  let top = event.clientY + offset;
+  if (left + rect.width > window.innerWidth - margin) {
+    left = event.clientX - rect.width - offset;
+  }
+  if (top + rect.height > window.innerHeight - margin) {
+    top = event.clientY - rect.height - offset;
+  }
+  tooltip.style.left = `${Math.max(margin, left)}px`;
+  tooltip.style.top = `${Math.max(margin, top)}px`;
+}
+
+function hideActivityWatchChartTooltip() {
+  const tooltip = document.getElementById('activitywatch-chart-tooltip');
+  if (!tooltip) return;
+  tooltip.classList.remove('is-visible');
+  tooltip.hidden = true;
 }
 
 function activityWatchDashboardChartCategories(days) {
