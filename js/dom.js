@@ -49,6 +49,8 @@ function buildAppIconSvg(iconName, className = 'ui-button-icon') {
     check: ['M5 12.5l4.2 4.2L19 7'],
     'check-circle': ['M20 11.1V12a8 8 0 1 1-4.7-7.3', 'M7.8 11.7l2.7 2.7L20 5'],
     'chevron-down': ['M7 10l5 5 5-5'],
+    'chevron-left': ['M15 6l-6 6 6 6'],
+    'chevron-right': ['M9 6l6 6-6 6'],
     'chevron-up': ['M7 14l5-5 5 5'],
     copy: [
       'M8 8h11v11H8z',

@@ -154,16 +154,23 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-pager-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
   min-height: 32px;
-  padding: 6px 9px;
+  padding: 0;
   border: 0;
   border-right: 1px solid var(--border);
   background: transparent;
   color: var(--text);
   cursor: pointer;
   font: inherit;
-  font-size: 12px;
-  font-weight: 800;
+}
+
+.activitywatch-pager-btn .ui-button-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2.2;
 }
 
 .activitywatch-pager-btn:last-child {
@@ -308,6 +315,14 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   margin-bottom: 10px;
 }
 
+.activitywatch-section-heading > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px 8px;
+  min-width: 0;
+}
+
 .activitywatch-section-heading h3 {
   margin: 0;
   color: var(--text);
@@ -317,8 +332,8 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-section-subtitle {
-  display: block;
-  margin-top: 3px;
+  display: inline;
+  margin-top: 0;
   color: var(--text-muted);
   font-size: 11px;
   font-weight: 700;
@@ -327,57 +342,19 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-refresh-btn {
   min-height: 32px;
-}
-
-.activitywatch-category-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-  margin: -2px 0 9px;
-}
-
-.activitywatch-category-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  max-width: 220px;
-  min-height: 30px;
-  padding: 5px 8px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--ui-control-bg);
-  color: var(--text-muted);
-  cursor: pointer;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1.15;
-}
-
-.activitywatch-category-chip span:last-child {
-  overflow: hidden;
-  min-width: 0;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.activitywatch-category-chip .activitywatch-legend-swatch {
-  background: var(--activitywatch-category-color);
-}
-
-.activitywatch-category-chip:hover,
-.activitywatch-category-chip:focus-visible,
-.activitywatch-category-chip.is-active {
-  border-color: rgba(99,179,255,.72);
-  background: var(--ui-control-hover);
+  border-color: rgba(99,179,255,.52);
+  background: rgba(99,179,255,.12);
   color: var(--text);
-  outline: none;
 }
 
-.activitywatch-all-categories-chip {
-  border-color: rgba(99,179,255,.46);
-  color: #cfe8ff;
+.activitywatch-refresh-btn:hover,
+.activitywatch-refresh-btn:focus-visible {
+  border-color: rgba(99,179,255,.82);
+  background: rgba(99,179,255,.18);
+}
+
+.activitywatch-resync-history-btn {
+  color: var(--text-muted);
 }
 
 .activitywatch-stacked-chart {
@@ -508,7 +485,6 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-day-bar-segment.is-dimmed,
-.activitywatch-category-chip.is-dimmed,
 .activitywatch-category-row.is-dimmed {
   opacity: .35;
 }
@@ -556,14 +532,6 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   font-size: 9px;
 }
 
-.activitywatch-chart-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px 10px;
-  margin-top: 10px;
-}
-
-.activitywatch-legend-item,
 .activitywatch-category-label {
   display: inline-flex;
   align-items: center;
@@ -654,6 +622,41 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 .activitywatch-detail-toggle button.is-active {
   background: var(--ui-control-hover);
   color: var(--text);
+  outline: none;
+}
+
+.activitywatch-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 1px solid rgba(99,179,255,.34);
+  border-radius: 7px;
+  background: rgba(99,179,255,.07);
+  color: #cfe8ff;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.activitywatch-clear-filter-btn {
+  min-height: 26px;
+  padding: 4px 8px;
+  border: 1px solid rgba(99,179,255,.42);
+  border-radius: 5px;
+  background: rgba(99,179,255,.1);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.activitywatch-clear-filter-btn:hover,
+.activitywatch-clear-filter-btn:focus-visible {
+  background: rgba(99,179,255,.18);
   outline: none;
 }
 
