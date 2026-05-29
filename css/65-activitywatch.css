@@ -773,12 +773,17 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-stacked-chart.is-wide-range .activitywatch-bars-row {
-  display: flex;
-  gap: 1px;
+  grid-template-columns: repeat(var(--activitywatch-day-count), 8px);
+  justify-content: space-between;
+  gap: 0;
 }
 
 .activitywatch-stacked-chart.is-wide-range .activitywatch-day-bar {
-  flex: 1 1 0;
+  width: 8px;
+}
+
+.activitywatch-stacked-chart.is-wide-range .activitywatch-day-bar-stack {
+  border-radius: 3px 3px 2px 2px;
 }
 
 .activitywatch-category-label {
