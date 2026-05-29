@@ -980,10 +980,7 @@ function activityWatchXAxisLabel(day, index, days) {
   const selected = day.date === activityWatchDashboardState.selectedDate;
   if (dayCount <= 14) return String(date.getDate());
   if (dayCount <= 30) {
-    if (selected || index === 0 || index === dayCount - 1 || index % 7 === 0 || date.getDate() === 1) {
-      return activityWatchCompactAxisDate(date, index > 0 ? dateFromStr(days[index - 1].date) : null, selected || index === 0 || index === dayCount - 1 || date.getDate() === 1);
-    }
-    return '';
+    return activityWatchCompactAxisDate(date, index > 0 ? dateFromStr(days[index - 1].date) : null, selected || index === 0 || index === dayCount - 1 || date.getDate() === 1);
   }
   if (selected || index === 0 || index === dayCount - 1 || activityWatchIsWideRangeTick(date, index, days)) {
     return activityWatchCompactAxisDate(date, index > 0 ? dateFromStr(days[index - 1].date) : null, selected || index === 0 || index === dayCount - 1 || date.getDate() === 1);

@@ -284,7 +284,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(310px, 420px);
+  grid-template-columns: minmax(0, 1fr) minmax(264px, 357px);
   gap: 14px;
   align-items: start;
 }
@@ -765,6 +765,20 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   overflow: visible;
   color: var(--text-muted);
   font-size: 9px;
+}
+
+.activitywatch-stacked-chart.is-wide-range .activitywatch-month-bands {
+  grid-template-columns: repeat(var(--activitywatch-day-count), minmax(0, 1fr));
+  gap: 0;
+}
+
+.activitywatch-stacked-chart.is-wide-range .activitywatch-bars-row {
+  display: flex;
+  gap: 1px;
+}
+
+.activitywatch-stacked-chart.is-wide-range .activitywatch-day-bar {
+  flex: 1 1 0;
 }
 
 .activitywatch-category-label {
