@@ -558,6 +558,8 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 .activitywatch-month-bands span {
   overflow: hidden;
   min-width: 0;
+  height: 100%;
+  padding-top: 6px;
   color: var(--text-muted);
   font-size: 11px;
   font-weight: 850;
@@ -565,6 +567,10 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.activitywatch-month-band + .activitywatch-month-band {
+  box-shadow: inset 1px 0 0 rgba(255,255,255,.09);
 }
 
 .activitywatch-bars-row {
@@ -712,18 +718,23 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   white-space: nowrap;
 }
 
-.activitywatch-day-bar.is-selected .activitywatch-day-bar-label {
+.activitywatch-day-bar.is-selected .activitywatch-day-bar-label.has-label {
+  position: absolute;
+  bottom: 1px;
+  left: 50%;
   justify-self: center;
-  min-width: 22px;
+  min-width: 0;
+  max-width: max-content;
   padding: 2px 7px;
   border: 1px solid rgba(99,179,255,.62);
   border-radius: 999px;
   background: rgba(99,179,255,.16);
   color: var(--text);
   box-shadow: 0 0 0 1px rgba(99,179,255,.12);
+  transform: translateX(-50%);
 }
 
-.activitywatch-day-bar.is-selected .activitywatch-day-bar-total {
+.activitywatch-day-bar.is-selected .activitywatch-day-bar-total.has-label {
   justify-self: center;
   max-width: calc(100% + 18px);
   padding: 2px 7px;
@@ -736,6 +747,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   gap: 6px;
 }
 
+.activitywatch-stacked-chart.is-dense-range .activitywatch-month-bands,
 .activitywatch-stacked-chart.is-dense-range .activitywatch-bars-row {
   grid-template-columns: repeat(var(--activitywatch-day-count), minmax(5px, 1fr));
   gap: 2px;
@@ -746,6 +758,12 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-stacked-chart.is-dense-range .activitywatch-day-bar-label {
+  font-size: 9px;
+}
+
+.activitywatch-stacked-chart.is-wide-range .activitywatch-day-bar-label.has-label {
+  overflow: visible;
+  color: var(--text-muted);
   font-size: 9px;
 }
 

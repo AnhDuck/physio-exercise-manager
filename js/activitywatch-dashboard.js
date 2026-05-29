@@ -537,6 +537,7 @@ function renderActivityWatchStackedChart(days) {
   if (!root) return;
   hideActivityWatchChartTooltip();
   root.innerHTML = '';
+  root.classList.toggle('is-wide-range', days.length > 45);
   root.classList.toggle('is-dense-range', days.length > 30);
   root.classList.toggle('is-month-range', days.length >= 30);
   root.classList.toggle('is-filtered', Boolean(activityWatchDashboardState.selectedCategory));
@@ -578,7 +579,9 @@ function renderActivityWatchStackedChart(days) {
     const plottedSeconds = activityWatchDashboardState.selectedCategory
       ? day.categoryTotals?.[activityWatchDashboardState.selectedCategory] || 0
       : day.totalActiveSeconds || 0;
-    const totalLabel = elText('span', 'activitywatch-day-bar-total', activityWatchBarTotalLabel(day, plottedSeconds, index, days.length));
+    const totalLabelText = activityWatchBarTotalLabel(day, plottedSeconds, index, days.length);
+    const totalLabel = elText('span', 'activitywatch-day-bar-total', totalLabelText);
+    totalLabel.classList.toggle('has-label', Boolean(totalLabelText));
     barButton.appendChild(totalLabel);
 
     const stack = el('span', 'activitywatch-day-bar-stack');
@@ -602,7 +605,10 @@ function renderActivityWatchStackedChart(days) {
       stack.appendChild(empty);
     }
     barButton.appendChild(stack);
-    barButton.appendChild(elText('span', 'activitywatch-day-bar-label', activityWatchXAxisLabel(day, index, days)));
+    const axisLabel = activityWatchXAxisLabel(day, index, days);
+    const label = elText('span', 'activitywatch-day-bar-label', axisLabel);
+    label.classList.toggle('has-label', Boolean(axisLabel));
+    barButton.appendChild(label);
     bars.appendChild(barButton);
   });
   plot.appendChild(bars);
@@ -702,6 +708,7 @@ function buildActivityWatchMonthBands(days) {
       month: 'short',
       year: startDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
     }));
+    band.classList.add('activitywatch-month-band');
     band.style.gridColumn = `${startIndex + 1} / ${endIndex + 2}`;
     row.appendChild(band);
     startIndex = endIndex + 1;
@@ -972,11 +979,30 @@ function activityWatchXAxisLabel(day, index, days) {
   const date = dateFromStr(day.date);
   const selected = day.date === activityWatchDashboardState.selectedDate;
   if (dayCount <= 14) return String(date.getDate());
-  if (selected || index === 0 || index === dayCount - 1) return String(date.getDate());
-  if (dayCount <= 30) return index % 7 === 0 ? String(date.getDate()) : '';
-  if (date.getDate() === 1) return date.toLocaleDateString(undefined, { month: 'short' });
-  if (dayCount <= 45 && date.getDay() === 1) return String(date.getDate());
+  if (dayCount <= 30) {
+    if (selected || index === 0 || index === dayCount - 1 || index % 7 === 0 || date.getDate() === 1) {
+      return activityWatchCompactAxisDate(date, index > 0 ? dateFromStr(days[index - 1].date) : null, selected || index === 0 || index === dayCount - 1 || date.getDate() === 1);
+    }
+    return '';
+  }
+  if (selected || index === 0 || index === dayCount - 1 || activityWatchIsWideRangeTick(date, index, days)) {
+    return activityWatchCompactAxisDate(date, index > 0 ? dateFromStr(days[index - 1].date) : null, selected || index === 0 || index === dayCount - 1 || date.getDate() === 1);
+  }
   return '';
+}
+
+function activityWatchIsWideRangeTick(date, index, days) {
+  if (date.getDate() === 1) return true;
+  return index % 14 === 0;
+}
+
+function activityWatchCompactAxisDate(date, previousDate = null, forceMonth = false) {
+  const month = date.toLocaleDateString(undefined, { month: 'short' });
+  const day = date.getDate();
+  if (forceMonth || !previousDate || previousDate.getMonth() !== date.getMonth()) {
+    return `${month} ${day}`;
+  }
+  return String(day);
 }
 
 function activityWatchDashboardCategoryColor(category) {
