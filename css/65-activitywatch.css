@@ -665,6 +665,10 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   transition: opacity .12s ease, filter .12s ease;
 }
 
+.activitywatch-day-bar-segment + .activitywatch-day-bar-segment {
+  box-shadow: inset 0 -1px 0 rgba(20,24,28,.46);
+}
+
 .activitywatch-day-bar-segment.is-dimmed,
 .activitywatch-category-row.is-dimmed {
   opacity: .35;
