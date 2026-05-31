@@ -21,6 +21,18 @@ Use these docs as needed instead of keeping every detail here:
 - `docs/verification.md`: version bumps, required checks, and browser verification.
 - `css/README.md`: CSS load order and style placement.
 
+## Documentation Rule
+
+When a change affects how future agents should understand, edit, test, or verify the app, update the matching Markdown doc in the same change.
+
+Use:
+
+- `ARCHITECTURE.md` for structure, load order, storage, feature ownership, and where-to-edit guidance.
+- `docs/activitywatch.md` for ActivityWatch behavior, privacy, CORS, dashboard, settings, and sync rules.
+- `docs/verification.md` for required checks, browser verification, ports, and test guidance.
+- `css/README.md` for CSS organization and cascade rules.
+- `AGENTS.md` only for durable agent behavior, user communication preferences, and non-negotiable project rules.
+
 ## Non-Negotiable Rules
 
 - Any code edit must bump `window.PEM_APP_VERSION` in `index.html`; default to patch SemVer.
