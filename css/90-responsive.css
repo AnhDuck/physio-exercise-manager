@@ -384,6 +384,10 @@
     padding-bottom: 2px;
   }
 
+  .weather-advisory strong {
+    white-space: normal;
+  }
+
   .activitywatch-mini-total {
     font-size: 34px;
   }
@@ -768,6 +772,11 @@
 
   .weather-current {
     grid-template-columns: minmax(0, 1fr) 72px;
+  }
+
+  .weather-advisory {
+    grid-template-columns: 1fr;
+    align-items: start;
   }
 
   .weather-temp {

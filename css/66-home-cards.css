@@ -147,11 +147,77 @@
 
 .weather-card {
   display: grid;
-  grid-template-rows: auto 1fr auto auto auto;
+  grid-template-rows: auto 1fr auto auto auto auto;
   gap: 10px;
   background:
     radial-gradient(circle at 88% 14%, rgba(99,179,255,.22), transparent 32%),
     linear-gradient(135deg, rgba(55,110,153,.5), rgba(58,58,62,.96) 58%),
+    var(--bg-card);
+}
+
+.weather-card.weather-mood-clear {
+  background:
+    radial-gradient(circle at 88% 14%, rgba(255,212,59,.28), transparent 30%),
+    linear-gradient(135deg, rgba(66,120,158,.62), rgba(56,64,70,.96) 60%),
+    var(--bg-card);
+}
+
+.weather-card.weather-mood-cloudy,
+.weather-card.weather-mood-fog {
+  background:
+    radial-gradient(circle at 88% 14%, rgba(203,213,225,.16), transparent 32%),
+    linear-gradient(135deg, rgba(72,83,94,.72), rgba(54,55,60,.96) 62%),
+    var(--bg-card);
+}
+
+.weather-card.weather-mood-rain,
+.weather-card.weather-mood-storm {
+  background:
+    radial-gradient(circle at 88% 14%, rgba(125,211,252,.2), transparent 32%),
+    linear-gradient(135deg, rgba(34,79,105,.74), rgba(45,49,58,.98) 62%),
+    var(--bg-card);
+}
+
+.weather-card.weather-mood-snow {
+  background:
+    radial-gradient(circle at 88% 14%, rgba(219,234,254,.28), transparent 32%),
+    linear-gradient(135deg, rgba(85,116,138,.64), rgba(55,60,67,.97) 62%),
+    var(--bg-card);
+}
+
+.weather-card.weather-mood-wind {
+  background:
+    radial-gradient(circle at 88% 14%, rgba(94,234,212,.16), transparent 34%),
+    linear-gradient(135deg, rgba(50,94,103,.72), rgba(53,57,64,.98) 62%),
+    var(--bg-card);
+}
+
+.weather-card.weather-mood-hot {
+  background:
+    radial-gradient(circle at 88% 14%, rgba(251,191,36,.28), transparent 32%),
+    linear-gradient(135deg, rgba(126,94,50,.66), rgba(62,58,57,.98) 62%),
+    var(--bg-card);
+}
+
+.weather-card.weather-mood-sunset {
+  background:
+    radial-gradient(circle at 88% 14%, rgba(251,191,36,.24), transparent 32%),
+    linear-gradient(135deg, rgba(91,93,126,.66), rgba(91,66,62,.98) 62%),
+    var(--bg-card);
+}
+
+.weather-card.weather-mood-night {
+  background:
+    radial-gradient(circle at 88% 14%, rgba(138,184,255,.2), transparent 32%),
+    linear-gradient(135deg, rgba(38,55,82,.74), rgba(41,43,52,.98) 62%),
+    var(--bg-card);
+}
+
+.weather-card.weather-mood-alert {
+  border-color: rgba(248,113,113,.5);
+  background:
+    radial-gradient(circle at 88% 14%, rgba(248,113,113,.22), transparent 32%),
+    linear-gradient(135deg, rgba(111,66,72,.72), rgba(55,50,55,.98) 62%),
     var(--bg-card);
 }
 
@@ -213,6 +279,40 @@
   color: rgba(232,234,237,.78);
   font-size: 12px;
   font-weight: 750;
+}
+
+.weather-advisory {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 8px 9px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 7px;
+  background: rgba(0,0,0,.16);
+}
+
+.weather-advisory-label {
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: rgba(255,255,255,.09);
+  color: rgba(232,234,237,.72);
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.weather-advisory strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #f8fbff;
+  font-size: 12px;
+  font-weight: 820;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .weather-icon {
@@ -297,6 +397,29 @@
   border: 1px solid rgba(255,255,255,.095);
   border-radius: 7px;
   background: rgba(0,0,0,.12);
+}
+
+.weather-fact.is-smart-highlight {
+  border-color: rgba(255,255,255,.28);
+  background: linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 8px 18px rgba(0,0,0,.16);
+}
+
+.weather-fact.is-smart-secondary {
+  border-color: rgba(255,255,255,.18);
+  background: rgba(255,255,255,.075);
+}
+
+.weather-highlight-wind .weather-fact.is-smart-highlight {
+  border-color: rgba(94,234,212,.4);
+}
+
+.weather-highlight-uv .weather-fact.is-smart-highlight {
+  border-color: rgba(251,191,36,.46);
+}
+
+.weather-highlight-sun .weather-fact.is-smart-highlight {
+  border-color: rgba(251,191,36,.42);
 }
 
 .weather-fact-label {

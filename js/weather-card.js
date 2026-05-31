@@ -19,7 +19,8 @@ function weatherSettings() {
 function buildWeatherCard() {
   const cfg = weatherSettings();
   const data = cfg.lastResult;
-  const card = el('article', `home-card weather-card ${weatherCardStateClass(cfg)}`);
+  const brain = data?.current ? buildWeatherBrain(data) : null;
+  const card = el('article', `home-card weather-card ${weatherCardStateClass(cfg, brain)}`);
   card.setAttribute('aria-label', 'Weather');
 
   if (!cfg.location) {
@@ -49,12 +50,13 @@ function buildWeatherCard() {
   main.appendChild(temp);
   main.appendChild(buildWeatherIcon(condition.icon, data.current.isDay, 'weather-hero-icon'));
   card.appendChild(main);
+  if (brain?.advisory) card.appendChild(buildWeatherAdvisory(brain));
 
   const facts = el('div', 'weather-facts');
-  facts.appendChild(buildWeatherFact('Humidity', `${Math.round(data.current.humidity)}%`, 'humidity'));
-  facts.appendChild(buildWeatherFact('Wind', formatWeatherWind(data.current.windSpeed, data.current.windDirection), 'wind'));
-  facts.appendChild(buildWeatherFact('UV index', formatWeatherUvIndex(data.current.uvIndex), 'uv'));
-  facts.appendChild(buildWeatherFact('Sun', formatWeatherSunTimes(data.daily, data.timezone), 'sun', 'weather-fact-sun'));
+  facts.appendChild(buildWeatherFact('Humidity', `${Math.round(data.current.humidity)}%`, 'humidity', weatherFactClass(brain, 'humidity')));
+  facts.appendChild(buildWeatherFact(weatherFactLabel(brain, 'wind', 'Wind'), formatWeatherWind(data.current.windSpeed, data.current.windDirection), 'wind', weatherFactClass(brain, 'wind')));
+  facts.appendChild(buildWeatherFact(weatherFactLabel(brain, 'uv', 'UV index'), formatWeatherUvIndex(data.current.uvIndex), 'uv', weatherFactClass(brain, 'uv')));
+  facts.appendChild(buildWeatherFact(weatherFactLabel(brain, 'sun', 'Sun'), formatWeatherSunTimes(data.daily, data.timezone), 'sun', weatherFactClass(brain, 'sun', 'weather-fact-sun')));
   card.appendChild(facts);
 
   card.appendChild(buildWeatherHourlyStrip(data));
@@ -96,6 +98,13 @@ function buildWeatherRefreshButton() {
   return btn;
 }
 
+function buildWeatherAdvisory(brain) {
+  const advisory = el('div', `weather-advisory weather-advisory-${brain.highlight || 'normal'}`);
+  advisory.appendChild(elText('span', 'weather-advisory-label', brain.label || 'Today'));
+  advisory.appendChild(elText('strong', '', brain.advisory));
+  return advisory;
+}
+
 function buildWeatherFact(label, value, iconName = '', className = '') {
   const item = el('div', `weather-fact ${className}`.trim());
   const labelRow = el('span', 'weather-fact-label');
@@ -104,6 +113,19 @@ function buildWeatherFact(label, value, iconName = '', className = '') {
   item.appendChild(labelRow);
   item.appendChild(elText('strong', '', value || '--'));
   return item;
+}
+
+function weatherFactClass(brain, fact, baseClass = '') {
+  const classes = [baseClass].filter(Boolean);
+  if (brain?.highlight === fact) classes.push('is-smart-highlight');
+  if (brain?.secondary === fact) classes.push('is-smart-secondary');
+  return classes.join(' ');
+}
+
+function weatherFactLabel(brain, fact, fallback) {
+  if (brain?.highlight === fact && brain.tileLabel) return brain.tileLabel;
+  if (brain?.secondary === fact && brain.secondaryLabel) return brain.secondaryLabel;
+  return fallback;
 }
 
 function buildWeatherMetricIcon(iconName) {
@@ -139,12 +161,15 @@ function buildWeatherStatusLine(cfg, data) {
   return line;
 }
 
-function weatherCardStateClass(cfg) {
-  if (!cfg.location) return 'is-setup-needed';
-  if (weatherRefreshPromise) return 'is-refreshing';
-  if (cfg.lastResult?.fetchedAt && isWeatherStale(cfg.lastResult.fetchedAt)) return 'is-stale';
-  if (cfg.lastError && !cfg.lastResult) return 'is-error';
-  return '';
+function weatherCardStateClass(cfg, brain = null) {
+  const classes = [];
+  if (!cfg.location) classes.push('is-setup-needed');
+  if (weatherRefreshPromise) classes.push('is-refreshing');
+  if (cfg.lastResult?.fetchedAt && isWeatherStale(cfg.lastResult.fetchedAt)) classes.push('is-stale');
+  if (cfg.lastError && !cfg.lastResult) classes.push('is-error');
+  if (brain?.mood) classes.push(`weather-mood-${brain.mood}`);
+  if (brain?.highlight) classes.push(`weather-highlight-${brain.highlight}`);
+  return classes.join(' ');
 }
 
 function refreshWeatherIfNeeded(trigger = 'auto', options = {}) {
@@ -211,7 +236,7 @@ async function fetchWeatherForLocation(location) {
     latitude: String(location.latitude),
     longitude: String(location.longitude),
     current_weather: 'true',
-    hourly: 'temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,is_day,uv_index,wind_speed_10m,wind_direction_10m',
+    hourly: 'temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,is_day,uv_index,wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation_probability',
     daily: 'sunrise,sunset',
     temperature_unit: 'celsius',
     wind_speed_unit: 'kmh',
@@ -232,6 +257,7 @@ async function fetchWeatherForLocation(location) {
       humidity: nearest?.humidity || 0,
       windSpeed: Number(raw.current_weather?.windspeed) || nearest?.windSpeed || 0,
       windDirection: Number(raw.current_weather?.winddirection) || nearest?.windDirection || 0,
+      windGusts: nearest?.windGusts || 0,
       uvIndex: nearest?.uvIndex || 0,
       weatherCode: Number(raw.current_weather?.weathercode) || nearest?.weatherCode || 0,
       isDay: Number(raw.current_weather?.is_day) === 1 || Boolean(nearest?.isDay),
@@ -315,6 +341,8 @@ function normalizeWeatherHourly(hourly = {}) {
     humidity: Number(hourly.relative_humidity_2m?.[index]) || 0,
     windSpeed: Number(hourly.wind_speed_10m?.[index]) || 0,
     windDirection: Number(hourly.wind_direction_10m?.[index]) || 0,
+    windGusts: Number(hourly.wind_gusts_10m?.[index]) || 0,
+    precipitationProbability: Number(hourly.precipitation_probability?.[index]) || 0,
     uvIndex: Number(hourly.uv_index?.[index]) || 0,
     weatherCode: Number(hourly.weather_code?.[index]) || 0,
     isDay: Number(hourly.is_day?.[index]) === 1,
@@ -327,6 +355,216 @@ function nearestWeatherHour(hourly, currentTime) {
   return hourly
     .slice()
     .sort((a, b) => Math.abs(new Date(a.time).getTime() - target) - Math.abs(new Date(b.time).getTime() - target))[0] || null;
+}
+
+function buildWeatherBrain(data) {
+  const current = data?.current || {};
+  const hourly = Array.isArray(data?.hourly) ? data.hourly : [];
+  const nowMs = weatherTimestamp(current.time) || Date.now();
+  const temp = Number(current.temperature) || 0;
+  const feels = Number(current.apparentTemperature) || temp;
+  const wind = Number(current.windSpeed) || 0;
+  const gust = Number(current.windGusts) || 0;
+  const uvNow = Number(current.uvIndex) || 0;
+  const uvPeak = Math.max(uvNow, ...hourly.slice(0, 8).map(hour => Number(hour.uvIndex) || 0));
+  const sunsetMinutes = weatherMinutesUntil(data?.daily?.sunset, nowMs);
+  const rainSoon = weatherNextPrecipitation(hourly, nowMs);
+  const alert = weatherPrimaryAlert(data);
+  const candidates = [];
+
+  if (alert) {
+    candidates.push({
+      key: 'alert',
+      highlight: 'alert',
+      label: 'Alert',
+      score: 1000,
+      advisory: alert,
+    });
+  }
+
+  if (current.isDay && sunsetMinutes !== null && sunsetMinutes >= 0 && sunsetMinutes <= 120) {
+    candidates.push({
+      key: 'sunset',
+      highlight: 'sun',
+      tileLabel: sunsetMinutes <= 45 ? 'Sunset soon' : 'Walk window',
+      label: 'Sunset',
+      score: 100 + (120 - sunsetMinutes),
+      advisory: `Sunset in ${weatherDurationPhrase(sunsetMinutes)}. Good walk window now.`,
+    });
+  }
+
+  if (uvPeak >= 6) {
+    candidates.push({
+      key: 'uv',
+      highlight: 'uv',
+      tileLabel: uvPeak >= 8 ? 'UV very high' : 'UV high',
+      label: 'UV',
+      score: uvPeak >= 8 ? 96 : 84,
+      advisory: uvPeak >= 8
+        ? `UV peaks very high today. Avoid the middle of the day.`
+        : `UV gets high today. Shade is your friend midday.`,
+    });
+  }
+
+  if (wind >= 25 || gust >= 45) {
+    candidates.push({
+      key: 'wind',
+      highlight: 'wind',
+      tileLabel: wind >= 35 || gust >= 45 ? 'Strong wind' : 'Windy',
+      label: 'Wind',
+      score: Math.max(wind >= 35 ? 92 : 78, gust >= 45 ? 94 : 0),
+      advisory: gust >= 45
+        ? `Gusts may hit ${Math.round(gust)} km/h. Expect it to feel rough.`
+        : `Wind is ${Math.round(wind)} km/h. Expect it to feel colder.`,
+    });
+  }
+
+  if (rainSoon) {
+    candidates.push({
+      key: rainSoon.kind,
+      highlight: rainSoon.kind,
+      label: rainSoon.kind === 'snow' ? 'Snow' : 'Rain',
+      score: rainSoon.minutes <= 120 ? 82 : 68,
+      advisory: `${rainSoon.kind === 'snow' ? 'Snow' : 'Rain'} likely ${weatherStartsPhrase(rainSoon.minutes)}. Walk earlier if you can.`,
+    });
+  }
+
+  const clothing = weatherClothingCue({ temp, feels, wind, current, rainSoon });
+  if (clothing) {
+    candidates.push({
+      key: 'clothing',
+      highlight: 'clothing',
+      label: 'Layer',
+      score: clothing.score,
+      advisory: clothing.advisory,
+    });
+  }
+
+  candidates.push({
+    key: 'normal',
+    highlight: 'normal',
+    label: 'Today',
+    score: 1,
+    advisory: weatherNormalAdvisory(current, temp, wind),
+  });
+
+  const ranked = candidates.sort((a, b) => b.score - a.score);
+  const primary = ranked[0];
+  const secondary = ranked.find(item => item.key !== primary.key && ['sun', 'uv', 'wind'].includes(item.highlight) && item.score >= 84);
+  return {
+    ...primary,
+    secondary: secondary?.highlight || '',
+    secondaryLabel: secondary?.tileLabel || '',
+    mood: weatherMood(data, primary, { wind, uvPeak, sunsetMinutes, rainSoon }),
+  };
+}
+
+function weatherTimestamp(value) {
+  const time = value ? new Date(value).getTime() : 0;
+  return Number.isFinite(time) ? time : 0;
+}
+
+function weatherMinutesUntil(value, nowMs) {
+  const target = weatherTimestamp(value);
+  if (!target) return null;
+  return Math.round((target - nowMs) / 60000);
+}
+
+function weatherNextPrecipitation(hourly, nowMs) {
+  return hourly
+    .map(hour => ({
+      hour,
+      minutes: Math.round((weatherTimestamp(hour.time) - nowMs) / 60000),
+    }))
+    .filter(item => item.minutes >= 0 && item.minutes <= 360)
+    .map(item => {
+      const code = Number(item.hour.weatherCode) || 0;
+      const probability = Number(item.hour.precipitationProbability) || 0;
+      if (weatherIsSnowCode(code)) return { kind: 'snow', minutes: item.minutes };
+      if (weatherIsRainCode(code) || probability >= 45) return { kind: 'rain', minutes: item.minutes };
+      return null;
+    })
+    .find(Boolean) || null;
+}
+
+function weatherPrimaryAlert(data) {
+  const alerts = Array.isArray(data?.alerts) ? data.alerts : [];
+  const first = alerts.find(alert => alert && typeof alert === 'object');
+  if (!first) return '';
+  const title = typeof first.title === 'string' ? first.title.trim() : '';
+  const summary = typeof first.summary === 'string' ? first.summary.trim() : '';
+  return title || summary || '';
+}
+
+function weatherClothingCue({ temp, feels, wind, current, rainSoon }) {
+  const isSunny = current.weatherCode === 0 || current.weatherCode === 1;
+  const isBreezy = wind >= 15;
+  if (rainSoon) {
+    return { score: 62, advisory: `Bring a rain layer. Weather may turn while you are out.` };
+  }
+  if (feels <= 8) {
+    return { score: 70, advisory: `${Math.round(feels)}\u00b0 feel. Wear the warm jacket.` };
+  }
+  if (temp <= 15 || feels <= 13) {
+    return { score: 66, advisory: `${Math.round(temp)}\u00b0${isBreezy ? ' and breezy' : ''}. Wear the real jacket.` };
+  }
+  if (temp <= 18 && isBreezy) {
+    return { score: 58, advisory: `${Math.round(temp)}\u00b0 with wind. Jacket beats zip-up.` };
+  }
+  if (temp >= 22 && isSunny && wind < 15) {
+    return { score: 54, advisory: `Sunny and warm. Sweater or lighter should be enough.` };
+  }
+  return null;
+}
+
+function weatherNormalAdvisory(current, temp, wind) {
+  if (!current.isDay) return `Night weather is calm. Check tomorrow's walk window.`;
+  if (temp >= 18 && wind < 20) return `Looks comfortable for a walk. Keep it simple.`;
+  if (wind >= 15) return `A bit of breeze today. Dress one step warmer.`;
+  return `No major weather issue right now.`;
+}
+
+function weatherMood(data, primary, context) {
+  const code = Number(data?.current?.weatherCode) || 0;
+  const temp = Number(data?.current?.temperature) || 0;
+  if (primary.key === 'alert') return 'alert';
+  if (!data?.current?.isDay) return 'night';
+  if (weatherIsStormCode(code)) return 'storm';
+  if (weatherIsSnowCode(code) || temp <= 1) return 'snow';
+  if (weatherIsRainCode(code) || context.rainSoon) return 'rain';
+  if (primary.key === 'sunset') return 'sunset';
+  if (context.uvPeak >= 8 || temp >= 27) return 'hot';
+  if (context.wind >= 25) return 'wind';
+  if (code === 0 || code === 1) return 'clear';
+  if (code === 2 || code === 3) return 'cloudy';
+  if ([45, 48].includes(code)) return 'fog';
+  return 'default';
+}
+
+function weatherDurationPhrase(minutes) {
+  const rounded = Math.max(0, Math.round(Number(minutes) || 0));
+  if (rounded < 60) return `${rounded} min`;
+  const hours = Math.floor(rounded / 60);
+  const rest = rounded % 60;
+  return rest ? `${hours}h ${rest}m` : `${hours}h`;
+}
+
+function weatherStartsPhrase(minutes) {
+  const rounded = Math.max(0, Math.round(Number(minutes) || 0));
+  if (rounded <= 30) return 'soon';
+  return `in ${weatherDurationPhrase(rounded)}`;
+}
+
+function weatherIsRainCode(code) {
+  return [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(Number(code));
+}
+
+function weatherIsSnowCode(code) {
+  return [71, 73, 75, 77, 85, 86].includes(Number(code));
+}
+
+function weatherIsStormCode(code) {
+  return [95, 96, 99].includes(Number(code));
 }
 
 function formatWeatherSunTimes(daily, timezone) {
