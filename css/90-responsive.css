@@ -88,6 +88,23 @@
     min-width: 752px;
   }
 
+  .home-cards-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .home-card {
+    min-height: 230px;
+  }
+
+  .weather-temp {
+    font-size: 54px;
+  }
+
+  .weather-hero-icon {
+    width: 78px;
+    height: 78px;
+  }
+
   .ex-info {
     grid-template-columns: minmax(0, 1fr) 38px 56px 108px;
   }
@@ -344,6 +361,40 @@
     min-width: 0;
     width: 100%;
     overflow: visible;
+  }
+
+  .home-cards-row {
+    padding: 8px;
+  }
+
+  .home-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    max-width: none;
+  }
+
+  .home-card {
+    min-height: 0;
+    padding: 12px;
+  }
+
+  .weather-facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .weather-hourly-strip {
+    overflow-x: auto;
+    grid-template-columns: repeat(6, minmax(52px, 1fr));
+    padding-bottom: 2px;
+  }
+
+  .activitywatch-mini-total {
+    font-size: 34px;
+  }
+
+  .dashboard-location-controls,
+  .dashboard-location-row {
+    grid-template-columns: 1fr;
   }
 
   .col-header-row {
@@ -717,6 +768,23 @@
 
   .settings-tab {
     padding: 0 12px;
+  }
+
+  .weather-current {
+    grid-template-columns: minmax(0, 1fr) 72px;
+  }
+
+  .weather-temp {
+    font-size: 46px;
+  }
+
+  .weather-hero-icon {
+    width: 70px;
+    height: 70px;
+  }
+
+  .weather-facts {
+    grid-template-columns: 1fr;
   }
 
   .block-settings-row,

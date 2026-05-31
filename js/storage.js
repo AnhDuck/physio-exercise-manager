@@ -554,6 +554,7 @@ function loadSettings() {
       setCueSpeechVolume: 1,
       personalDayStartTime: '07:00',
       timelineRange: 'past-30-days',
+      homeCards: defaultHomeCardsSettings(),
       autoBackup: defaultAutoBackupSettings(),
     };
     try {
@@ -570,10 +571,12 @@ function loadSettings() {
     setCueSpeechVolume: 1,
     personalDayStartTime: '07:00',
     timelineRange: 'past-30-days',
+    homeCards: defaultHomeCardsSettings(),
     autoBackup: defaultAutoBackupSettings(),
     ...JSON.parse(raw),
   });
   loaded.setCueSpeechVolume = clampSetCueSpeechVolume(loaded.setCueSpeechVolume);
+  loaded.homeCards = normalizeHomeCardsSettings(loaded.homeCards);
   loaded.autoBackup = normalizeAutoBackupSettings(loaded.autoBackup);
   return loaded;
 }
@@ -584,6 +587,7 @@ function saveSettings(settings) {
     ...cleanSettings,
     setCueSpeechVolume: clampSetCueSpeechVolume(cleanSettings.setCueSpeechVolume),
     timelineRange: normalizeStoredTimelineRange(cleanSettings.timelineRange),
+    homeCards: normalizeHomeCardsSettings(cleanSettings.homeCards),
     autoBackup: normalizeAutoBackupSettings(cleanSettings.autoBackup),
   };
   safeSetLocalStorageItem(KEYS.SETTINGS, JSON.stringify(nextSettings), STORAGE_LABELS[KEYS.SETTINGS]);
@@ -612,6 +616,100 @@ function clampSetCueSpeechVolume(value) {
   const volume = Number(value);
   if (!Number.isFinite(volume)) return 1;
   return Math.max(0, Math.min(1, volume));
+}
+
+function defaultHomeCardsSettings() {
+  return {
+    weather: {
+      enabled: true,
+      refreshMinutes: 10,
+      location: null,
+      searchText: '',
+      lastResult: null,
+      lastError: '',
+      lastErrorAt: '',
+    },
+    activityWatchMini: {
+      enabled: true,
+      refreshMinutes: 5,
+    },
+  };
+}
+
+function normalizeHomeCardsSettings(value = {}) {
+  const defaults = defaultHomeCardsSettings();
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  return {
+    weather: normalizeWeatherCardSettings(source.weather, defaults.weather),
+    activityWatchMini: normalizeActivityWatchMiniSettings(source.activityWatchMini, defaults.activityWatchMini),
+  };
+}
+
+function normalizeWeatherCardSettings(value = {}, defaults = defaultHomeCardsSettings().weather) {
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  return {
+    ...defaults,
+    ...source,
+    enabled: source.enabled !== false,
+    refreshMinutes: clampRefreshMinutes(source.refreshMinutes, defaults.refreshMinutes, 5, 60),
+    location: normalizeWeatherLocation(source.location),
+    searchText: typeof source.searchText === 'string' ? source.searchText : defaults.searchText,
+    lastResult: normalizeWeatherLastResult(source.lastResult),
+    lastError: typeof source.lastError === 'string' ? source.lastError : defaults.lastError,
+    lastErrorAt: typeof source.lastErrorAt === 'string' ? source.lastErrorAt : defaults.lastErrorAt,
+  };
+}
+
+function normalizeActivityWatchMiniSettings(value = {}, defaults = defaultHomeCardsSettings().activityWatchMini) {
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  return {
+    ...defaults,
+    ...source,
+    enabled: source.enabled !== false,
+    refreshMinutes: clampRefreshMinutes(source.refreshMinutes, defaults.refreshMinutes, 1, 30),
+  };
+}
+
+function normalizeWeatherLocation(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const latitude = Number(value.latitude);
+  const longitude = Number(value.longitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
+  const name = typeof value.name === 'string' ? value.name.trim() : '';
+  return {
+    name: name || 'Selected location',
+    admin1: typeof value.admin1 === 'string' ? value.admin1.trim() : '',
+    country: typeof value.country === 'string' ? value.country.trim() : '',
+    countryCode: typeof value.countryCode === 'string' ? value.countryCode.trim() : '',
+    timezone: typeof value.timezone === 'string' ? value.timezone.trim() : '',
+    latitude,
+    longitude,
+  };
+}
+
+function normalizeWeatherLastResult(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return {
+    fetchedAt: typeof value.fetchedAt === 'string' ? value.fetchedAt : '',
+    locationLabel: typeof value.locationLabel === 'string' ? value.locationLabel : '',
+    timezone: typeof value.timezone === 'string' ? value.timezone : '',
+    current: value.current && typeof value.current === 'object' && !Array.isArray(value.current)
+      ? { ...value.current }
+      : null,
+    daily: value.daily && typeof value.daily === 'object' && !Array.isArray(value.daily)
+      ? { ...value.daily }
+      : null,
+    hourly: Array.isArray(value.hourly)
+      ? value.hourly.filter(item => item && typeof item === 'object').slice(0, 12)
+      : [],
+  };
+}
+
+function clampRefreshMinutes(value, fallback, min, max) {
+  const number = Number.parseInt(value, 10);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.max(min, Math.min(max, number));
 }
 
 function loadEvents() {

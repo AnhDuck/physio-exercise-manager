@@ -8,13 +8,13 @@ ActivityWatch is the exception: browser CORS requires PEM to run from a local HT
 
 CSS order is manual and cascade-sensitive:
 
-`00-base.css`, `10-header.css`, `20-notes-timeline.css`, `30-grid-exercises.css`, `40-modals-forms.css`, `50-settings.css`, `60-tracker.css`, `65-activitywatch.css`, `70-images-scrollbar.css`, `90-responsive.css`.
+`00-base.css`, `10-header.css`, `20-notes-timeline.css`, `30-grid-exercises.css`, `40-modals-forms.css`, `50-settings.css`, `60-tracker.css`, `65-activitywatch.css`, `66-home-cards.css`, `70-images-scrollbar.css`, `90-responsive.css`.
 
 Keep `90-responsive.css` last. See `css/README.md` before changing styles.
 
 JavaScript order is also manual:
 
-`data.js`, `storage.js`, `constants.js`, `state.js`, `dates.js`, `dom.js`, `sessions.js`, `exercises.js`, `grid.js`, `tracker.js`, `activitywatch-data.js`, `timeline-data.js`, `timeline-filters.js`, `timeline-render.js`, `timeline-notes.js`, `timeline-export.js`, `timeline-edit.js`, `timeline.js`, `backup.js`, `auto-backup.js`, `settings.js`, `activitywatch-dashboard-state.js`, `activitywatch-dashboard-format.js`, `activitywatch-dashboard-sync.js`, `activitywatch-dashboard-controls.js`, `activitywatch-dashboard-chart.js`, `activitywatch-dashboard-detail.js`, `activitywatch-dashboard-shell.js`, `activitywatch-settings.js`, `images.js`, `main.js`.
+`data.js`, `storage.js`, `constants.js`, `state.js`, `dates.js`, `dom.js`, `sessions.js`, `exercises.js`, `grid.js`, `tracker.js`, `activitywatch-data.js`, `home-cards.js`, `weather-card.js`, `activitywatch-mini-card.js`, `timeline-data.js`, `timeline-filters.js`, `timeline-render.js`, `timeline-notes.js`, `timeline-export.js`, `timeline-edit.js`, `timeline.js`, `backup.js`, `auto-backup.js`, `settings.js`, `activitywatch-dashboard-state.js`, `activitywatch-dashboard-format.js`, `activitywatch-dashboard-sync.js`, `activitywatch-dashboard-controls.js`, `activitywatch-dashboard-chart.js`, `activitywatch-dashboard-detail.js`, `activitywatch-dashboard-shell.js`, `activitywatch-settings.js`, `images.js`, `main.js`.
 
 Never load `main.js` before feature files it binds. Do not add imports, exports, modules, dependencies, bundlers, or build tooling.
 
@@ -31,6 +31,9 @@ Never load `main.js` before feature files it binds. Do not add imports, exports,
 - `grid.js`: compact calendar grid and week navigation.
 - `tracker.js`: set tracker, timer, log edit, cues, and shortcuts.
 - `activitywatch-data.js`: ActivityWatch REST client, aggregate storage, sync orchestration.
+- `home-cards.js`: main-screen dashboard card row and refresh timers for the always-on monitor view.
+- `weather-card.js`: Open-Meteo weather card, location search, cached weather result, and weather Settings controls.
+- `activitywatch-mini-card.js`: current waking-day ActivityWatch mini dashboard card.
 - `activitywatch-dashboard-*.js`: ActivityWatch category dashboard. See `docs/activitywatch.md`.
 - `activitywatch-settings.js`: ActivityWatch Settings tab controls.
 - `timeline-*.js`: notes, events, Markdown, filters, export, and edit flows.
@@ -54,6 +57,8 @@ localStorage keys:
 - `pem_events`: timeline events.
 - `pem_activitywatch`: aggregate ActivityWatch summaries only.
 
+Dashboard card preferences and the cached last weather result live inside `pem_settings.homeCards` so backups and imports continue to use the existing settings safe-save path.
+
 All app-data writes must go through safe-save helpers in storage internals. Do not call `localStorage.setItem` directly for app keys outside storage internals.
 
 ## Core Data Rules
@@ -75,3 +80,4 @@ All app-data writes must go through safe-save helpers in storage internals. Do n
 - ActivityWatch sync/storage/query: `activitywatch-data.js` only when the query or stored aggregate changes.
 - ActivityWatch dashboard UI: `activitywatch-dashboard-*.js`.
 - ActivityWatch setup/settings UI: `activitywatch-settings.js` and the ActivityWatch settings markup in `index.html`.
+- Main-screen dashboard cards: `home-cards.js`, the specific card file, and `66-home-cards.css`. Weather location controls live in the General Settings markup in `index.html`.

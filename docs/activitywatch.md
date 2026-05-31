@@ -48,6 +48,8 @@ PEM waking-day periods are based on `settings.personalDayStartTime`. If Activity
 
 Startup, dashboard, and timeline sync should cover the current waking day plus previous 7 waking days and use a roughly 60-second throttle unless the user manually refreshes.
 
+The main-screen ActivityWatch mini card is a glanceable current waking-day surface. It should refresh only the current waking day, default to about every 5 minutes, show stale/offline state clearly, and keep using the aggregate-only `pem_activitywatch` data model.
+
 ## Dashboard Rules
 
 The dashboard is category-first, not top-application-first. Dashboard UI state is not persisted. The single dashboard state object includes selected date, range length/end date, selected category, hovered category, detail mode, show-all state, chart scroll state, and advanced sync state.

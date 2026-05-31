@@ -6,7 +6,7 @@
   <title>Physio Exercise Management</title>
   <link rel="icon" type="image/svg+xml" href="assets/physio-icon.svg" />
   <script>
-    window.PEM_APP_VERSION = '1.0.78';
+    window.PEM_APP_VERSION = '1.0.87';
     const PEM_CSS_FILES = [
       'css/00-base.css',
       'css/10-header.css',
@@ -16,6 +16,7 @@
       'css/50-settings.css',
       'css/60-tracker.css',
       'css/65-activitywatch.css',
+      'css/66-home-cards.css',
       'css/70-images-scrollbar.css',
       'css/90-responsive.css',
     ];
@@ -32,6 +33,7 @@
     <link rel="stylesheet" href="css/50-settings.css?v=1.0.57" />
     <link rel="stylesheet" href="css/60-tracker.css?v=1.0.57" />
     <link rel="stylesheet" href="css/65-activitywatch.css?v=1.0.59" />
+    <link rel="stylesheet" href="css/66-home-cards.css?v=1.0.87" />
     <link rel="stylesheet" href="css/70-images-scrollbar.css?v=1.0.57" />
     <link rel="stylesheet" href="css/90-responsive.css?v=1.0.57" />
   </noscript>
@@ -303,6 +305,52 @@
                 <label for="setting-personal-day-start">Personal day starts at</label>
                 <input type="time" id="setting-personal-day-start" />
               </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h3>Dashboard cards</h3>
+            </div>
+            <div class="settings-row-group">
+              <div class="settings-action-row dashboard-location-row">
+                <div class="settings-action-label">
+                  <strong>Weather location</strong>
+                  <span id="setting-weather-current-location">No location selected</span>
+                </div>
+                <div class="dashboard-location-controls">
+                  <input type="search" id="setting-weather-location-search" placeholder="Search city or postal code" autocomplete="off" spellcheck="false" />
+                  <button class="settings-backup-btn" id="setting-weather-location-search-btn" type="button" data-settings-icon="search">Search</button>
+                  <select id="setting-weather-location-results" aria-label="Weather location results">
+                    <option value="">Search for a location</option>
+                  </select>
+                  <span class="settings-help-text" id="setting-weather-location-status">Search for a city or postal code.</span>
+                </div>
+              </div>
+              <label class="settings-action-row" for="setting-weather-refresh-minutes">
+                <span class="settings-action-label">
+                  <strong>Weather refresh</strong>
+                  <span>Open-Meteo refresh cadence for the main weather card.</span>
+                </span>
+                <select id="setting-weather-refresh-minutes">
+                  <option value="5">Every 5 minutes</option>
+                  <option value="10">Every 10 minutes</option>
+                  <option value="15">Every 15 minutes</option>
+                  <option value="30">Every 30 minutes</option>
+                </select>
+              </label>
+              <label class="settings-action-row" for="setting-aw-mini-refresh-minutes">
+                <span class="settings-action-label">
+                  <strong>ActivityWatch mini refresh</strong>
+                  <span>Syncs only the current waking day for the main card.</span>
+                </span>
+                <select id="setting-aw-mini-refresh-minutes">
+                  <option value="1">Every 1 minute</option>
+                  <option value="5">Every 5 minutes</option>
+                  <option value="10">Every 10 minutes</option>
+                  <option value="15">Every 15 minutes</option>
+                </select>
+              </label>
             </div>
           </div>
 
@@ -921,6 +969,9 @@ cors_origins = "http://127.0.0.1:8891"
       'js/grid.js',
       'js/tracker.js',
       'js/activitywatch-data.js',
+      'js/home-cards.js',
+      'js/weather-card.js',
+      'js/activitywatch-mini-card.js',
       'js/timeline-data.js',
       'js/timeline-filters.js',
       'js/timeline-render.js',

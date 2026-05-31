@@ -85,6 +85,11 @@ function syncSettingsControls() {
   document.getElementById('setting-cue-vibrate').checked = settings.setCueVibrate !== false;
   document.getElementById('setting-cue-speech').checked = Boolean(settings.setCueSpeech);
   document.getElementById('setting-auto-backup-time').value = getAutoBackupSettings().time;
+  if (typeof syncWeatherSettingsControls === 'function') syncWeatherSettingsControls();
+  if (typeof activityWatchMiniSettings === 'function') {
+    const input = document.getElementById('setting-aw-mini-refresh-minutes');
+    if (input) input.value = String(activityWatchMiniSettings().refreshMinutes);
+  }
   if (typeof syncActivityWatchSettingsControls === 'function') syncActivityWatchSettingsControls();
   syncSpeechVolumeControl();
 }

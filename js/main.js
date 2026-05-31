@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderNotesPanel();
   startRealtimeUpdates();
   initializeAutoBackup();
+  if (typeof startHomeCards === 'function') startHomeCards();
   if (typeof maybeSyncActivityWatchRecent === 'function') maybeSyncActivityWatchRecent('startup');
   markStorageTestsReadyForUserActions();
 });
@@ -144,6 +145,15 @@ function bindStaticEvents() {
   document.getElementById('setting-cue-speech-volume').addEventListener('input', handleSpeechVolumeInput);
   document.getElementById('setting-cue-speech').addEventListener('change', autosaveGeneralSettings);
   document.getElementById('setting-auto-backup-time').addEventListener('change', autosaveAutoBackupTime);
+  document.getElementById('setting-weather-location-search')?.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    searchWeatherLocationsFromSettings();
+  });
+  document.getElementById('setting-weather-location-search-btn')?.addEventListener('click', searchWeatherLocationsFromSettings);
+  document.getElementById('setting-weather-location-results')?.addEventListener('change', applySelectedWeatherLocation);
+  document.getElementById('setting-weather-refresh-minutes')?.addEventListener('change', autosaveWeatherRefreshMinutes);
+  document.getElementById('setting-aw-mini-refresh-minutes')?.addEventListener('change', autosaveActivityWatchMiniRefreshMinutes);
   document.getElementById('setting-activitywatch-server-url')?.addEventListener('change', saveActivityWatchServerUrlSetting);
   document.getElementById('settings-activitywatch-refresh')?.addEventListener('click', refreshActivityWatchFromSettings);
   document.addEventListener('keydown', handleSettingsKeydown);

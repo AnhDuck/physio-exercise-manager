@@ -906,5 +906,6 @@ function activityWatchErrorMessage(err) {
 function renderActivityWatchSurfaces() {
   if (typeof renderActivityWatchSettings === 'function') renderActivityWatchSettings();
   if (typeof renderActivityWatchDashboard === 'function') renderActivityWatchDashboard();
+  if (typeof renderHomeCards === 'function') renderHomeCards();
   if (typeof renderNotesPanel === 'function' && settings?.notesOpen) renderNotesPanel();
 }

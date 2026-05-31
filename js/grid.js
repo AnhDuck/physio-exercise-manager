@@ -10,6 +10,7 @@ function render() {
   document.body.classList.toggle('set-tracker-open', Boolean(activeTracker));
 
   app.appendChild(buildColHeaders(dates, todayS, monthLabel));
+  if (typeof buildHomeCardsRow === 'function') app.appendChild(buildHomeCardsRow());
 
   let exerciseNumber = 1;
   for (const group of GROUP_ORDER) {

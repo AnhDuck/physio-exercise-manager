@@ -25,6 +25,13 @@ let autoBackupHandleLoaded = false;
 let autoBackupTimer = null;
 let autoBackupRunning = false;
 let autoBackupHistoryExpanded = false;
+let homeCardsTimer = null;
+let homeCardsClockTimer = null;
+let weatherRefreshPromise = null;
+let weatherRefreshStartedAt = 0;
+let weatherLocationSearchPromise = null;
+let weatherLocationSearchResults = [];
+let weatherLocationSearchRequestId = 0;
 let browserStorageEstimateRequestId = 0;
 let storageHealth = {
   lastAttempt: null,
