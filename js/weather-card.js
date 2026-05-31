@@ -3,6 +3,12 @@
 const WEATHER_REFRESH_STALE_MS = 20 * 60 * 1000;
 const WEATHER_REFRESH_ERROR_STALE_MS = 30 * 60 * 1000;
 const WEATHER_FETCH_TIMEOUT_MS = 12000;
+const WEATHER_REQUEST_MIN_GAP_MS = 60 * 1000;
+const WEATHER_FORECAST_BURST_WINDOW_MS = 10 * 60 * 1000;
+const WEATHER_FORECAST_BURST_LIMIT = 3;
+const WEATHER_FORECAST_BURST_COOLDOWN_MS = 10 * 60 * 1000;
+const WEATHER_RATE_LIMIT_COOLDOWN_MS = 65 * 60 * 1000;
+const WEATHER_LOCATION_SEARCH_MIN_GAP_MS = 2 * 1000;
 const WEATHER_FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 const WEATHER_GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1/search';
 
@@ -68,24 +74,23 @@ function buildWeatherSetupState() {
 }
 
 function buildWeatherLoadingState(cfg) {
-  if (cfg.location && !weatherRefreshPromise) {
-    window.setTimeout(() => refreshWeatherIfNeeded('render', { force: true }), 0);
-  }
   const wrap = el('div', 'home-card-empty');
+  const pauseMessage = weatherRefreshPauseMessage(cfg);
   wrap.appendChild(buildWeatherIcon('cloudy', true, 'weather-empty-icon'));
   wrap.appendChild(elText('strong', '', weatherLocationLabel(cfg.location)));
-  wrap.appendChild(elText('span', '', cfg.lastError || (weatherRefreshPromise ? 'Refreshing weather...' : 'Waiting for the first weather refresh.')));
+  wrap.appendChild(elText('span', '', pauseMessage || cfg.lastError || (weatherRefreshPromise ? 'Refreshing weather...' : 'Waiting for the first weather refresh.')));
   wrap.appendChild(buildWeatherRefreshButton());
   return wrap;
 }
 
 function buildWeatherRefreshButton() {
   const btn = el('button', 'home-card-icon-btn');
+  const pauseMessage = weatherRefreshPauseMessage(weatherSettings());
   btn.type = 'button';
   btn.dataset.homeCardAction = 'refresh-weather';
-  btn.title = weatherRefreshPromise ? 'Refreshing weather' : 'Refresh weather';
+  btn.title = pauseMessage || (weatherRefreshPromise ? 'Refreshing weather' : 'Refresh weather');
   btn.setAttribute('aria-label', btn.title);
-  btn.disabled = Boolean(weatherRefreshPromise);
+  btn.disabled = Boolean(weatherRefreshPromise || pauseMessage);
   btn.appendChild(buildAppIconSvg('reconnect'));
   return btn;
 }
@@ -117,6 +122,8 @@ function buildWeatherStatusLine(cfg, data) {
     ? `Stale - updated ${homeCardRelativeTime(data.fetchedAt)}`
     : `Updated ${homeCardRelativeTime(data.fetchedAt)}`;
   line.appendChild(elText('span', stale ? 'is-stale' : '', text));
+  const pauseMessage = weatherRefreshPauseMessage(cfg);
+  if (pauseMessage) line.appendChild(elText('span', 'is-warning', pauseMessage));
   if (cfg.lastError) line.appendChild(elText('span', 'is-warning', `Last refresh failed: ${cfg.lastError}`));
   return line;
 }
@@ -133,14 +140,27 @@ function refreshWeatherIfNeeded(trigger = 'auto', options = {}) {
   const cfg = weatherSettings();
   if (!cfg.enabled || !cfg.location) return Promise.resolve(null);
   if (weatherRefreshPromise) return weatherRefreshPromise;
+  const now = Date.now();
   const force = Boolean(options.force);
   const last = cfg.lastResult?.fetchedAt ? new Date(cfg.lastResult.fetchedAt).getTime() : 0;
   const intervalMs = Math.max(5, Number(cfg.refreshMinutes) || 10) * 60 * 1000;
-  if (!force && last && Date.now() - last < intervalMs) return Promise.resolve(cfg.lastResult);
+  if (!force && last && now - last < intervalMs) return Promise.resolve(cfg.lastResult);
+  if (isWeatherRateLimitPaused(cfg, now)) return Promise.resolve(cfg.lastResult);
 
-  weatherRefreshStartedAt = Date.now();
-  weatherRefreshPromise = fetchWeatherForLocation(cfg.location)
+  const lastError = cfg.lastErrorAt ? new Date(cfg.lastErrorAt).getTime() : 0;
+  if (!force && lastError && now - lastError < WEATHER_REFRESH_ERROR_STALE_MS) return Promise.resolve(cfg.lastResult);
+  if (!canStartWeatherRequest(cfg, now, trigger)) return Promise.resolve(cfg.lastResult);
+  if (!reserveWeatherForecastAttempt(cfg, now)) return Promise.resolve(cfg.lastResult);
+
+  weatherRefreshStartedAt = now;
+  const requestedLocationKey = weatherLocationKey(cfg.location);
+  const requestId = ++weatherForecastRequestId;
+  cfg.lastRequestAt = new Date(now).toISOString();
+  saveSettings(settings);
+
+  const promise = fetchWeatherForLocation(cfg.location)
     .then(result => {
+      if (requestId !== weatherForecastRequestId || weatherLocationKey(cfg.location) !== requestedLocationKey) return cfg.lastResult;
       cfg.lastResult = result;
       cfg.lastError = '';
       cfg.lastErrorAt = '';
@@ -149,27 +169,25 @@ function refreshWeatherIfNeeded(trigger = 'auto', options = {}) {
       return result;
     })
     .catch(err => {
-      cfg.lastError = weatherErrorMessage(err);
-      cfg.lastErrorAt = new Date().toISOString();
-      saveSettings(settings);
+      if (requestId !== weatherForecastRequestId || weatherLocationKey(cfg.location) !== requestedLocationKey) return cfg.lastResult;
+      if (isWeatherRateLimitError(err)) {
+        pauseWeatherRefresh(cfg, 'Open-Meteo hourly limit reached', now + WEATHER_RATE_LIMIT_COOLDOWN_MS);
+      } else {
+        cfg.lastError = weatherErrorMessage(err);
+        cfg.lastErrorAt = new Date().toISOString();
+        saveSettings(settings);
+      }
       renderHomeCards();
       return cfg.lastResult;
     })
     .finally(() => {
-      weatherRefreshPromise = null;
-      weatherRefreshStartedAt = 0;
+      if (weatherRefreshPromise === promise) {
+        weatherRefreshPromise = null;
+        weatherRefreshStartedAt = 0;
+      }
       renderHomeCards();
     });
-  const currentPromise = weatherRefreshPromise;
-  window.setTimeout(() => {
-    if (weatherRefreshPromise !== currentPromise) return;
-    cfg.lastError = 'Weather request timed out';
-    cfg.lastErrorAt = new Date().toISOString();
-    weatherRefreshPromise = null;
-    weatherRefreshStartedAt = 0;
-    saveSettings(settings);
-    renderHomeCards();
-  }, WEATHER_FETCH_TIMEOUT_MS + 1000);
+  weatherRefreshPromise = promise;
   renderHomeCards();
   return weatherRefreshPromise;
 }
@@ -185,7 +203,7 @@ async function fetchWeatherForLocation(location) {
     timezone: 'auto',
     forecast_days: '2',
   });
-  const raw = await weatherFetchJson(`${WEATHER_FORECAST_URL}?${params.toString()}`);
+  const raw = await weatherFetchJson(`${WEATHER_FORECAST_URL}?${params.toString()}`, 'Weather');
   const hourly = normalizeWeatherHourly(raw.hourly);
   const nearest = nearestWeatherHour(hourly, raw.current_weather?.time);
   return {
@@ -208,21 +226,42 @@ async function fetchWeatherForLocation(location) {
   };
 }
 
-function weatherFetchJson(url) {
-  if (window.Worker && window.Blob && window.URL) {
-    return weatherFetchJsonInWorker(url);
+async function weatherFetchJson(url, label = 'Weather') {
+  if (!window.fetch) return weatherFetchJsonWithXhr(url, label);
+  const controller = window.AbortController ? new AbortController() : null;
+  const timeout = controller
+    ? window.setTimeout(() => controller.abort(), WEATHER_FETCH_TIMEOUT_MS)
+    : null;
+  try {
+    const response = await fetch(url, {
+      cache: 'no-store',
+      signal: controller?.signal,
+    });
+    const text = await response.text();
+    const payload = parseWeatherJson(text);
+    if (!response.ok) throw createWeatherHttpError(label, response.status, payload, text);
+    return payload || {};
+  } catch (err) {
+    if (err.name === 'AbortError') throw new Error('Weather request timed out');
+    throw err;
+  } finally {
+    if (timeout) window.clearTimeout(timeout);
   }
+}
+
+function weatherFetchJsonWithXhr(url, label = 'Weather') {
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
     request.open('GET', url, true);
     request.responseType = 'json';
     request.timeout = WEATHER_FETCH_TIMEOUT_MS;
     request.onload = () => {
+      const payload = request.response || null;
       if (request.status < 200 || request.status >= 300) {
-        reject(new Error(`Weather HTTP ${request.status}`));
+        reject(createWeatherHttpError(label, request.status, payload, ''));
         return;
       }
-      resolve(request.response || JSON.parse(request.responseText || '{}'));
+      resolve(payload || {});
     };
     request.onerror = () => reject(new Error('Weather request failed'));
     request.ontimeout = () => reject(new Error('Weather request timed out'));
@@ -230,44 +269,22 @@ function weatherFetchJson(url) {
   });
 }
 
-function weatherFetchJsonInWorker(url) {
-  return new Promise((resolve, reject) => {
-    const workerSource = `
-      self.onmessage = async (event) => {
-        try {
-          const response = await fetch(event.data, { cache: 'no-store' });
-          if (!response.ok) throw new Error('Weather HTTP ' + response.status);
-          self.postMessage({ ok: true, value: await response.json() });
-        } catch (err) {
-          self.postMessage({ ok: false, error: err && err.message ? err.message : String(err) });
-        }
-      };
-    `;
-    const blobUrl = URL.createObjectURL(new Blob([workerSource], { type: 'text/javascript' }));
-    const worker = new Worker(blobUrl);
-    const timeout = window.setTimeout(() => {
-      worker.terminate();
-      URL.revokeObjectURL(blobUrl);
-      reject(new Error('Weather request timed out'));
-    }, WEATHER_FETCH_TIMEOUT_MS);
-    worker.onmessage = (event) => {
-      window.clearTimeout(timeout);
-      worker.terminate();
-      URL.revokeObjectURL(blobUrl);
-      if (event.data?.ok) {
-        resolve(event.data.value);
-      } else {
-        reject(new Error(event.data?.error || 'Weather request failed'));
-      }
-    };
-    worker.onerror = () => {
-      window.clearTimeout(timeout);
-      worker.terminate();
-      URL.revokeObjectURL(blobUrl);
-      reject(new Error('Weather request failed'));
-    };
-    worker.postMessage(url);
-  });
+function parseWeatherJson(text) {
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch (_) {
+    return null;
+  }
+}
+
+function createWeatherHttpError(label, status, payload, text) {
+  const reason = typeof payload?.reason === 'string' ? payload.reason : String(text || '').trim();
+  const err = new Error(`${label} HTTP ${status}${reason ? `: ${reason}` : ''}`);
+  err.status = status;
+  err.reason = reason;
+  err.rateLimited = status === 429 || /limit exceeded|rate limit|too many requests/i.test(reason);
+  return err;
 }
 
 function normalizeWeatherHourly(hourly = {}) {
@@ -344,7 +361,63 @@ function weatherLocationLabel(location) {
 function weatherErrorMessage(err) {
   if (!err) return 'Unknown error';
   if (err.name === 'AbortError') return 'Request timed out';
+  if (err?.rateLimited || err?.status === 429) return 'Open-Meteo hourly limit reached';
   return err.message || String(err);
+}
+
+function weatherLocationKey(location) {
+  if (!location) return '';
+  return `${Number(location.latitude).toFixed(5)},${Number(location.longitude).toFixed(5)}`;
+}
+
+function isWeatherRateLimitError(err) {
+  const text = `${err?.reason || ''} ${err?.message || ''}`;
+  return Boolean(err?.rateLimited || err?.status === 429 || /hourly api request limit|rate limit|too many requests/i.test(text));
+}
+
+function isWeatherRateLimitPaused(cfg, now = Date.now()) {
+  const until = cfg.rateLimitUntil ? new Date(cfg.rateLimitUntil).getTime() : 0;
+  return Boolean(until && until > now);
+}
+
+function weatherRefreshPauseMessage(cfg) {
+  const until = cfg?.rateLimitUntil ? new Date(cfg.rateLimitUntil).getTime() : 0;
+  if (!until || until <= Date.now()) return '';
+  return `Open-Meteo paused until ${homeCardFormatTime(new Date(until).toISOString())}`;
+}
+
+function canStartWeatherRequest(cfg, now, trigger) {
+  const lastRequest = cfg.lastRequestAt ? new Date(cfg.lastRequestAt).getTime() : 0;
+  if (!lastRequest || now - lastRequest >= WEATHER_REQUEST_MIN_GAP_MS) return true;
+  if (trigger === 'manual' && typeof showToast === 'function') {
+    showToast(`Weather is paused for ${formatWeatherDelay(WEATHER_REQUEST_MIN_GAP_MS - (now - lastRequest))}.`);
+  }
+  return false;
+}
+
+function reserveWeatherForecastAttempt(cfg, now = Date.now()) {
+  weatherForecastRequestTimes = weatherForecastRequestTimes.filter(ts => now - ts < WEATHER_FORECAST_BURST_WINDOW_MS);
+  if (weatherForecastRequestTimes.length >= WEATHER_FORECAST_BURST_LIMIT) {
+    pauseWeatherRefresh(cfg, 'Too many weather requests. Weather paused', now + WEATHER_FORECAST_BURST_COOLDOWN_MS);
+    renderHomeCards();
+    return false;
+  }
+  weatherForecastRequestTimes.push(now);
+  return true;
+}
+
+function pauseWeatherRefresh(cfg, message, untilMs) {
+  cfg.rateLimitUntil = new Date(untilMs).toISOString();
+  cfg.lastError = `${message} for ${formatWeatherDelay(untilMs - Date.now())}.`;
+  cfg.lastErrorAt = new Date().toISOString();
+  saveSettings(settings);
+}
+
+function formatWeatherDelay(ms) {
+  const minutes = Math.max(1, Math.ceil((Number(ms) || 0) / 60000));
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'}`;
+  const hours = Math.ceil(minutes / 60);
+  return `${hours} hour${hours === 1 ? '' : 's'}`;
 }
 
 function searchWeatherLocationsFromSettings() {
@@ -354,6 +427,16 @@ function searchWeatherLocationsFromSettings() {
     renderWeatherLocationSearchStatus('Type at least 3 characters.', true);
     return;
   }
+  if (weatherLocationSearchPromise) {
+    renderWeatherLocationSearchStatus('Search already running.', false);
+    return;
+  }
+  const now = Date.now();
+  if (now - weatherLocationSearchLastAt < WEATHER_LOCATION_SEARCH_MIN_GAP_MS) {
+    renderWeatherLocationSearchStatus('Wait a moment before searching again.', true);
+    return;
+  }
+  weatherLocationSearchLastAt = now;
   const requestId = ++weatherLocationSearchRequestId;
   weatherLocationSearchPromise = searchWeatherLocations(query)
     .then(results => {
@@ -373,9 +456,7 @@ function searchWeatherLocationsFromSettings() {
 
 async function searchWeatherLocations(query) {
   const params = new URLSearchParams({ name: query, count: '8', language: 'en', format: 'json' });
-  const response = await fetch(`${WEATHER_GEOCODING_URL}?${params.toString()}`, { cache: 'no-store' });
-  if (!response.ok) throw new Error(`Location HTTP ${response.status}`);
-  const raw = await response.json();
+  const raw = await weatherFetchJson(`${WEATHER_GEOCODING_URL}?${params.toString()}`, 'Location');
   return (raw.results || []).map(item => ({
     name: item.name || '',
     admin1: item.admin1 || '',
@@ -433,15 +514,40 @@ function applySelectedWeatherLocation() {
   refreshWeatherIfNeeded('location-change', { force: true });
 }
 
+function clearWeatherLocationFromSettings() {
+  const cfg = weatherSettings();
+  if (!cfg.location && !cfg.searchText && !cfg.lastResult) return;
+  if (!confirm('Clear the saved weather location and cached weather data?')) return;
+  weatherForecastRequestId++;
+  weatherLocationSearchRequestId++;
+  weatherLocationSearchResults = [];
+  cfg.location = null;
+  cfg.searchText = '';
+  cfg.lastResult = null;
+  cfg.lastError = '';
+  cfg.lastErrorAt = '';
+  saveSettings(settings);
+  const select = document.getElementById('setting-weather-location-results');
+  if (select) {
+    select.innerHTML = '';
+    select.appendChild(new Option('Search for a location', ''));
+  }
+  syncWeatherSettingsControls();
+  renderHomeCards();
+  if (typeof showToast === 'function') showToast('Weather location cleared.');
+}
+
 function syncWeatherSettingsControls() {
   const cfg = weatherSettings();
   const search = document.getElementById('setting-weather-location-search');
   const current = document.getElementById('setting-weather-current-location');
   const refresh = document.getElementById('setting-weather-refresh-minutes');
+  const clear = document.getElementById('setting-weather-location-clear-btn');
   if (search) search.value = cfg.searchText || (cfg.location ? weatherLocationLabel(cfg.location) : '');
   if (current) current.textContent = cfg.location ? weatherLocationLabel(cfg.location) : 'No location selected';
   if (refresh) refresh.value = String(cfg.refreshMinutes);
-  renderWeatherLocationSearchStatus(cfg.location ? `Using ${weatherLocationLabel(cfg.location)}.` : 'Search for a city or postal code.', false);
+  if (clear) clear.disabled = !cfg.location && !cfg.searchText && !cfg.lastResult;
+  renderWeatherLocationSearchStatus(weatherRefreshPauseMessage(cfg) || (cfg.location ? `Using ${weatherLocationLabel(cfg.location)}.` : 'Search for a city or postal code.'), false);
 }
 
 function autosaveWeatherRefreshMinutes() {

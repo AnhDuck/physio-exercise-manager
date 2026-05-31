@@ -29,9 +29,12 @@ let homeCardsTimer = null;
 let homeCardsClockTimer = null;
 let weatherRefreshPromise = null;
 let weatherRefreshStartedAt = 0;
+let weatherForecastRequestId = 0;
+let weatherForecastRequestTimes = [];
 let weatherLocationSearchPromise = null;
 let weatherLocationSearchResults = [];
 let weatherLocationSearchRequestId = 0;
+let weatherLocationSearchLastAt = 0;
 let browserStorageEstimateRequestId = 0;
 let storageHealth = {
   lastAttempt: null,

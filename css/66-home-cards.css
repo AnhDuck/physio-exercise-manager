@@ -463,13 +463,14 @@
 
 .dashboard-location-controls {
   display: grid;
-  grid-template-columns: minmax(180px, 260px) auto;
+  grid-template-columns: minmax(180px, 260px) auto auto;
   gap: 7px;
   min-width: min(100%, 440px);
 }
 
 .dashboard-location-controls input,
 .dashboard-location-controls select,
+.dashboard-location-controls button,
 #setting-weather-refresh-minutes,
 #setting-aw-mini-refresh-minutes {
   min-height: 32px;
@@ -480,6 +481,10 @@
   color: var(--text);
   font: inherit;
   font-size: 12px;
+}
+
+.dashboard-location-controls button {
+  white-space: nowrap;
 }
 
 .dashboard-location-controls input:focus,

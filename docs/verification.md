@@ -40,7 +40,7 @@ If launching fallback Chrome with `Start-Process`, every argument must be a sepa
 
 For broad local UI checks, cover compact grid, notes, settings, set tracker, backup warnings, image modal entry points, and ActivityWatch dashboard interactions when ActivityWatch changed.
 
-For Home Cards changes, smoke-check desktop and mobile widths: the cards appear between the date header and first exercise group, Weather setup/search/refresh controls render in Settings, stale/error text is visible when data is missing or old, and ActivityWatch mini still opens the full dashboard.
+For Home Cards changes, smoke-check desktop and mobile widths: the cards appear between the date header and first exercise group, Weather setup/search/refresh/clear controls render in Settings, stale/error/rate-limit text is visible when data is missing or old, and ActivityWatch mini still opens the full dashboard. Avoid live Open-Meteo fetch testing when the hourly limit is already near or recently exceeded.
 
 For ActivityWatch dashboard changes, smoke-check:
 

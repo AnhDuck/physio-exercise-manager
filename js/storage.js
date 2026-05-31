@@ -628,6 +628,8 @@ function defaultHomeCardsSettings() {
       lastResult: null,
       lastError: '',
       lastErrorAt: '',
+      lastRequestAt: '',
+      rateLimitUntil: '',
     },
     activityWatchMini: {
       enabled: true,
@@ -657,6 +659,8 @@ function normalizeWeatherCardSettings(value = {}, defaults = defaultHomeCardsSet
     lastResult: normalizeWeatherLastResult(source.lastResult),
     lastError: typeof source.lastError === 'string' ? source.lastError : defaults.lastError,
     lastErrorAt: typeof source.lastErrorAt === 'string' ? source.lastErrorAt : defaults.lastErrorAt,
+    lastRequestAt: typeof source.lastRequestAt === 'string' ? source.lastRequestAt : defaults.lastRequestAt,
+    rateLimitUntil: typeof source.rateLimitUntil === 'string' ? source.rateLimitUntil : defaults.rateLimitUntil,
   };
 }
 
