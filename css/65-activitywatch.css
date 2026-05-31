@@ -74,8 +74,9 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 .activitywatch-dashboard-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
   flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .activitywatch-dashboard-controls,
@@ -89,20 +90,20 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 .activitywatch-control-row {
   display: grid;
   grid-template-areas: "stats status actions";
-  grid-template-columns: minmax(230px, 340px) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(224px, 306px) minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
-  padding: 8px 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: rgba(255,255,255,.025);
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid rgba(160,164,173,.2);
+  border-radius: 7px;
+  background: rgba(255,255,255,.016);
 }
 
 .activitywatch-control-stats {
   grid-area: stats;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -284,25 +285,29 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(264px, 357px);
+  grid-template-columns: minmax(0, 1fr) minmax(270px, 310px);
   gap: 14px;
-  align-items: start;
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .activitywatch-dashboard-main {
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 10px;
+  min-height: 0;
 }
 
 .activitywatch-summary-card {
   display: grid;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
-  min-height: 58px;
-  padding: 8px 9px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: rgba(255,255,255,.025);
+  min-height: 42px;
+  padding: 5px 7px;
+  border: 1px solid rgba(160,164,173,.18);
+  border-radius: 6px;
+  background: rgba(255,255,255,.02);
 }
 
 .activitywatch-summary-card span,
@@ -315,9 +320,15 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-summary-card strong {
   color: var(--text);
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 850;
   line-height: 1.1;
+}
+
+.activitywatch-chart-section {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
 }
 
 .activitywatch-section-heading {
@@ -505,7 +516,8 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr);
   gap: 4px;
-  height: 438px;
+  height: 100%;
+  min-height: 438px;
   padding: 10px 10px 8px 8px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -536,6 +548,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   grid-template-rows: 24px minmax(0, 1fr);
   min-width: 0;
   height: 100%;
+  overflow: hidden;
   padding: 0 8px 0;
   border-left: 1px solid rgba(255,255,255,.12);
   background:
@@ -769,6 +782,13 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   font-size: 9px;
 }
 
+.activitywatch-stacked-chart.is-wide-range .activitywatch-chart-plot {
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  padding: 0 24px 4px;
+}
+
 .activitywatch-stacked-chart.is-wide-range .activitywatch-day-bar-label.has-label {
   overflow: visible;
   color: var(--text-muted);
@@ -778,13 +798,15 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-stacked-chart.is-wide-range .activitywatch-month-bands {
-  grid-template-columns: repeat(var(--activitywatch-day-count), minmax(0, 1fr));
-  gap: 0;
+  grid-template-columns: repeat(var(--activitywatch-day-count), minmax(14px, 1fr));
+  gap: 3px;
+  min-width: calc(var(--activitywatch-day-count) * 18px);
 }
 
 .activitywatch-stacked-chart.is-wide-range .activitywatch-bars-row {
-  grid-template-columns: repeat(var(--activitywatch-day-count), minmax(0, 1fr));
-  gap: 0;
+  grid-template-columns: repeat(var(--activitywatch-day-count), minmax(14px, 1fr));
+  gap: 3px;
+  min-width: calc(var(--activitywatch-day-count) * 18px);
 }
 
 .activitywatch-stacked-chart.is-wide-range .activitywatch-day-bar {
@@ -792,13 +814,12 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-stacked-chart.is-wide-range .activitywatch-day-bar-stack {
-  justify-self: start;
-  width: var(--activitywatch-wide-bar-width, 10px);
-  margin-left: var(--activitywatch-wide-bar-offset, .5px);
+  width: 100%;
+  border-radius: 3px 3px 2px 2px;
 }
 
-.activitywatch-stacked-chart.is-wide-range .activitywatch-day-bar-stack {
-  border-radius: 3px 3px 2px 2px;
+.activitywatch-stacked-chart.is-wide-range .activitywatch-day-bar-segment {
+  min-height: 1px;
 }
 
 .activitywatch-stacked-chart.is-wide-range .activitywatch-day-bar-label.is-edge-start {
@@ -840,11 +861,12 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-selected-day {
-  position: sticky;
-  top: 0;
+  position: relative;
   display: grid;
+  align-content: start;
   gap: 10px;
-  max-height: calc(100dvh - 136px);
+  height: 100%;
+  max-height: none;
   overflow: auto;
   padding: 12px;
   border: 1px solid var(--border);
@@ -1267,16 +1289,23 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 @media (max-width: 900px) {
+  .activitywatch-dashboard-body {
+    overflow: auto;
+  }
+
   .activitywatch-dashboard-grid {
     grid-template-columns: 1fr;
+    flex: 0 0 auto;
   }
 
   .activitywatch-stacked-chart {
     height: 360px;
+    min-height: 360px;
   }
 
   .activitywatch-selected-day {
     position: static;
+    height: auto;
     max-height: none;
   }
 
@@ -1355,6 +1384,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   .activitywatch-stacked-chart {
     grid-template-columns: 18px minmax(0, 1fr);
     height: 310px;
+    min-height: 310px;
     padding-left: 6px;
   }
 

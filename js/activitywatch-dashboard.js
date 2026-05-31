@@ -4,10 +4,11 @@ const ACTIVITYWATCH_DASHBOARD_RANGE_OPTIONS = [
   { days: 7, label: 'Last 7 days' },
   { days: 14, label: 'Last 2 weeks' },
   { days: 30, label: 'Last 30 days' },
+  { days: 60, label: 'Last 60 days' },
   { days: 90, label: 'Last 90 days' },
 ];
 const ACTIVITYWATCH_DASHBOARD_DEFAULT_RANGE_DAYS = 14;
-const ACTIVITYWATCH_SELECTED_CATEGORY_LIMIT = 8;
+const ACTIVITYWATCH_SELECTED_CATEGORY_LIMIT = 12;
 const ACTIVITYWATCH_DASHBOARD_OTHER_CATEGORY = 'Other';
 const ACTIVITYWATCH_WIDE_AXIS_MIN_LABEL_GAP_DAYS = 6;
 const ACTIVITYWATCH_DASHBOARD_CATEGORY_COLORS = {
@@ -69,9 +70,9 @@ function ensureActivityWatchDashboardShell() {
         <button class="modal-close" id="activitywatch-dashboard-close" type="button" aria-label="Close ActivityWatch dashboard" title="Close" data-ui-icon="x"></button>
       </div>
       <div class="modal-body activitywatch-dashboard-body">
-        <section class="activitywatch-dashboard-controls" id="activitywatch-dashboard-controls"></section>
         <div class="activitywatch-dashboard-grid">
           <div class="activitywatch-dashboard-main">
+            <section class="activitywatch-dashboard-controls" id="activitywatch-dashboard-controls"></section>
             <section class="activitywatch-chart-section">
               <div class="activitywatch-section-heading">
                 <div>
@@ -617,20 +618,6 @@ function renderActivityWatchStackedChart(days) {
   });
   plot.appendChild(bars);
   root.appendChild(plot);
-  syncActivityWatchWideBarWidth(root, days.length);
-}
-
-function syncActivityWatchWideBarWidth(root, dayCount) {
-  if (!root?.classList?.contains('is-wide-range')) {
-    root?.style?.removeProperty('--activitywatch-wide-bar-width');
-    return;
-  }
-  const bars = root.querySelector('.activitywatch-bars-row');
-  const rowWidth = bars?.getBoundingClientRect().width || 0;
-  const trackWidth = rowWidth / Math.max(1, dayCount || 1);
-  const barWidth = Math.max(4, trackWidth - 1);
-  root.style.setProperty('--activitywatch-wide-bar-width', `${barWidth}px`);
-  root.style.setProperty('--activitywatch-wide-bar-offset', `${Math.max(0, (trackWidth - barWidth) / 2)}px`);
 }
 
 function addActivityWatchBarSegmentTooltipHandlers(segment, category, seconds) {
@@ -1013,7 +1000,7 @@ function activityWatchXAxisLabels(days) {
     const selected = day.date === activityWatchDashboardState.selectedDate;
     if (selected) candidates.push({ day, index, priority: 100, forceMonth: true });
     if (index === 0 || index === dayCount - 1) candidates.push({ day, index, priority: 90, forceMonth: true });
-    if (date.getDate() === 1) candidates.push({ day, index, priority: 80, forceMonth: true });
+    if (date.getDate() === 1) candidates.push({ day, index, priority: 80, forceMonth: false, dayOnly: true });
     if (index % 14 === 0) candidates.push({ day, index, priority: 50, forceMonth: false });
   });
 
@@ -1031,7 +1018,9 @@ function activityWatchXAxisLabels(days) {
     .forEach(candidate => {
       const date = dateFromStr(candidate.day.date);
       const previousDate = candidate.index > 0 ? dateFromStr(days[candidate.index - 1].date) : null;
-      labels.set(candidate.day.date, activityWatchCompactAxisDate(date, previousDate, candidate.forceMonth));
+      labels.set(candidate.day.date, candidate.dayOnly
+        ? String(date.getDate())
+        : activityWatchCompactAxisDate(date, previousDate, candidate.forceMonth));
     });
   return labels;
 }
