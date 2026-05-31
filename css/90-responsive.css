@@ -378,10 +378,6 @@
     padding: 12px;
   }
 
-  .weather-facts {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .weather-hourly-strip {
     overflow-x: auto;
     grid-template-columns: repeat(6, minmax(52px, 1fr));
@@ -781,10 +777,6 @@
   .weather-hero-icon {
     width: 70px;
     height: 70px;
-  }
-
-  .weather-facts {
-    grid-template-columns: 1fr;
   }
 
   .block-settings-row,

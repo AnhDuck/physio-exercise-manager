@@ -285,7 +285,7 @@
 
 .weather-facts {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 7px;
 }
 
@@ -293,13 +293,17 @@
   display: grid;
   gap: 3px;
   min-width: 0;
-  padding: 8px 9px;
+  padding: 8px 7px;
   border: 1px solid rgba(255,255,255,.095);
   border-radius: 7px;
   background: rgba(0,0,0,.12);
 }
 
-.weather-fact span {
+.weather-fact-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
   color: rgba(232,234,237,.68);
   font-size: 10px;
   font-weight: 850;
@@ -307,11 +311,44 @@
   text-transform: uppercase;
 }
 
+.weather-fact-label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weather-fact-icon {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  color: rgba(232,234,237,.72);
+}
+
+.weather-fact-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.1;
+}
+
 .weather-fact strong {
+  overflow: hidden;
   color: var(--text);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 850;
   line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weather-fact-sun strong {
+  font-size: 11px;
 }
 
 .weather-hourly-strip {

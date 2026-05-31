@@ -51,9 +51,10 @@ function buildWeatherCard() {
   card.appendChild(main);
 
   const facts = el('div', 'weather-facts');
-  facts.appendChild(buildWeatherFact('Humidity', `${Math.round(data.current.humidity)}%`));
-  facts.appendChild(buildWeatherFact('Sunrise', homeCardFormatTime(data.daily?.sunrise, data.timezone)));
-  facts.appendChild(buildWeatherFact('Sunset', homeCardFormatTime(data.daily?.sunset, data.timezone)));
+  facts.appendChild(buildWeatherFact('Humidity', `${Math.round(data.current.humidity)}%`, 'humidity'));
+  facts.appendChild(buildWeatherFact('Wind', formatWeatherWind(data.current.windSpeed, data.current.windDirection), 'wind'));
+  facts.appendChild(buildWeatherFact('UV index', formatWeatherUvIndex(data.current.uvIndex), 'uv'));
+  facts.appendChild(buildWeatherFact('Sun', formatWeatherSunTimes(data.daily, data.timezone), 'sun', 'weather-fact-sun'));
   card.appendChild(facts);
 
   card.appendChild(buildWeatherHourlyStrip(data));
@@ -95,11 +96,21 @@ function buildWeatherRefreshButton() {
   return btn;
 }
 
-function buildWeatherFact(label, value) {
-  const item = el('div', 'weather-fact');
-  item.appendChild(elText('span', '', label));
+function buildWeatherFact(label, value, iconName = '', className = '') {
+  const item = el('div', `weather-fact ${className}`.trim());
+  const labelRow = el('span', 'weather-fact-label');
+  if (iconName) labelRow.appendChild(buildWeatherMetricIcon(iconName));
+  labelRow.appendChild(elText('span', '', label));
+  item.appendChild(labelRow);
   item.appendChild(elText('strong', '', value || '--'));
   return item;
+}
+
+function buildWeatherMetricIcon(iconName) {
+  const icon = el('span', `weather-fact-icon weather-fact-icon-${iconName}`);
+  icon.setAttribute('aria-hidden', 'true');
+  icon.innerHTML = weatherMetricIconSvg(iconName);
+  return icon;
 }
 
 function buildWeatherHourlyStrip(data) {
@@ -200,9 +211,10 @@ async function fetchWeatherForLocation(location) {
     latitude: String(location.latitude),
     longitude: String(location.longitude),
     current_weather: 'true',
-    hourly: 'temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,is_day',
+    hourly: 'temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,is_day,uv_index,wind_speed_10m,wind_direction_10m',
     daily: 'sunrise,sunset',
     temperature_unit: 'celsius',
+    wind_speed_unit: 'kmh',
     timezone: 'auto',
     forecast_days: '2',
   });
@@ -218,6 +230,9 @@ async function fetchWeatherForLocation(location) {
       temperature: Number(raw.current_weather?.temperature) || nearest?.temperature || 0,
       apparentTemperature: nearest?.apparentTemperature || Number(raw.current_weather?.temperature) || 0,
       humidity: nearest?.humidity || 0,
+      windSpeed: Number(raw.current_weather?.windspeed) || nearest?.windSpeed || 0,
+      windDirection: Number(raw.current_weather?.winddirection) || nearest?.windDirection || 0,
+      uvIndex: nearest?.uvIndex || 0,
       weatherCode: Number(raw.current_weather?.weathercode) || nearest?.weatherCode || 0,
       isDay: Number(raw.current_weather?.is_day) === 1 || Boolean(nearest?.isDay),
     },
@@ -298,6 +313,9 @@ function normalizeWeatherHourly(hourly = {}) {
     temperature: Number(hourly.temperature_2m?.[index]) || 0,
     apparentTemperature: Number(hourly.apparent_temperature?.[index]) || Number(hourly.temperature_2m?.[index]) || 0,
     humidity: Number(hourly.relative_humidity_2m?.[index]) || 0,
+    windSpeed: Number(hourly.wind_speed_10m?.[index]) || 0,
+    windDirection: Number(hourly.wind_direction_10m?.[index]) || 0,
+    uvIndex: Number(hourly.uv_index?.[index]) || 0,
     weatherCode: Number(hourly.weather_code?.[index]) || 0,
     isDay: Number(hourly.is_day?.[index]) === 1,
   })).filter(item => new Date(item.time).getTime() >= now - 60 * 60 * 1000).slice(0, 8);
@@ -309,6 +327,55 @@ function nearestWeatherHour(hourly, currentTime) {
   return hourly
     .slice()
     .sort((a, b) => Math.abs(new Date(a.time).getTime() - target) - Math.abs(new Date(b.time).getTime() - target))[0] || null;
+}
+
+function formatWeatherSunTimes(daily, timezone) {
+  const sunrise = homeCardFormatTime(daily?.sunrise, timezone);
+  const sunset = homeCardFormatTime(daily?.sunset, timezone);
+  if (!sunrise && !sunset) return '';
+  if (!sunrise) return sunset;
+  if (!sunset) return sunrise;
+  return `${sunrise} / ${sunset}`;
+}
+
+function formatWeatherWind(speed, direction) {
+  const speedValue = Number(speed);
+  if (!Number.isFinite(speedValue)) return '';
+  const roundedSpeed = Math.round(speedValue);
+  const compass = weatherCompassDirection(direction);
+  return `${roundedSpeed} km/h${compass ? ` ${compass}` : ''}`;
+}
+
+function weatherCompassDirection(degrees) {
+  const value = Number(degrees);
+  if (!Number.isFinite(value)) return '';
+  const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  return directions[Math.round((((value % 360) + 360) % 360) / 45) % directions.length];
+}
+
+function formatWeatherUvIndex(value) {
+  const uvValue = Number(value);
+  if (!Number.isFinite(uvValue)) return '';
+  const index = Math.max(0, Math.round(uvValue));
+  return `${index} ${weatherUvRiskLabel(index)}`;
+}
+
+function weatherUvRiskLabel(index) {
+  if (index >= 11) return 'Extreme';
+  if (index >= 8) return 'Very high';
+  if (index >= 6) return 'High';
+  if (index >= 3) return 'Moderate';
+  return 'Low';
+}
+
+function weatherMetricIconSvg(iconName) {
+  const icons = {
+    humidity: '<path d="M12 3.5C8.6 7.4 6.8 10.2 6.8 13a5.2 5.2 0 0 0 10.4 0c0-2.8-1.8-5.6-5.2-9.5z"></path>',
+    wind: '<path d="M4 8h10.2a2.3 2.3 0 1 0-2.1-3.2"></path><path d="M4 12h14.2a2.8 2.8 0 1 1-2.5 4"></path><path d="M4 16h7"></path>',
+    uv: '<circle cx="12" cy="12" r="3.2"></circle><path d="M12 3.5v2"></path><path d="M12 18.5v2"></path><path d="M3.5 12h2"></path><path d="M18.5 12h2"></path><path d="M6 6l1.4 1.4"></path><path d="M16.6 16.6L18 18"></path><path d="M18 6l-1.4 1.4"></path><path d="M7.4 16.6L6 18"></path>',
+    sun: '<path d="M5 15.5h14"></path><path d="M7.5 15.5a4.5 4.5 0 0 1 9 0"></path><path d="M12 4v2"></path><path d="M4.8 8.3l1.5 1.1"></path><path d="M19.2 8.3l-1.5 1.1"></path>',
+  };
+  return `<svg viewBox="0 0 24 24" focusable="false">${icons[iconName] || icons.sun}</svg>`;
 }
 
 function weatherCondition(code, isDay = true) {

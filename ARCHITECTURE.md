@@ -32,7 +32,7 @@ Never load `main.js` before feature files it binds. Do not add imports, exports,
 - `tracker.js`: set tracker, timer, log edit, cues, and shortcuts.
 - `activitywatch-data.js`: ActivityWatch REST client, aggregate storage, sync orchestration.
 - `home-cards.js`: main-screen dashboard card row and refresh timers for the always-on monitor view.
-- `weather-card.js`: Open-Meteo weather card, location search, cached weather result, request throttling/rate-limit cooldowns, and weather Settings controls.
+- `weather-card.js`: Open-Meteo weather card, current details including humidity/wind/UV/sun times, location search, cached weather result, request throttling/rate-limit cooldowns, and weather Settings controls.
 - `activitywatch-mini-card.js`: current waking-day ActivityWatch mini dashboard card.
 - `activitywatch-dashboard-*.js`: ActivityWatch category dashboard. See `docs/activitywatch.md`.
 - `activitywatch-settings.js`: ActivityWatch Settings tab controls.
