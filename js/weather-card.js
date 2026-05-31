@@ -42,7 +42,7 @@ function buildWeatherCard() {
   title.appendChild(elText('span', 'home-card-kicker', 'Weather'));
   title.appendChild(elText('strong', '', data.locationLabel || weatherLocationLabel(cfg.location)));
   header.appendChild(title);
-  header.appendChild(buildWeatherRefreshButton());
+  header.appendChild(buildWeatherHeaderActions());
   card.appendChild(header);
 
   const main = el('div', 'weather-current');
@@ -81,6 +81,10 @@ function buildWeatherSetupState() {
   btn.type = 'button';
   btn.dataset.homeCardAction = 'open-weather-settings';
   wrap.appendChild(btn);
+  const actions = el('div', 'home-card-actions');
+  actions.appendChild(buildWeatherPreviewButton('preview-weather-alert', 'Alert preview', 'warning'));
+  actions.appendChild(buildWeatherPreviewButton('randomize-weather-preview', 'Random preview', 'shuffle'));
+  wrap.appendChild(actions);
   return wrap;
 }
 
@@ -92,6 +96,24 @@ function buildWeatherLoadingState(cfg) {
   wrap.appendChild(elText('span', '', pauseMessage || cfg.lastError || (weatherRefreshPromise ? 'Refreshing weather...' : 'Waiting for the first weather refresh.')));
   wrap.appendChild(buildWeatherRefreshButton());
   return wrap;
+}
+
+function buildWeatherHeaderActions() {
+  const actions = el('div', 'home-card-actions');
+  actions.appendChild(buildWeatherPreviewButton('preview-weather-alert', 'Preview Environment Canada alert', 'warning'));
+  actions.appendChild(buildWeatherPreviewButton('randomize-weather-preview', 'Randomize weather preview', 'shuffle'));
+  actions.appendChild(buildWeatherRefreshButton());
+  return actions;
+}
+
+function buildWeatherPreviewButton(action, title, iconName) {
+  const btn = el('button', 'home-card-icon-btn');
+  btn.type = 'button';
+  btn.dataset.homeCardAction = action;
+  btn.title = title;
+  btn.setAttribute('aria-label', title);
+  btn.appendChild(buildAppIconSvg(iconName));
+  return btn;
 }
 
 function buildWeatherRefreshButton() {
@@ -1280,6 +1302,14 @@ function autosaveWeatherPreviewMode() {
 function randomizeWeatherPreviewMode() {
   const cfg = weatherSettings();
   cfg.previewMode = `random:${Date.now()}`;
+  saveSettings(settings);
+  syncWeatherSettingsControls();
+  renderHomeCards();
+}
+
+function previewWeatherAlertMode() {
+  const cfg = weatherSettings();
+  cfg.previewMode = 'alert';
   saveSettings(settings);
   syncWeatherSettingsControls();
   renderHomeCards();
