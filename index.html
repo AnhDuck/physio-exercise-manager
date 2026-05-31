@@ -6,7 +6,7 @@
   <title>Physio Exercise Management</title>
   <link rel="icon" type="image/svg+xml" href="assets/physio-icon.svg" />
   <script>
-    window.PEM_APP_VERSION = '1.0.92';
+    window.PEM_APP_VERSION = '1.0.93';
     const PEM_CSS_FILES = [
       'css/00-base.css',
       'css/10-header.css',
@@ -340,6 +340,30 @@
                   <option value="30">Every 30 minutes</option>
                 </select>
               </label>
+              <div class="settings-action-row" id="setting-weather-preview-row">
+                <span class="settings-action-label">
+                  <strong>Weather preview</strong>
+                  <span>Dev preview for card moods, advisories, and highlight states.</span>
+                </span>
+                <div class="dashboard-preview-controls">
+                  <select id="setting-weather-preview-mode" aria-label="Weather preview mode">
+                    <option value="live">Live weather</option>
+                    <option value="clear">Clear morning</option>
+                    <option value="cloudy">Cloudy</option>
+                    <option value="rain">Rain soon</option>
+                    <option value="snow">Snow</option>
+                    <option value="wind">Windy</option>
+                    <option value="uv">High UV</option>
+                    <option value="sunset">Sunset walk</option>
+                    <option value="night">Night</option>
+                    <option value="jacket">Real jacket</option>
+                    <option value="warm">Warm calm</option>
+                    <option value="alert">Alert</option>
+                    <option value="random">Random mix</option>
+                  </select>
+                  <button class="settings-backup-btn" id="setting-weather-preview-random-btn" type="button" data-settings-icon="reconnect">Randomize</button>
+                </div>
+              </div>
               <label class="settings-action-row" for="setting-aw-mini-refresh-minutes">
                 <span class="settings-action-label">
                   <strong>ActivityWatch mini refresh</strong>

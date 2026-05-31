@@ -479,16 +479,23 @@
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 6px;
   min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  background: rgba(0,0,0,.12);
 }
 
 .weather-hourly-item {
   display: grid;
   justify-items: center;
-  gap: 3px;
+  gap: 5px;
   min-width: 0;
-  padding: 6px 4px;
-  border-radius: 999px;
-  background: rgba(255,255,255,.06);
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+
+.weather-hourly-item + .weather-hourly-item {
+  box-shadow: -1px 0 0 rgba(255,255,255,.055);
 }
 
 .weather-hourly-item span,
@@ -631,6 +638,8 @@
 .dashboard-location-controls input,
 .dashboard-location-controls select,
 .dashboard-location-controls button,
+.dashboard-preview-controls select,
+.dashboard-preview-controls button,
 #setting-weather-refresh-minutes,
 #setting-aw-mini-refresh-minutes {
   min-height: 32px;
@@ -647,8 +656,20 @@
   white-space: nowrap;
 }
 
+.dashboard-preview-controls {
+  display: grid;
+  grid-template-columns: minmax(160px, 240px) auto;
+  gap: 7px;
+  min-width: min(100%, 390px);
+}
+
+.dashboard-preview-controls button {
+  white-space: nowrap;
+}
+
 .dashboard-location-controls input:focus,
 .dashboard-location-controls select:focus,
+.dashboard-preview-controls select:focus,
 #setting-weather-refresh-minutes:focus,
 #setting-aw-mini-refresh-minutes:focus {
   border-color: rgba(99,179,255,.82);

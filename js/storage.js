@@ -630,6 +630,7 @@ function defaultHomeCardsSettings() {
       lastErrorAt: '',
       lastRequestAt: '',
       rateLimitUntil: '',
+      previewMode: 'live',
     },
     activityWatchMini: {
       enabled: true,
@@ -661,6 +662,7 @@ function normalizeWeatherCardSettings(value = {}, defaults = defaultHomeCardsSet
     lastErrorAt: typeof source.lastErrorAt === 'string' ? source.lastErrorAt : defaults.lastErrorAt,
     lastRequestAt: typeof source.lastRequestAt === 'string' ? source.lastRequestAt : defaults.lastRequestAt,
     rateLimitUntil: typeof source.rateLimitUntil === 'string' ? source.rateLimitUntil : defaults.rateLimitUntil,
+    previewMode: typeof source.previewMode === 'string' ? source.previewMode : defaults.previewMode,
   };
 }
 

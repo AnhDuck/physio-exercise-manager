@@ -154,6 +154,8 @@ function bindStaticEvents() {
   document.getElementById('setting-weather-location-clear-btn')?.addEventListener('click', clearWeatherLocationFromSettings);
   document.getElementById('setting-weather-location-results')?.addEventListener('change', applySelectedWeatherLocation);
   document.getElementById('setting-weather-refresh-minutes')?.addEventListener('change', autosaveWeatherRefreshMinutes);
+  document.getElementById('setting-weather-preview-mode')?.addEventListener('change', autosaveWeatherPreviewMode);
+  document.getElementById('setting-weather-preview-random-btn')?.addEventListener('click', randomizeWeatherPreviewMode);
   document.getElementById('setting-aw-mini-refresh-minutes')?.addEventListener('change', autosaveActivityWatchMiniRefreshMinutes);
   document.getElementById('setting-activitywatch-server-url')?.addEventListener('change', saveActivityWatchServerUrlSetting);
   document.getElementById('settings-activitywatch-refresh')?.addEventListener('click', refreshActivityWatchFromSettings);

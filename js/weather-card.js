@@ -18,12 +18,13 @@ function weatherSettings() {
 
 function buildWeatherCard() {
   const cfg = weatherSettings();
-  const data = cfg.lastResult;
+  const liveData = cfg.lastResult;
+  const data = weatherPreviewResult(cfg, liveData) || liveData;
   const brain = data?.current ? buildWeatherBrain(data) : null;
   const card = el('article', `home-card weather-card ${weatherCardStateClass(cfg, brain)}`);
   card.setAttribute('aria-label', 'Weather');
 
-  if (!cfg.location) {
+  if (!cfg.location && !weatherPreviewEnabled(cfg)) {
     card.appendChild(buildWeatherSetupState());
     return card;
   }
@@ -357,6 +358,151 @@ function nearestWeatherHour(hourly, currentTime) {
     .sort((a, b) => Math.abs(new Date(a.time).getTime() - target) - Math.abs(new Date(b.time).getTime() - target))[0] || null;
 }
 
+function weatherPreviewEnabled(cfg) {
+  return weatherPreviewMode(cfg) !== 'live';
+}
+
+function weatherPreviewMode(cfg) {
+  const value = typeof cfg?.previewMode === 'string' ? cfg.previewMode : 'live';
+  if (value.startsWith('random:')) return value;
+  return weatherPreviewScenarioKeys().includes(value) ? value : 'live';
+}
+
+function weatherPreviewScenarioKeys() {
+  return ['live', 'clear', 'cloudy', 'rain', 'snow', 'wind', 'uv', 'sunset', 'night', 'jacket', 'warm', 'alert'];
+}
+
+function weatherPreviewResult(cfg, liveData = null) {
+  const mode = weatherPreviewMode(cfg);
+  if (mode === 'live') return null;
+  const scenario = mode.startsWith('random:')
+    ? randomWeatherPreviewScenario(mode)
+    : weatherPreviewScenario(mode);
+  if (!scenario) return null;
+  const locationLabel = liveData?.locationLabel || (cfg.location ? weatherLocationLabel(cfg.location) : 'Preview weather');
+  return buildWeatherPreviewData(scenario, locationLabel);
+}
+
+function weatherPreviewScenario(mode) {
+  const scenarios = {
+    clear: { label: 'Preview: Clear morning', temp: 7, feels: 5, humidity: 66, wind: 6, direction: 135, gust: 10, uv: 0, code: 0, isDay: true, moodHour: 6 },
+    cloudy: { label: 'Preview: Cloudy', temp: 12, feels: 10, humidity: 78, wind: 14, direction: 240, gust: 22, uv: 1, code: 3, isDay: true, moodHour: 11 },
+    rain: { label: 'Preview: Rain soon', temp: 11, feels: 9, humidity: 86, wind: 18, direction: 180, gust: 28, uv: 1, code: 2, isDay: true, rainIn: 90, rainProbability: 75, moodHour: 14 },
+    snow: { label: 'Preview: Snow', temp: 0, feels: -4, humidity: 84, wind: 17, direction: 20, gust: 30, uv: 0, code: 71, isDay: true, moodHour: 9 },
+    wind: { label: 'Preview: Windy', temp: 13, feels: 9, humidity: 58, wind: 34, direction: 90, gust: 48, uv: 2, code: 1, isDay: true, moodHour: 15 },
+    uv: { label: 'Preview: High UV', temp: 24, feels: 25, humidity: 52, wind: 8, direction: 210, gust: 14, uv: 6, code: 0, isDay: true, uvPeak: 8, uvPeakHour: 13, moodHour: 11 },
+    sunset: { label: 'Preview: Sunset walk', temp: 17, feels: 16, humidity: 64, wind: 10, direction: 270, gust: 18, uv: 1, code: 1, isDay: true, sunsetIn: 74, moodHour: 19 },
+    night: { label: 'Preview: Night', temp: 9, feels: 7, humidity: 72, wind: 9, direction: 315, gust: 15, uv: 0, code: 0, isDay: false, moodHour: 22 },
+    jacket: { label: 'Preview: Real jacket', temp: 14, feels: 12, humidity: 70, wind: 12, direction: 110, gust: 18, uv: 1, code: 1, isDay: true, moodHour: 16 },
+    warm: { label: 'Preview: Warm calm', temp: 23, feels: 24, humidity: 48, wind: 6, direction: 200, gust: 11, uv: 2, code: 0, isDay: true, moodHour: 17 },
+    alert: { label: 'Preview: Weather alert', temp: 16, feels: 12, humidity: 68, wind: 39, direction: 80, gust: 58, uv: 2, code: 3, isDay: true, alert: 'Wind warning. Secure loose stuff before walking.', moodHour: 13 },
+  };
+  return scenarios[mode] || null;
+}
+
+function randomWeatherPreviewScenario(mode) {
+  const seed = Number.parseInt(String(mode).split(':')[1], 10) || Date.now();
+  const random = seededWeatherPreviewRandom(seed);
+  const codes = [0, 1, 2, 3, 45, 61, 71, 95];
+  const code = codes[Math.floor(random() * codes.length)] || 0;
+  const isNight = random() > .78;
+  const wind = Math.round(4 + random() * 40);
+  const temp = Math.round(-1 + random() * 29);
+  const rainCode = weatherIsRainCode(code) || code === 95;
+  const snowCode = weatherIsSnowCode(code);
+  return {
+    label: 'Preview: Random mix',
+    temp,
+    feels: Math.round(temp - (wind >= 20 ? 3 + random() * 3 : random() * 2)),
+    humidity: Math.round(42 + random() * 48),
+    wind,
+    direction: Math.round(random() * 359),
+    gust: Math.round(wind + random() * 22),
+    uv: isNight ? 0 : Math.round(random() * 7),
+    uvPeak: isNight ? 0 : Math.round(3 + random() * 8),
+    uvPeakHour: 10 + Math.floor(random() * 6),
+    code,
+    isDay: !isNight,
+    rainIn: rainCode || random() > .7 ? Math.round(30 + random() * 240) : null,
+    rainProbability: rainCode ? 80 : Math.round(45 + random() * 45),
+    snowIn: snowCode ? Math.round(30 + random() * 180) : null,
+    sunsetIn: !isNight && random() > .72 ? Math.round(30 + random() * 105) : null,
+    alert: random() > .84 ? 'Special weather statement. Check conditions before heading out.' : '',
+    moodHour: isNight ? 22 : 6 + Math.floor(random() * 14),
+  };
+}
+
+function seededWeatherPreviewRandom(seed) {
+  let value = seed % 2147483647;
+  if (value <= 0) value += 2147483646;
+  return () => {
+    value = value * 16807 % 2147483647;
+    return (value - 1) / 2147483646;
+  };
+}
+
+function buildWeatherPreviewData(scenario, locationLabel) {
+  const now = new Date();
+  const base = new Date(now.getFullYear(), now.getMonth(), now.getDate(), scenario.moodHour ?? now.getHours(), 0, 0, 0);
+  const sunset = scenario.sunsetIn !== null && scenario.sunsetIn !== undefined
+    ? new Date(base.getTime() + scenario.sunsetIn * 60000)
+    : new Date(now.getFullYear(), now.getMonth(), now.getDate(), 21, 4, 0, 0);
+  const sunrise = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 5, 9, 0, 0);
+  const hourly = Array.from({ length: 8 }, (_, index) => {
+    const hourTime = new Date(base.getTime() + index * 60 * 60000);
+    const precipitationStarts = scenario.rainIn !== null && scenario.rainIn !== undefined && index * 60 >= scenario.rainIn;
+    const snowStarts = scenario.snowIn !== null && scenario.snowIn !== undefined && index * 60 >= scenario.snowIn;
+    const uvPeakHour = Number(scenario.uvPeakHour) || 13;
+    const uvDistance = Math.abs(hourTime.getHours() - uvPeakHour);
+    const uvIndex = Math.max(Number(scenario.uv) || 0, Math.round((Number(scenario.uvPeak) || scenario.uv || 0) - uvDistance * 1.4));
+    return {
+      time: weatherLocalIso(hourTime),
+      temperature: Math.round((Number(scenario.temp) || 0) + index * .8),
+      apparentTemperature: Math.round((Number(scenario.feels) || scenario.temp || 0) + index * .7),
+      humidity: Number(scenario.humidity) || 0,
+      windSpeed: Number(scenario.wind) || 0,
+      windDirection: Number(scenario.direction) || 0,
+      windGusts: Number(scenario.gust) || 0,
+      precipitationProbability: precipitationStarts || snowStarts ? Number(scenario.rainProbability) || 70 : 8,
+      uvIndex,
+      weatherCode: snowStarts ? 71 : precipitationStarts ? 61 : Number(scenario.code) || 0,
+      isDay: Boolean(scenario.isDay),
+    };
+  });
+  return {
+    fetchedAt: new Date().toISOString(),
+    locationLabel: scenario.label || locationLabel,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+    current: {
+      time: weatherLocalIso(base),
+      temperature: Number(scenario.temp) || 0,
+      apparentTemperature: Number(scenario.feels) || Number(scenario.temp) || 0,
+      humidity: Number(scenario.humidity) || 0,
+      windSpeed: Number(scenario.wind) || 0,
+      windDirection: Number(scenario.direction) || 0,
+      windGusts: Number(scenario.gust) || 0,
+      uvIndex: Number(scenario.uv) || 0,
+      weatherCode: Number(scenario.code) || 0,
+      isDay: Boolean(scenario.isDay),
+    },
+    daily: {
+      sunrise: weatherLocalIso(sunrise),
+      sunset: weatherLocalIso(sunset),
+    },
+    hourly,
+    alerts: scenario.alert ? [{ title: scenario.alert }] : [],
+  };
+}
+
+function weatherLocalIso(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  const h = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  return `${y}-${m}-${d}T${h}:${min}`;
+}
+
 function buildWeatherBrain(data) {
   const current = data?.current || {};
   const hourly = Array.isArray(data?.hourly) ? data.hourly : [];
@@ -366,7 +512,9 @@ function buildWeatherBrain(data) {
   const wind = Number(current.windSpeed) || 0;
   const gust = Number(current.windGusts) || 0;
   const uvNow = Number(current.uvIndex) || 0;
-  const uvPeak = Math.max(uvNow, ...hourly.slice(0, 8).map(hour => Number(hour.uvIndex) || 0));
+  const uvPeakInfo = weatherUvPeakInfo(hourly, nowMs, uvNow);
+  const uvPeak = uvPeakInfo.value;
+  const uvHighSoon = weatherNextUvHigh(hourly, nowMs);
   const sunsetMinutes = weatherMinutesUntil(data?.daily?.sunset, nowMs);
   const rainSoon = weatherNextPrecipitation(hourly, nowMs);
   const alert = weatherPrimaryAlert(data);
@@ -393,16 +541,23 @@ function buildWeatherBrain(data) {
     });
   }
 
-  if (uvPeak >= 6) {
+  if (uvNow >= 6 || uvHighSoon || uvPeak >= 6) {
+    const highSoon = uvHighSoon && uvHighSoon.minutes <= 180;
+    const highLater = uvHighSoon && uvHighSoon.minutes > 180;
+    const label = uvPeak >= 8 ? 'UV very high' : 'UV high';
     candidates.push({
       key: 'uv',
       highlight: 'uv',
-      tileLabel: uvPeak >= 8 ? 'UV very high' : 'UV high',
+      tileLabel: label,
       label: 'UV',
-      score: uvPeak >= 8 ? 96 : 84,
-      advisory: uvPeak >= 8
-        ? `UV peaks very high today. Avoid the middle of the day.`
-        : `UV gets high today. Shade is your friend midday.`,
+      score: uvNow >= 8 ? 98 : uvNow >= 6 ? 90 : highSoon ? 86 : 38,
+      advisory: uvNow >= 6
+        ? `UV is ${uvNow >= 8 ? 'very high' : 'high'} now. Shade helps.`
+        : highSoon
+          ? `UV gets ${uvPeak >= 8 ? 'very high' : 'high'} by ${homeCardFormatTime(uvHighSoon.time, data.timezone).replace(/\s/g, '')}.`
+          : highLater
+            ? `UV peaks around ${homeCardFormatTime(uvPeakInfo.time, data.timezone).replace(/\s/g, '')}.`
+            : `UV peaks around ${homeCardFormatTime(uvPeakInfo.time, data.timezone).replace(/\s/g, '')}.`,
     });
   }
 
@@ -485,6 +640,27 @@ function weatherNextPrecipitation(hourly, nowMs) {
       return null;
     })
     .find(Boolean) || null;
+}
+
+function weatherUvPeakInfo(hourly, nowMs, currentUv) {
+  const future = hourly
+    .filter(hour => weatherTimestamp(hour.time) >= nowMs)
+    .slice(0, 10);
+  const peak = future.reduce((best, hour) => {
+    const value = Number(hour.uvIndex) || 0;
+    return value > best.value ? { value, time: hour.time } : best;
+  }, { value: Number(currentUv) || 0, time: future[0]?.time || '' });
+  return peak;
+}
+
+function weatherNextUvHigh(hourly, nowMs) {
+  return hourly
+    .map(hour => ({
+      time: hour.time,
+      value: Number(hour.uvIndex) || 0,
+      minutes: Math.round((weatherTimestamp(hour.time) - nowMs) / 60000),
+    }))
+    .find(item => item.minutes >= 0 && item.value >= 6) || null;
 }
 
 function weatherPrimaryAlert(data) {
@@ -850,10 +1026,12 @@ function syncWeatherSettingsControls() {
   const search = document.getElementById('setting-weather-location-search');
   const current = document.getElementById('setting-weather-current-location');
   const refresh = document.getElementById('setting-weather-refresh-minutes');
+  const preview = document.getElementById('setting-weather-preview-mode');
   const clear = document.getElementById('setting-weather-location-clear-btn');
   if (search) search.value = cfg.searchText || (cfg.location ? weatherLocationLabel(cfg.location) : '');
   if (current) current.textContent = cfg.location ? weatherLocationLabel(cfg.location) : 'No location selected';
   if (refresh) refresh.value = String(cfg.refreshMinutes);
+  if (preview) preview.value = weatherPreviewMode(cfg).startsWith('random:') ? 'random' : weatherPreviewMode(cfg);
   if (clear) clear.disabled = !cfg.location && !cfg.searchText && !cfg.lastResult;
   renderWeatherLocationSearchStatus(weatherRefreshPauseMessage(cfg) || (cfg.location ? `Using ${weatherLocationLabel(cfg.location)}.` : 'Search for a city or postal code.'), false);
 }
@@ -864,4 +1042,26 @@ function autosaveWeatherRefreshMinutes() {
   cfg.refreshMinutes = clampRefreshMinutes(input?.value, 10, 5, 60);
   if (input) input.value = String(cfg.refreshMinutes);
   saveSettings(settings);
+}
+
+function autosaveWeatherPreviewMode() {
+  const input = document.getElementById('setting-weather-preview-mode');
+  const cfg = weatherSettings();
+  cfg.previewMode = normalizeWeatherPreviewSetting(input?.value);
+  if (input) input.value = cfg.previewMode.startsWith('random:') ? 'random' : cfg.previewMode;
+  saveSettings(settings);
+  renderHomeCards();
+}
+
+function randomizeWeatherPreviewMode() {
+  const cfg = weatherSettings();
+  cfg.previewMode = `random:${Date.now()}`;
+  saveSettings(settings);
+  syncWeatherSettingsControls();
+  renderHomeCards();
+}
+
+function normalizeWeatherPreviewSetting(value) {
+  if (value === 'random') return `random:${Date.now()}`;
+  return weatherPreviewScenarioKeys().includes(value) ? value : 'live';
 }
