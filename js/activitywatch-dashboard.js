@@ -32,6 +32,9 @@ const activityWatchDashboardState = {
   hoveredCategory: '',
   detailMode: 'day',
   showAllCategories: false,
+  chartScrollKey: '',
+  chartScrollLeft: null,
+  chartScrollToEnd: false,
   advancedSyncOpen: false,
   advancedSyncMode: '',
   advancedSyncCustomStart: '',
@@ -46,6 +49,7 @@ function openActivityWatchDashboard() {
   if (!activityWatchDashboardState.rangeEndDate) {
     activityWatchDashboardState.rangeEndDate = current;
   }
+  activityWatchDashboardState.chartScrollToEnd = true;
   modal.classList.remove('hidden');
   renderActivityWatchDashboard();
   maybeSyncActivityWatchRecent('dashboard-open');
@@ -538,11 +542,17 @@ function renderActivityWatchStackedChart(days) {
   const root = document.getElementById('activitywatch-stacked-chart');
   if (!root) return;
   hideActivityWatchChartTooltip();
+  rememberActivityWatchChartScroll(root);
+  const scrollKey = activityWatchChartScrollKey(days);
+  const shouldRestoreScroll = activityWatchDashboardState.chartScrollKey === scrollKey
+    && Number.isFinite(activityWatchDashboardState.chartScrollLeft)
+    && !activityWatchDashboardState.chartScrollToEnd;
   root.innerHTML = '';
   root.classList.toggle('is-wide-range', days.length > 45);
   root.classList.toggle('is-dense-range', days.length > 30);
   root.classList.toggle('is-month-range', days.length >= 30);
   root.classList.toggle('is-filtered', Boolean(activityWatchDashboardState.selectedCategory));
+  root.dataset.awScrollKey = scrollKey;
 
   const chartCategories = activityWatchDashboardChartCategories(days);
   const maxSeconds = activityWatchDashboardState.selectedCategory
@@ -618,6 +628,52 @@ function renderActivityWatchStackedChart(days) {
   });
   plot.appendChild(bars);
   root.appendChild(plot);
+  bindActivityWatchChartWheelScroll(plot);
+  requestAnimationFrame(() => {
+    if (shouldRestoreScroll) {
+      plot.scrollLeft = activityWatchDashboardState.chartScrollLeft;
+    } else if (days.length > 45) {
+      plot.scrollLeft = plot.scrollWidth;
+    }
+    activityWatchDashboardState.chartScrollKey = scrollKey;
+    activityWatchDashboardState.chartScrollLeft = plot.scrollLeft;
+    activityWatchDashboardState.chartScrollToEnd = false;
+  });
+}
+
+function activityWatchChartScrollKey(days) {
+  if (!days.length) return 'empty';
+  return `${days.length}:${days[0].date}:${days[days.length - 1].date}`;
+}
+
+function rememberActivityWatchChartScroll(root) {
+  const plot = root.querySelector('.activitywatch-chart-plot');
+  if (!plot) return;
+  activityWatchDashboardState.chartScrollLeft = plot.scrollLeft;
+}
+
+function bindActivityWatchChartWheelScroll(plot) {
+  plot.addEventListener('scroll', () => {
+    activityWatchDashboardState.chartScrollLeft = plot.scrollLeft;
+  }, { passive: true });
+
+  plot.addEventListener('wheel', (event) => {
+    if (plot.scrollWidth <= plot.clientWidth) return;
+    const rawDelta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : -event.deltaY;
+    const delta = activityWatchWheelDeltaPixels(rawDelta, event.deltaMode, plot.clientWidth);
+    if (!delta) return;
+    const nextScrollLeft = Math.max(0, Math.min(plot.scrollWidth - plot.clientWidth, plot.scrollLeft + delta));
+    if (nextScrollLeft === plot.scrollLeft) return;
+    event.preventDefault();
+    plot.scrollLeft = nextScrollLeft;
+    activityWatchDashboardState.chartScrollLeft = nextScrollLeft;
+  }, { passive: false });
+}
+
+function activityWatchWheelDeltaPixels(delta, deltaMode, pageSize) {
+  if (deltaMode === 1) return delta * 16;
+  if (deltaMode === 2) return delta * pageSize;
+  return delta;
 }
 
 function addActivityWatchBarSegmentTooltipHandlers(segment, category, seconds) {
