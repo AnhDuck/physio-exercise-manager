@@ -6,7 +6,7 @@
   <title>Physio Exercise Management</title>
   <link rel="icon" type="image/svg+xml" href="assets/physio-icon.svg" />
   <script>
-    window.PEM_APP_VERSION = '1.0.93';
+    window.PEM_APP_VERSION = '1.0.95';
     const PEM_CSS_FILES = [
       'css/00-base.css',
       'css/10-header.css',
@@ -331,7 +331,7 @@
               <label class="settings-action-row" for="setting-weather-refresh-minutes">
                 <span class="settings-action-label">
                   <strong>Weather refresh</strong>
-                  <span>Open-Meteo refresh cadence for the main weather card.</span>
+                  <span>Shared refresh cadence for weather, air quality, and official alerts.</span>
                 </span>
                 <select id="setting-weather-refresh-minutes">
                   <option value="5">Every 5 minutes</option>
@@ -339,6 +339,20 @@
                   <option value="15">Every 15 minutes</option>
                   <option value="30">Every 30 minutes</option>
                 </select>
+              </label>
+              <label class="settings-action-row" for="setting-weather-air-quality-enabled">
+                <span class="settings-action-label">
+                  <strong>Air quality tile</strong>
+                  <span>Uses Open-Meteo air quality with the normal weather refresh.</span>
+                </span>
+                <input type="checkbox" id="setting-weather-air-quality-enabled" />
+              </label>
+              <label class="settings-action-row" for="setting-weather-alerts-enabled">
+                <span class="settings-action-label">
+                  <strong>Environment Canada alerts</strong>
+                  <span>Checks official MSC GeoMet weather alerts for the saved location.</span>
+                </span>
+                <input type="checkbox" id="setting-weather-alerts-enabled" />
               </label>
               <div class="settings-action-row" id="setting-weather-preview-row">
                 <span class="settings-action-label">
@@ -354,6 +368,7 @@
                     <option value="snow">Snow</option>
                     <option value="wind">Windy</option>
                     <option value="uv">High UV</option>
+                    <option value="air">Bad air</option>
                     <option value="sunset">Sunset walk</option>
                     <option value="night">Night</option>
                     <option value="jacket">Real jacket</option>

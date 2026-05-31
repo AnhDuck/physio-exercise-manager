@@ -67,7 +67,7 @@ function buildActivityWatchMiniStack(day) {
     const segment = el('span', 'activitywatch-mini-stack-segment');
     segment.style.width = `${Math.max(2, item.percent)}%`;
     segment.style.background = activityWatchCategoryColor(item.name);
-    segment.title = `${item.name}: ${formatActivityWatchDuration(item.seconds)}`;
+    segment.title = `${item.name}: ${formatActivityWatchDuration(item.seconds)} (${formatActivityWatchMiniPercent(item.percent)})`;
     stack.appendChild(segment);
   });
   return stack;
@@ -75,7 +75,7 @@ function buildActivityWatchMiniStack(day) {
 
 function buildActivityWatchMiniCategoryList(day) {
   const list = el('div', 'activitywatch-mini-list');
-  const categories = activityWatchMiniCategories(day).slice(0, 4);
+  const categories = activityWatchMiniCategories(day);
   if (!day?.totalActiveSeconds || !categories.length) {
     const empty = el('div', 'activitywatch-mini-empty');
     empty.textContent = activityWatchMiniEmptyText();
@@ -90,7 +90,10 @@ function buildActivityWatchMiniCategoryList(day) {
     label.appendChild(swatch);
     label.appendChild(elText('span', '', item.name));
     row.appendChild(label);
-    row.appendChild(elText('strong', '', formatActivityWatchDuration(item.seconds)));
+    const meta = el('span', 'activitywatch-mini-category-meta');
+    meta.appendChild(elText('strong', '', formatActivityWatchDuration(item.seconds)));
+    meta.appendChild(elText('span', '', formatActivityWatchMiniPercent(item.percent)));
+    row.appendChild(meta);
     list.appendChild(row);
   });
   return list;
@@ -159,6 +162,12 @@ function activityWatchMiniIsStale(isoString) {
 function activityWatchMiniDateLabel(dateStr) {
   const date = dateFromStr(dateStr);
   return new Intl.DateTimeFormat([], { weekday: 'short', month: 'short', day: 'numeric' }).format(date);
+}
+
+function formatActivityWatchMiniPercent(percent) {
+  const value = Math.max(0, Number(percent) || 0);
+  if (value > 0 && value < 1) return '<1%';
+  return `${Math.round(value)}%`;
 }
 
 function activityWatchMiniEmptyText() {

@@ -630,6 +630,8 @@ function defaultHomeCardsSettings() {
       lastErrorAt: '',
       lastRequestAt: '',
       rateLimitUntil: '',
+      airQualityEnabled: true,
+      alertsEnabled: true,
       previewMode: 'live',
     },
     activityWatchMini: {
@@ -662,6 +664,8 @@ function normalizeWeatherCardSettings(value = {}, defaults = defaultHomeCardsSet
     lastErrorAt: typeof source.lastErrorAt === 'string' ? source.lastErrorAt : defaults.lastErrorAt,
     lastRequestAt: typeof source.lastRequestAt === 'string' ? source.lastRequestAt : defaults.lastRequestAt,
     rateLimitUntil: typeof source.rateLimitUntil === 'string' ? source.rateLimitUntil : defaults.rateLimitUntil,
+    airQualityEnabled: source.airQualityEnabled !== false,
+    alertsEnabled: source.alertsEnabled !== false,
     previewMode: typeof source.previewMode === 'string' ? source.previewMode : defaults.previewMode,
   };
 }
@@ -706,6 +710,12 @@ function normalizeWeatherLastResult(value) {
     daily: value.daily && typeof value.daily === 'object' && !Array.isArray(value.daily)
       ? { ...value.daily }
       : null,
+    airQuality: value.airQuality && typeof value.airQuality === 'object' && !Array.isArray(value.airQuality)
+      ? { ...value.airQuality }
+      : null,
+    alerts: Array.isArray(value.alerts)
+      ? value.alerts.filter(item => item && typeof item === 'object').slice(0, 6)
+      : [],
     hourly: Array.isArray(value.hourly)
       ? value.hourly.filter(item => item && typeof item === 'object').slice(0, 12)
       : [],

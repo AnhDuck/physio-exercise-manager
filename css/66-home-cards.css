@@ -221,6 +221,14 @@
     var(--bg-card);
 }
 
+.weather-card.weather-mood-air {
+  border-color: rgba(251,146,60,.5);
+  background:
+    radial-gradient(circle at 88% 14%, rgba(251,146,60,.2), transparent 32%),
+    linear-gradient(135deg, rgba(100,76,60,.76), rgba(55,54,52,.98) 62%),
+    var(--bg-card);
+}
+
 .weather-card-header,
 .activitywatch-mini-header {
   display: grid;
@@ -422,6 +430,10 @@
   border-color: rgba(251,191,36,.42);
 }
 
+.weather-highlight-air .weather-fact.is-smart-highlight {
+  border-color: rgba(251,146,60,.58);
+}
+
 .weather-fact-label {
   display: inline-flex;
   align-items: center;
@@ -474,6 +486,51 @@
   font-size: 11px;
 }
 
+.weather-fact-air {
+  position: relative;
+  overflow: hidden;
+}
+
+.weather-fact-air::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  opacity: .18;
+}
+
+.weather-air-good::before {
+  background: #22c55e;
+}
+
+.weather-air-moderate::before {
+  background: #eab308;
+}
+
+.weather-air-poor::before {
+  background: #f97316;
+}
+
+.weather-air-bad::before {
+  background: #ef4444;
+}
+
+.weather-air-good .weather-fact-icon {
+  color: #86efac;
+}
+
+.weather-air-moderate .weather-fact-icon {
+  color: #fde047;
+}
+
+.weather-air-poor .weather-fact-icon {
+  color: #fdba74;
+}
+
+.weather-air-bad .weather-fact-icon {
+  color: #fca5a5;
+}
+
 .weather-hourly-strip {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -496,6 +553,11 @@
 
 .weather-hourly-item + .weather-hourly-item {
   box-shadow: -1px 0 0 rgba(255,255,255,.055);
+}
+
+.weather-hourly-item.is-countdown {
+  background: rgba(125,211,252,.12);
+  box-shadow: inset 0 0 0 1px rgba(125,211,252,.2);
 }
 
 .weather-hourly-item span,
@@ -575,6 +637,9 @@
   align-content: start;
   gap: 6px;
   min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+  scrollbar-gutter: stable;
 }
 
 .activitywatch-mini-category {
@@ -609,6 +674,21 @@
   color: var(--text);
   font-size: 12px;
   font-weight: 850;
+  white-space: nowrap;
+}
+
+.activitywatch-mini-category-meta {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 7px;
+  min-width: max-content;
+}
+
+.activitywatch-mini-category-meta span {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 800;
   white-space: nowrap;
 }
 
