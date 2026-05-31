@@ -525,18 +525,23 @@ function weatherPreviewScenario(mode) {
 function randomWeatherPreviewScenario(mode) {
   const seed = Number.parseInt(String(mode).split(':')[1], 10) || Date.now();
   const random = seededWeatherPreviewRandom(seed);
-  const codes = [0, 1, 2, 3, 45, 61, 71, 95];
+  const codes = [0, 1, 2, 3, 45, 48, 51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 71, 73, 75, 77, 80, 81, 82, 85, 86, 95, 96, 99];
   const code = codes[Math.floor(random() * codes.length)] || 0;
   const isNight = random() > .78;
-  const wind = Math.round(4 + random() * 40);
-  const temp = Math.round(-1 + random() * 29);
-  const rainCode = weatherIsRainCode(code) || code === 95;
+  const rainCode = weatherIsRainCode(code) || weatherIsStormCode(code);
   const snowCode = weatherIsSnowCode(code);
+  const freezingCode = [56, 57, 66, 67].includes(code);
+  const stormCode = weatherIsStormCode(code);
+  const dampCode = rainCode || snowCode || [45, 48].includes(code);
+  const wind = Math.round((stormCode ? 14 : 4) + random() * (stormCode ? 42 : 36));
+  let temp = Math.round(-3 + random() * 32);
+  if (snowCode || freezingCode) temp = Math.round(-6 + random() * 6);
+  if (stormCode) temp = Math.round(7 + random() * 18);
   return {
     label: 'Preview: Random mix',
     temp,
     feels: Math.round(temp - (wind >= 20 ? 3 + random() * 3 : random() * 2)),
-    humidity: Math.round(42 + random() * 48),
+    humidity: Math.round((dampCode ? 66 : 38) + random() * (dampCode ? 30 : 46)),
     wind,
     direction: Math.round(random() * 359),
     gust: Math.round(wind + random() * 22),
@@ -548,10 +553,10 @@ function randomWeatherPreviewScenario(mode) {
     code,
     isDay: !isNight,
     rainIn: rainCode || random() > .7 ? Math.round(30 + random() * 240) : null,
-    rainProbability: rainCode ? 80 : Math.round(45 + random() * 45),
+    rainProbability: rainCode ? Math.round(70 + random() * 25) : Math.round(45 + random() * 45),
     snowIn: snowCode ? Math.round(30 + random() * 180) : null,
     sunsetIn: !isNight && random() > .72 ? Math.round(30 + random() * 105) : null,
-    alert: random() > .84 ? 'Special weather statement. Check conditions before heading out.' : '',
+    alert: stormCode || random() > .84 ? 'Special weather statement. Check conditions before heading out.' : '',
     moodHour: isNight ? 22 : 6 + Math.floor(random() * 14),
   };
 }
@@ -589,7 +594,11 @@ function buildWeatherPreviewData(scenario, locationLabel) {
       windGusts: Number(scenario.gust) || 0,
       precipitationProbability: precipitationStarts || snowStarts ? Number(scenario.rainProbability) || 70 : 8,
       uvIndex,
-      weatherCode: snowStarts ? 71 : precipitationStarts ? 61 : Number(scenario.code) || 0,
+      weatherCode: snowStarts
+        ? (weatherIsSnowCode(scenario.code) ? Number(scenario.code) : 71)
+        : precipitationStarts
+          ? (weatherIsRainCode(scenario.code) || weatherIsStormCode(scenario.code) ? Number(scenario.code) : 61)
+          : Number(scenario.code) || 0,
       isDay: Boolean(scenario.isDay),
     };
   });
@@ -1022,11 +1031,18 @@ function weatherCondition(code, isDay = true) {
   if (code === 0) return { label: isDay ? 'Clear' : 'Clear night', icon: isDay ? 'sunny' : 'clear-night' };
   if ([1, 2].includes(code)) return { label: code === 1 ? 'Mostly clear' : 'Partly cloudy', icon: isDay ? 'partly-cloudy' : 'partly-cloudy-night' };
   if (code === 3) return { label: 'Cloudy', icon: 'cloudy' };
-  if ([45, 48].includes(code)) return { label: 'Fog', icon: 'fog' };
-  if ([51, 53, 55, 56, 57].includes(code)) return { label: 'Drizzle', icon: 'rain' };
-  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return { label: 'Rain', icon: 'rain' };
-  if ([71, 73, 75, 77, 85, 86].includes(code)) return { label: 'Snow', icon: 'snow' };
-  if ([95, 96, 99].includes(code)) return { label: 'Thunderstorm', icon: 'storm' };
+  if (code === 45) return { label: 'Fog', icon: 'fog' };
+  if (code === 48) return { label: 'Rime fog', icon: 'rime-fog' };
+  if ([51, 53, 55].includes(code)) return { label: code === 51 ? 'Light drizzle' : code === 55 ? 'Heavy drizzle' : 'Drizzle', icon: 'drizzle' };
+  if ([56, 57].includes(code)) return { label: code === 56 ? 'Light freezing drizzle' : 'Freezing drizzle', icon: 'freezing-rain' };
+  if ([61, 63, 65].includes(code)) return { label: code === 61 ? 'Light rain' : code === 65 ? 'Heavy rain' : 'Rain', icon: code === 65 ? 'heavy-rain' : 'rain' };
+  if ([66, 67].includes(code)) return { label: code === 66 ? 'Light freezing rain' : 'Freezing rain', icon: 'freezing-rain' };
+  if ([71, 73, 75].includes(code)) return { label: code === 71 ? 'Light snow' : code === 75 ? 'Heavy snow' : 'Snow', icon: code === 75 ? 'heavy-snow' : 'snow' };
+  if (code === 77) return { label: 'Snow grains', icon: 'snow-grains' };
+  if ([80, 81, 82].includes(code)) return { label: code === 80 ? 'Light showers' : code === 82 ? 'Heavy showers' : 'Showers', icon: code === 82 ? 'heavy-rain' : 'showers' };
+  if ([85, 86].includes(code)) return { label: code === 85 ? 'Snow showers' : 'Heavy snow showers', icon: 'snow-showers' };
+  if (code === 95) return { label: 'Thunderstorm', icon: 'storm' };
+  if ([96, 99].includes(code)) return { label: code === 96 ? 'Thunderstorm with hail' : 'Severe thunderstorm with hail', icon: 'storm-hail' };
   return { label: 'Weather', icon: isDay ? 'partly-cloudy' : 'partly-cloudy-night' };
 }
 
@@ -1037,23 +1053,37 @@ function buildWeatherIcon(type, isDay = true, className = 'weather-icon') {
   return icon;
 }
 
-function weatherIconSvg(type) {
+function weatherIconSvg(type, isDay = true) {
   const sun = '<circle class="wi-sun" cx="32" cy="32" r="10"></circle><g class="wi-rays"><path d="M32 8v8"></path><path d="M32 48v8"></path><path d="M8 32h8"></path><path d="M48 32h8"></path><path d="M15 15l6 6"></path><path d="M49 15l-6 6"></path><path d="M15 49l6-6"></path><path d="M49 49l-6-6"></path></g>';
   const moon = '<path class="wi-moon" d="M43 39A18 18 0 0 1 25 13a17 17 0 1 0 18 26z"></path>';
   const cloud = '<path class="wi-cloud" d="M20 45h27a11 11 0 0 0 1-22 15 15 0 0 0-28-5 13 13 0 0 0 0 27z"></path>';
+  const drizzle = '<path class="wi-drop" d="M28 52l-2 5"></path><path class="wi-drop" d="M42 52l-2 5"></path>';
   const rain = '<path class="wi-drop" d="M24 51l-3 7"></path><path class="wi-drop" d="M36 51l-3 7"></path><path class="wi-drop" d="M48 51l-3 7"></path>';
+  const heavyRain = `${rain}<path class="wi-drop" d="M18 50l-3 8"></path><path class="wi-drop" d="M54 50l-3 8"></path>`;
   const snow = '<path class="wi-drop" d="M24 52l-4 4m0-4l4 4"></path><path class="wi-drop" d="M38 52l-4 4m0-4l4 4"></path><path class="wi-drop" d="M52 52l-4 4m0-4l4 4"></path>';
+  const heavySnow = `${snow}<path class="wi-drop" d="M17 52l-3 3m0-3l3 3"></path><path class="wi-drop" d="M59 52l-3 3m0-3l3 3"></path>`;
+  const snowGrains = '<circle class="wi-hail" cx="25" cy="54" r="2.2"></circle><circle class="wi-hail" cx="38" cy="57" r="2.2"></circle><circle class="wi-hail" cx="51" cy="54" r="2.2"></circle>';
   const fog = '<path class="wi-fog" d="M13 48h38"></path><path class="wi-fog" d="M18 55h28"></path>';
   const storm = '<path class="wi-bolt" d="M35 44l-8 14 10-3-4 12 10-17-10 3z"></path>';
+  const hail = '<circle class="wi-hail" cx="21" cy="55" r="2.5"></circle><circle class="wi-hail" cx="48" cy="56" r="2.5"></circle>';
   let body = sun;
   if (type === 'clear-night') body = moon;
   if (type === 'partly-cloudy') body = `${sun}${cloud}`;
   if (type === 'partly-cloudy-night') body = `${moon}${cloud}`;
   if (type === 'cloudy') body = cloud;
+  if (type === 'drizzle') body = `${cloud}${drizzle}`;
   if (type === 'rain') body = `${cloud}${rain}`;
+  if (type === 'heavy-rain') body = `${cloud}${heavyRain}`;
+  if (type === 'showers') body = `${isDay ? sun : moon}${cloud}${rain}`;
   if (type === 'snow') body = `${cloud}${snow}`;
+  if (type === 'heavy-snow') body = `${cloud}${heavySnow}`;
+  if (type === 'snow-grains') body = `${cloud}${snowGrains}`;
+  if (type === 'snow-showers') body = `${isDay ? sun : moon}${cloud}${snow}`;
+  if (type === 'freezing-rain') body = `${cloud}${drizzle}${snowGrains}`;
   if (type === 'fog') body = `${cloud}${fog}`;
+  if (type === 'rime-fog') body = `${cloud}${fog}${snowGrains}`;
   if (type === 'storm') body = `${cloud}${storm}`;
+  if (type === 'storm-hail') body = `${cloud}${storm}${hail}`;
   return `<svg viewBox="0 0 64 64" focusable="false">${body}</svg>`;
 }
 
@@ -1301,7 +1331,7 @@ function autosaveWeatherPreviewMode() {
 
 function randomizeWeatherPreviewMode() {
   const cfg = weatherSettings();
-  cfg.previewMode = `random:${Date.now()}`;
+  cfg.previewMode = `random:${weatherRandomPreviewSeed()}`;
   saveSettings(settings);
   syncWeatherSettingsControls();
   renderHomeCards();
@@ -1316,6 +1346,15 @@ function previewWeatherAlertMode() {
 }
 
 function normalizeWeatherPreviewSetting(value) {
-  if (value === 'random') return `random:${Date.now()}`;
+  if (value === 'random') return `random:${weatherRandomPreviewSeed()}`;
   return weatherPreviewScenarioKeys().includes(value) ? value : 'live';
+}
+
+function weatherRandomPreviewSeed() {
+  if (window.crypto?.getRandomValues) {
+    const values = new Uint32Array(1);
+    window.crypto.getRandomValues(values);
+    return values[0] || Date.now();
+  }
+  return Math.floor(Math.random() * 2147483646) + 1;
 }

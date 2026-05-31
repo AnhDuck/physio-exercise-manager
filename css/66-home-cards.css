@@ -391,6 +391,12 @@
   fill: #facc15;
 }
 
+.wi-hail {
+  fill: #dbeafe;
+  stroke: rgba(62,68,76,.24);
+  stroke-width: 1;
+}
+
 .weather-facts {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
