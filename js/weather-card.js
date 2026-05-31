@@ -3,10 +3,10 @@
 const WEATHER_REFRESH_STALE_MS = 20 * 60 * 1000;
 const WEATHER_REFRESH_ERROR_STALE_MS = 30 * 60 * 1000;
 const WEATHER_FETCH_TIMEOUT_MS = 12000;
-const WEATHER_REQUEST_MIN_GAP_MS = 60 * 1000;
+const WEATHER_REQUEST_MIN_GAP_MS = 10 * 1000;
 const WEATHER_FORECAST_BURST_WINDOW_MS = 10 * 60 * 1000;
-const WEATHER_FORECAST_BURST_LIMIT = 3;
-const WEATHER_FORECAST_BURST_COOLDOWN_MS = 10 * 60 * 1000;
+const WEATHER_FORECAST_BURST_LIMIT = 60;
+const WEATHER_FORECAST_BURST_COOLDOWN_MS = 5 * 60 * 1000;
 const WEATHER_RATE_LIMIT_COOLDOWN_MS = 65 * 60 * 1000;
 const WEATHER_LOCATION_SEARCH_MIN_GAP_MS = 2 * 1000;
 const WEATHER_FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
@@ -160,25 +160,28 @@ function refreshWeatherIfNeeded(trigger = 'auto', options = {}) {
 
   const promise = fetchWeatherForLocation(cfg.location)
     .then(result => {
-      if (requestId !== weatherForecastRequestId || weatherLocationKey(cfg.location) !== requestedLocationKey) return cfg.lastResult;
-      cfg.lastResult = result;
-      cfg.lastError = '';
-      cfg.lastErrorAt = '';
+      const latestCfg = weatherSettings();
+      if (requestId !== weatherForecastRequestId || weatherLocationKey(latestCfg.location) !== requestedLocationKey) return latestCfg.lastResult;
+      latestCfg.lastResult = result;
+      latestCfg.lastError = '';
+      latestCfg.lastErrorAt = '';
+      latestCfg.rateLimitUntil = '';
       saveSettings(settings);
       renderHomeCards();
       return result;
     })
     .catch(err => {
-      if (requestId !== weatherForecastRequestId || weatherLocationKey(cfg.location) !== requestedLocationKey) return cfg.lastResult;
+      const latestCfg = weatherSettings();
+      if (requestId !== weatherForecastRequestId || weatherLocationKey(latestCfg.location) !== requestedLocationKey) return latestCfg.lastResult;
       if (isWeatherRateLimitError(err)) {
-        pauseWeatherRefresh(cfg, 'Open-Meteo hourly limit reached', now + WEATHER_RATE_LIMIT_COOLDOWN_MS);
+        pauseWeatherRefresh(latestCfg, 'Open-Meteo hourly limit reached', now + WEATHER_RATE_LIMIT_COOLDOWN_MS);
       } else {
-        cfg.lastError = weatherErrorMessage(err);
-        cfg.lastErrorAt = new Date().toISOString();
+        latestCfg.lastError = weatherErrorMessage(err);
+        latestCfg.lastErrorAt = new Date().toISOString();
         saveSettings(settings);
       }
       renderHomeCards();
-      return cfg.lastResult;
+      return latestCfg.lastResult;
     })
     .finally(() => {
       if (weatherRefreshPromise === promise) {
@@ -328,7 +331,7 @@ function buildWeatherIcon(type, isDay = true, className = 'weather-icon') {
 }
 
 function weatherIconSvg(type) {
-  const sun = '<circle class="wi-sun" cx="32" cy="28" r="13"></circle><g class="wi-rays"><path d="M32 7v7"></path><path d="M32 42v7"></path><path d="M11 28h7"></path><path d="M46 28h7"></path><path d="M17 13l5 5"></path><path d="M47 13l-5 5"></path></g>';
+  const sun = '<circle class="wi-sun" cx="32" cy="32" r="10"></circle><g class="wi-rays"><path d="M32 8v8"></path><path d="M32 48v8"></path><path d="M8 32h8"></path><path d="M48 32h8"></path><path d="M15 15l6 6"></path><path d="M49 15l-6 6"></path><path d="M15 49l6-6"></path><path d="M49 49l-6-6"></path></g>';
   const moon = '<path class="wi-moon" d="M43 39A18 18 0 0 1 25 13a17 17 0 1 0 18 26z"></path>';
   const cloud = '<path class="wi-cloud" d="M20 45h27a11 11 0 0 0 1-22 15 15 0 0 0-28-5 13 13 0 0 0 0 27z"></path>';
   const rain = '<path class="wi-drop" d="M24 51l-3 7"></path><path class="wi-drop" d="M36 51l-3 7"></path><path class="wi-drop" d="M48 51l-3 7"></path>';
