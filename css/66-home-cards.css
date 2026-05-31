@@ -577,6 +577,8 @@
 .activitywatch-mini-card {
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  align-self: start;
+  height: 408px;
   gap: 10px;
   background:
     radial-gradient(circle at 86% 22%, rgba(121,214,189,.18), transparent 30%),
