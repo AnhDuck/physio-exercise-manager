@@ -1,92 +1,55 @@
 # Physio Exercise Management - Agent Guide
 
-Static personal physio tracker. No build step/server/deps; open `index.html` directly for normal physio tracking or host repo root statically. The ActivityWatch integration is the exception: browser security/CORS means it must run from a local `http://127.0.0.1:<port>` origin, not `file://`. The user's stable production/local app origin is `http://127.0.0.1:8891`; `Start PEM Localhost.bat` starts that server and opens the app. User data is browser `localStorage`; folder backup also depends on browser-origin-scoped IndexedDB + File System Access permissions. A folder chosen on one origin (`127.0.0.1:8891`, another port, or `file://`) is not connected on another origin; verify backup on the same origin before calling it broken.
+Static personal physio tracker. No build step, server dependency, package dependency, module system, bundler, or generated assets. Normal tracking can run by opening `index.html` directly; ActivityWatch sync requires a local `http://127.0.0.1:<port>` origin because browser CORS does not work from `file://`.
 
-## Files / load order
+Read these first when relevant:
 
-`index.html` loads CSS + JS via `PEM_APP_VERSION` cache-busting. CSS order is manual and cascade-sensitive: `00-base.css`, `10-header.css`, `20-notes-timeline.css`, `30-grid-exercises.css`, `40-modals-forms.css`, `50-settings.css`, `60-tracker.css`, `65-activitywatch.css`, `70-images-scrollbar.css`, `90-responsive.css`. Keep `90-responsive.css` last.
+- `ARCHITECTURE.md` for app structure, load order, storage model, and feature ownership.
+- `docs/activitywatch.md` for ActivityWatch query, storage, CORS, dashboard, and settings rules.
+- `docs/verification.md` for version bumps, checks, and browser verification.
+- `css/README.md` before changing CSS.
 
-JS load order is: `data.js`, `storage.js`, `constants.js`, `state.js`, `dates.js`, `dom.js`, `sessions.js`, `exercises.js`, `grid.js`, `tracker.js`, `activitywatch-data.js`, `timeline-data.js`, `timeline-filters.js`, `timeline-render.js`, `timeline-notes.js`, `timeline-export.js`, `timeline-edit.js`, `timeline.js`, `backup.js`, `auto-backup.js`, `settings.js`, `activitywatch-dashboard.js`, `activitywatch-settings.js`, `images.js`, `main.js`. Never load `main.js` before the feature files it binds. `app.js` is only a pointer; app logic lives in feature files. `assets/physio-icon.svg` is the icon.
+## Hard Rules
 
-Module map: `data` defaults/groups; `storage` localStorage + local date helpers; `constants` labels/quotes; `state` mutable globals/migrations; `dates` calendar/schedule; `dom` DOM/toast helpers; `sessions` completion/set progress; `exercises` ordering/blocks/drag/edit; `grid` compact grid/week nav; `tracker` set tracker/timer/log edit/cues/shortcuts; `activitywatch-data` local ActivityWatch REST client/query/storage/sync; `activitywatch-dashboard` ActivityWatch category dashboard; `activitywatch-settings` ActivityWatch Settings tab; `timeline` notes/events/Markdown/event edit; `backup` JSON import/export/validation; `auto-backup` folder backups; `settings` settings/review/block/backup UI; `images` upload/URL import; `main` bootstrap/static bindings.
+- Any code edit must bump `window.PEM_APP_VERSION` in `index.html`; default to patch SemVer.
+- Keep `main.js` last. It binds features loaded before it.
+- Keep CSS load order manual and cascade-sensitive; `90-responsive.css` stays last.
+- Preserve the flat static global-script architecture. Do not add imports, exports, modules, dependencies, package managers, build tooling, or a proxy/server layer.
+- Use `textContent` or DOM helpers for user-controlled strings.
+- All app-data writes must go through storage safe-save helpers; do not call `localStorage.setItem` directly for app keys outside storage internals.
+- User data is origin-scoped browser storage. Folder backup permissions are also origin-scoped; a folder chosen on `127.0.0.1:8891`, another port, or `file://` is not connected on another origin.
+- Do not use the user's production/local origin `http://127.0.0.1:8891` for Codex verification unless explicitly asked. Use `http://127.0.0.1:8895` for Codex checks when browser verification is useful.
 
-## Versioning + browser checks
+## Current Load Order
 
-`index.html` defines `window.PEM_APP_VERSION`, displays `v<version>` in the header, and uses it for script cache-busting. Any Codex code edit must bump it; default to patch SemVer unless asked otherwise.
+CSS order in `index.html`:
 
-Only use browser/UI verification when it adds value. For verification, prefer a local static server over `file://`: `python -m http.server 8895 --bind 127.0.0.1`, then open `http://127.0.0.1:8895/index.html?v=<PEM_APP_VERSION>` and confirm the visible header matches. Do not use the user's production/local port `8891` for Codex verification because that origin is intended for the user's real browser data, folder backup permission, and ActivityWatch CORS setup. Prefer the stable Codex dev origin `http://127.0.0.1:8895` across chats so browser `localStorage`, IndexedDB, and folder-backup permissions remain consistent. Use another temporary dev port only when `8895` is unavailable, points at the wrong workspace/version, or the user explicitly asks to inspect another origin. If the version does not match, the browser result is invalid; reload the versioned URL, fix server/root, or start the correct server. Reuse the `8895` same-workspace dev server after a version match; do not fresh-port every small fix because browser storage and permissions are origin-scoped.
+`00-base.css`, `10-header.css`, `20-notes-timeline.css`, `30-grid-exercises.css`, `40-modals-forms.css`, `50-settings.css`, `60-tracker.css`, `65-activitywatch.css`, `70-images-scrollbar.css`, `90-responsive.css`.
 
-Do not run shell-launched headless browser automation, Playwright, Puppeteer, or Node browser automation here; local headless/GPU support is unreliable. Prefer the Codex in-app browser for local UI verification when it is available. The in-app browser is controlled through the `node_repl` MCP tool; if the JS tool is not listed, use tool discovery for `node_repl js` before declaring browser automation unavailable. If `node_repl` crashes with `node_repl kernel exited unexpectedly` and `windows sandbox failed: spawn setup refresh`, treat it as a Codex Desktop Windows runtime issue, not a PEM bug. The known working setup on this machine is: `C:\Users\Bill\.codex\config.toml` has `[windows] sandbox = "unelevated"`; `CODEX_CLI_PATH`, `NODE_REPL_NODE_PATH`, and `CODEX_HOME` point at `C:\Users\Bill\AppData\Local\OpenAI\Codex\bin`; and that flat bin folder contains `codex.exe`, `node.exe`, `node_repl.exe`, `codex-command-runner.exe`, and `codex-windows-sandbox-setup.exe`. Codex may still launch `node_repl.exe` from a hash subfolder such as `C:\Users\Bill\AppData\Local\OpenAI\Codex\bin\34ab3e1324cc55b5`; if so, that subfolder must also contain the sandbox helper files, especially `codex-windows-sandbox-setup.exe`. After any fix, hard-kill stale Codex processes before retesting: `Get-Process -Name Codex,codex,node_repl -ErrorAction SilentlyContinue | Stop-Process -Force`, verify the same `Get-Process` query prints nothing, then reopen Codex. A fresh thread is not enough if the old Codex backend process is still running. Only use the visible-browser/manual fallback after this fix path is unavailable or still fails after a hard process restart. For local UI checks, cover compact grid, notes, settings, set tracker, backup warnings, image modal entry points, and ActivityWatch dashboard interactions when ActivityWatch changed. Always report whether browser verification was in-app automated, visible-browser/CDP based, manual, or skipped.
+JS order in `index.html`:
 
-Computer-use/browser automation does not need to be visible to the user when the Codex in-app browser works; prefer that path because it avoids touching the user's active desktop session. Browser verification preference order: use the Codex in-app browser first. If that fails and browser verification is still valuable, use an isolated temporary Chrome profile/window. Use the user's normal Chrome profile only when login/cookies/extensions are required and the user explicitly approves it. If Chrome does not work, skip browser verification and report that it was skipped; do not open or try any other browser.
+`data.js`, `storage.js`, `constants.js`, `state.js`, `dates.js`, `dom.js`, `sessions.js`, `exercises.js`, `grid.js`, `tracker.js`, `activitywatch-data.js`, `timeline-data.js`, `timeline-filters.js`, `timeline-render.js`, `timeline-notes.js`, `timeline-export.js`, `timeline-edit.js`, `timeline.js`, `backup.js`, `auto-backup.js`, `settings.js`, `activitywatch-dashboard-state.js`, `activitywatch-dashboard-format.js`, `activitywatch-dashboard-sync.js`, `activitywatch-dashboard-controls.js`, `activitywatch-dashboard-chart.js`, `activitywatch-dashboard-detail.js`, `activitywatch-dashboard-shell.js`, `activitywatch-settings.js`, `images.js`, `main.js`.
 
-The isolated Chrome fallback is allowed to be visible and may briefly steal focus, but it must not open tabs in, attach to, or automate the user's active Chrome session. The user's active Chrome may be playing video or in active use; Codex should avoid mutating that profile, tabs, extensions, bookmarks, browsing state, or logged-in sessions. Launch fallback Chrome with a dedicated workspace `--user-data-dir=...`, `--new-window`, `--no-first-run`, and `--no-default-browser-check`, using the exact origin under test and avoiding `8891` unless explicitly requested. Do not use remote debugging or CDP attachment against the user's normal Chrome profile unless explicitly approved.
+`app.js` is only a pointer; app logic lives in feature files. `assets/physio-icon.svg` is the icon.
 
-If launching Chrome with `Start-Process`, every argument must be a separate complete `-ArgumentList` item and any path value must stay attached to its switch, e.g. `--user-data-dir=C:\...\profile` as one item; paths under `C:\Users\Bill\Desktop\VIBE CODING\...` contain spaces, and bad quoting opens bogus tabs such as `file:///C:/Users/Bill/Desktop/VIBE` or `http://coding/...`. Do not pass workspace paths as loose positional arguments. A bogus tab such as `coding/physio-exercise-manager/...` means a quoted Windows path was split and interpreted as a URL; treat that as a launch-command bug, close or ignore the bogus tab, and fix the launch arguments instead of retrying. Close only the temporary verification Chrome window/profile after the check when practical; never close user-owned browser windows.
+## Core App Rules
 
-## Core app rules
+- Groups are fixed: `arm-day1` (Arm Day 1), `arm-day2` (Arm Day 2), `legs` (Legs). Labels/colors live in `GROUPS` in `data.js`; CSS colors are `--c-day1`, `--c-day2`, `--c-legs`.
+- Arm rotation is calendar-based, not completion-count-based: anchor Friday 2026-05-01 = `arm-day1`; scheduled arm days are Monday/Wednesday/Friday; each scheduled arm day after the anchor flips between Day 1 and Day 2. Logic is `getArmDayForDate(dateStr)` in `dates.js`. Do not reintroduce stale `armSessionCount`.
+- Dates are local `YYYY-MM-DD`; use `toDateStr()` and `dateFromStr()` from `storage.js`.
+- Timeline storage/sorting uses actual calendar dates/times. `personalDayStartTime` only inserts the visual/Markdown boundary for early-morning events; do not rewrite event dates to the previous waking day.
+- Hidden exercises remain in `pem_exercises` to preserve linked session/timeline data but are excluded from active calendar.
+- Blocks are group-scoped in `settings.blocks[group]`; exercises only store `blockId`. Do not restore legacy exercise-level block title/gap fields.
+- Set tracker close paths must stop timers. No path may hide the tracker while leaving its timer running.
+- `Clear` and completed-cell `Clear Log` must confirm before deleting progress.
+- Preserve `exerciseSnapshot` so old logs survive renamed, hidden, or deleted exercises.
+- Compact grid stays one spreadsheet-like grid with group-header add controls; do not add alternate view toggles or full-width action rows.
+- Review markers and Settings clear-review flow must stay intact.
+- Settings UI should reuse existing primitives before adding custom CSS.
 
-Groups are fixed: `arm-day1` (Arm Day 1), `arm-day2` (Arm Day 2), `legs` (Legs). Labels/colors live in `GROUPS` (`data.js`); CSS colors are `--c-day1`, `--c-day2`, `--c-legs`.
+## Required Check
 
-Arm rotation is calendar-based, not completion-count-based: anchor Friday 2026-05-01 = `arm-day1`; scheduled arm days are Monday/Wednesday/Friday; each scheduled arm day after the anchor flips between Day 1 and Day 2; logic is `getArmDayForDate(dateStr)` in `dates.js`. Do not reintroduce stale `armSessionCount`.
-
-Dates are local `YYYY-MM-DD`; use `toDateStr()` / `dateFromStr()` from `storage.js`.
-
-Timeline storage/sorting uses actual calendar dates/times. `personalDayStartTime` only inserts the visual/Markdown boundary `Before <time> · <previous date> waking day` for early-morning events; do not rewrite event dates to the previous waking day.
-
-## Data model
-
-localStorage keys: `pem_exercises` array, `pem_sessions` object keyed by `YYYY-MM-DD`, `pem_settings` object, `pem_events` array, and `pem_activitywatch` aggregate ActivityWatch summaries. `DEFAULT_EXERCISES` only seeds new installs when `pem_exercises` is missing. Hidden exercises remain in `pem_exercises` to preserve linked session/timeline data but are excluded from active calendar.
-
-Exercise fields: `id`, `name`, `group`, `sets`, `reps`, `resistance`, `frequency`, `instructions`, `image` (data URL/null), `order`, optional `hiddenAt`, `deletedAt`, `blockId`, `changedSinceLastPhysioVisit`. Legacy per-exercise `blockTitle`, `blockMinGapHours`, `blockPreferredGapHours` are migration-only and should not be reintroduced.
-
-Session shape: `{ completedExercises: string[], setProgress: { [exerciseId]: progress }, activeExerciseId? }`. Progress fields: `completedSets`, `targetSets`, `startedAt`, `updatedAt`, `completedAt|null`, `finishedEarly`, `setDurations[]`, `setCompletedAt[]`, `timerStartedAt|null`, `elapsedSeconds`, `timerStoppedAt|null`, `timerCapped`, `exerciseSnapshot|null`.
-
-Settings fields include `createdAt`, `notesOpen?`, `personalDayStartTime`, `setCueSound`, `setCueVibrate`, `setCueSpeech`, `setCueSpeechVolume`, `autoBackup`, `blocks`, `defaultBlocksApplied`. Legacy `legsDays`, `denseMode`, `collapsedGroups`, and `blockTitles` are migration-only.
-
-Stored events are `note`, `dose-change`, and `exercise-added` with `id`, `date`, `time`, optional `exerciseId`, `exerciseName`, `text`, `annotation`, `changes`, `createdAt`, `updatedAt`. Timeline also renders derived `exercise-log` items from session progress; do not store those in `pem_events`.
-
-Blocks are group-scoped: definitions live in `settings.blocks[group]`; exercises only store `blockId`. Settings uses a draft/apply/discard flow for block edits. Moving an exercise to another group clears invalid `blockId`; block-member drag/drop is constrained to the same block. Do not restore legacy exercise-level block title/gap fields.
-
-Folder auto-backup writes a dated daily file plus `physio-exercise-auto-backup-latest.json`, verifies by reading/validating latest, cleans old dated files, records success/error/missed history, and drives Settings backup status + the backup health banner. Do not treat folder backup as simple JSON download; it needs File System Access support, stored directory handles, permission checks, reconnect state, and same-origin testing.
-
-ActivityWatch data lives in `pem_activitywatch` and must be aggregate-only: daily total active seconds, category totals, hourly category totals, category colors, optional diagnostic app totals, bucket/status metadata, and sync timestamps. Never store raw ActivityWatch titles, URLs, domains, or raw events in PEM. Backups/imports/data-health/storage usage must include `pem_activitywatch`; writes must use the safe-save helper like other app data.
-
-## Behavior constraints
-
-Set tracker: clicking exercise/day opens tracker; `Complete Set` logs one set; clicking the active grid cell completes all sets; `Pause & Close` stops timer, saves partial progress, clears `activeExerciseId`, and closes tracker. No path may hide the tracker while leaving its timer running. Real-time timer updates text in place; do not rerender tracker/log-modal DOM every second because that causes hover/focus glitches, duplicate tooltips, and unstable modal inputs. `Clear` and completed-cell `Clear Log` must confirm before deleting progress.
-
-Log details: calendar day controls grid placement; started-at controls timeline/notes placement; finished-at records final-set time. Historical logs for hidden/deleted/missing exercises open read-only/details-first. Preserve `exerciseSnapshot` so old logs survive renamed/hidden/deleted exercises.
-
-Compact grid: one spreadsheet-like grid, no alternate view toggle, groups stay open. Do not add extra full-width action rows. Add-exercise controls belong in group headers. Group-header add buttons must stop propagation so header drag/drop is unaffected.
-
-Review markers: dose changes and exercise additions can mark `changedSinceLastPhysioVisit`; Settings can clear markers. Do not remove marker rendering or the clear-review flow when editing exercise/settings UI.
-
-Settings UI: first reuse existing primitives before custom CSS: `settings-section`, `settings-row-group`, `settings-action-row`, `settings-action-label` with `strong` + `span`, matching button classes (`settings-clear-review`, `settings-draft-btn`, `settings-backup-btn`), and `settings-grid` / `settings-status-grid` only when they naturally fit. Custom settings CSS must be minimal, scoped, and layered on shared classes. Compare new settings rows against nearby rows for borders, spacing, typography, button styling, and mobile wrapping.
-
-Security/storage: use `textContent` or DOM helpers for user-controlled strings. Exercise images are data URLs inside `pem_exercises`; large images can exceed browser storage.
-
-All app-data writes must go through the safe-save helper; never call `localStorage.setItem` directly for app keys outside storage internals.
-
-The Backup tab is the data control center. Save-failure status outranks data safety and folder-backup health in the shared backup health banner.
-
-ActivityWatch integration is read-only against the user's local ActivityWatch server, default `http://127.0.0.1:5600`. In plain language, `127.0.0.1`/`localhost` means this same PC; the ActivityWatch service is not on the public internet. Do not add a dependency, build step, query helper, or server-side proxy for it. A tiny launcher such as `Start PEM Localhost.bat` is okay because it only starts a static file server for the existing app. PEM uses browser `fetch` and therefore needs ActivityWatch CORS configured for the exact PEM origin. The ActivityWatch Settings tab must stay guided/setup-first: checklist cards first, diagnostics hidden under Advanced. Keep the TOML setup show-don't-tell: show the disabled `#cors_origins = ""` line, the active replacement line, a complete `aw-server.toml` example, and concrete failing examples for commented, nested, page-path, and `[server-testing]` edits. For the user's current checked `aw-server` module, the primary config guidance is `aw-server/aw-server.toml`; tell the user to change `#cors_origins = ""` in the `[server]` section to `cors_origins = "http://127.0.0.1:8891"` and leave ActivityWatch's `#port = "5600"` alone. Rust `cors = ["http://127.0.0.1:8891"]` belongs only in Advanced for installs where `aw-server-rust` is checked. `file://` is not a supported origin for ActivityWatch sync; the rest of PEM can still run from `file://`.
-
-ActivityWatch query code should mirror ActivityWatch's canonical desktop query shape: window bucket + AFK bucket, `not-afk` filtering, focused browser bucket events via `split_url_events`, audible browser events counted as active when available, and ActivityWatch category rules/colors from `/api/0/settings`. Use exact bucket IDs with `query_bucket("bucket-id")`; use `find_bucket(...)` only for prefix IDs ending in `_`. PEM waking-day periods are based on `settings.personalDayStartTime`; if ActivityWatch `startOfDay` differs, warn but do not block sync.
-
-ActivityWatch UI priorities: category dashboard first, not top applications. The dashboard uses a single dashboard-only state object in `activitywatch-dashboard.js`: `selectedDate`, `rangeDays`, `rangeEndDate`, `selectedCategory`, `hoveredCategory`, `detailMode`, and `showAllCategories`; do not persist this UI state. Default range is Last 2 weeks ending on the current waking day, and opening the dashboard selects the current waking day when it is visible. Range paging jumps by the selected range length; Latest returns to the current waking-day range. `Daily average` divides by days with active time, not every visible day.
-
-The ActivityWatch dashboard top row contains compact `Total active` and `Daily average` stat cards, sync/status copy, and actions in that order on desktop; mobile order is status, stats, actions. Do not restore the old separate summary row. `Refresh recent` is the primary everyday action and refreshes only the latest 3 waking days. `Sync this range` is contextual: show it only for older history or visible days that are missing/stale, and use exact date strings via `maybeSyncActivityWatchDateStrings(...)`; do not change the ActivityWatch query shape, storage shape, backup schema, or raw-data policy for dashboard work.
-
-ActivityWatch chart interaction: default mode is stacked bars. Show top exact categories as chips plus `All categories` only when a filter is active. Unfiltered bars include computed `Other` so visible stacks add up to total active time; `Other` is informational only and must not become a filter chip or locked filter. Bar clicks are two-step: first click selects the day; only clicking a category segment inside the already-selected day locks that exact category. Chips and right-panel category rows lock exact categories with one click. Before lock, hover previews that category across the chart and dims unrelated categories. Once locked, strict lock applies: unrelated hover/click must not preview or switch until `All categories` clears the lock. Filtered charts show only the locked category across the visible range and rescale the y-axis to that category's own daily max.
-
-ActivityWatch right panel has a Day/Range segmented control. Day mode shows the selected day's categories with swatch, name, duration, percent of that day's active total, and meter. Range mode aggregates all visible days and uses percent of visible-range active total. Show the top categories by default with Show all / Show top categories. Row clicks lock the exact category immediately; clicking the locked row again clears it.
-
-ActivityWatch chart visual rules: keep category chips and row labels compact without clipping; sparse x-axis labels are expected for 30/90-day ranges; hide or reduce labels on narrow screens rather than letting them overlap. Use dashboard-only color mapping/fallback adjustments for visible category colors, but never rewrite stored ActivityWatch colors. Timeline day headers show compact active-time metadata only; do not add separate ActivityWatch rows to the timeline. Settings owns server URL, CORS guidance, watcher bucket state, start-of-day comparison, last sync, and distinct missing-window/missing-AFK/offline/CORS/file-origin states. Startup/dashboard/timeline sync should cover the current waking day plus previous 7 waking days and use a throttle around 60 seconds unless the user manually refreshes.
-
-## Checks
-
-After JS edits run:
+After JavaScript edits run:
 
 ```powershell
 Get-ChildItem -Path js -Filter *.js | Sort-Object Name | ForEach-Object { node --check $_.FullName }
