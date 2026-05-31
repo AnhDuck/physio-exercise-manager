@@ -569,6 +569,10 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   white-space: nowrap;
 }
 
+.activitywatch-month-bands span.is-short-month {
+  color: transparent;
+}
+
 .activitywatch-month-band + .activitywatch-month-band {
   box-shadow: inset 1px 0 0 rgba(255,255,255,.09);
 }
@@ -769,6 +773,8 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   overflow: visible;
   color: var(--text-muted);
   font-size: 9px;
+  width: max-content;
+  max-width: none;
 }
 
 .activitywatch-stacked-chart.is-wide-range .activitywatch-month-bands {
@@ -777,17 +783,41 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-stacked-chart.is-wide-range .activitywatch-bars-row {
-  grid-template-columns: repeat(var(--activitywatch-day-count), 8px);
-  justify-content: space-between;
+  grid-template-columns: repeat(var(--activitywatch-day-count), minmax(0, 1fr));
   gap: 0;
 }
 
 .activitywatch-stacked-chart.is-wide-range .activitywatch-day-bar {
-  width: 8px;
+  justify-items: center;
+}
+
+.activitywatch-stacked-chart.is-wide-range .activitywatch-day-bar-stack {
+  justify-self: start;
+  width: var(--activitywatch-wide-bar-width, 10px);
+  margin-left: var(--activitywatch-wide-bar-offset, .5px);
 }
 
 .activitywatch-stacked-chart.is-wide-range .activitywatch-day-bar-stack {
   border-radius: 3px 3px 2px 2px;
+}
+
+.activitywatch-stacked-chart.is-wide-range .activitywatch-day-bar-label.is-edge-start {
+  justify-self: start;
+}
+
+.activitywatch-stacked-chart.is-wide-range .activitywatch-day-bar-label.is-edge-end {
+  justify-self: end;
+}
+
+.activitywatch-stacked-chart.is-wide-range .activitywatch-day-bar.is-selected .activitywatch-day-bar-label.has-label.is-edge-start {
+  left: 0;
+  transform: none;
+}
+
+.activitywatch-stacked-chart.is-wide-range .activitywatch-day-bar.is-selected .activitywatch-day-bar-label.has-label.is-edge-end {
+  right: 0;
+  left: auto;
+  transform: none;
 }
 
 .activitywatch-category-label {

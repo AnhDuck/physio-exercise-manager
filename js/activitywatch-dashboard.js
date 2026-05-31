@@ -9,6 +9,7 @@ const ACTIVITYWATCH_DASHBOARD_RANGE_OPTIONS = [
 const ACTIVITYWATCH_DASHBOARD_DEFAULT_RANGE_DAYS = 14;
 const ACTIVITYWATCH_SELECTED_CATEGORY_LIMIT = 8;
 const ACTIVITYWATCH_DASHBOARD_OTHER_CATEGORY = 'Other';
+const ACTIVITYWATCH_WIDE_AXIS_MIN_LABEL_GAP_DAYS = 6;
 const ACTIVITYWATCH_DASHBOARD_CATEGORY_COLORS = {
   YouTube: '#d96b6b',
   Health: '#66bfa3',
@@ -562,6 +563,7 @@ function renderActivityWatchStackedChart(days) {
   plot.appendChild(buildActivityWatchMonthBands(days));
 
   const bars = el('div', 'activitywatch-bars-row');
+  const axisLabels = activityWatchXAxisLabels(days);
   days.forEach((day, index) => {
     const barButton = el('button', 'activitywatch-day-bar');
     barButton.type = 'button';
@@ -605,14 +607,30 @@ function renderActivityWatchStackedChart(days) {
       stack.appendChild(empty);
     }
     barButton.appendChild(stack);
-    const axisLabel = activityWatchXAxisLabel(day, index, days);
+    const axisLabel = axisLabels.get(day.date) || '';
     const label = elText('span', 'activitywatch-day-bar-label', axisLabel);
     label.classList.toggle('has-label', Boolean(axisLabel));
+    label.classList.toggle('is-edge-start', Boolean(axisLabel) && index === 0);
+    label.classList.toggle('is-edge-end', Boolean(axisLabel) && index === days.length - 1);
     barButton.appendChild(label);
     bars.appendChild(barButton);
   });
   plot.appendChild(bars);
   root.appendChild(plot);
+  syncActivityWatchWideBarWidth(root, days.length);
+}
+
+function syncActivityWatchWideBarWidth(root, dayCount) {
+  if (!root?.classList?.contains('is-wide-range')) {
+    root?.style?.removeProperty('--activitywatch-wide-bar-width');
+    return;
+  }
+  const bars = root.querySelector('.activitywatch-bars-row');
+  const rowWidth = bars?.getBoundingClientRect().width || 0;
+  const trackWidth = rowWidth / Math.max(1, dayCount || 1);
+  const barWidth = Math.max(4, trackWidth - 1);
+  root.style.setProperty('--activitywatch-wide-bar-width', `${barWidth}px`);
+  root.style.setProperty('--activitywatch-wide-bar-offset', `${Math.max(0, (trackWidth - barWidth) / 2)}px`);
 }
 
 function addActivityWatchBarSegmentTooltipHandlers(segment, category, seconds) {
@@ -704,12 +722,15 @@ function buildActivityWatchMonthBands(days) {
       if (next.getMonth() !== startDate.getMonth() || next.getFullYear() !== startDate.getFullYear()) break;
       endIndex += 1;
     }
-    const band = elText('span', '', startDate.toLocaleDateString(undefined, {
+    const label = startDate.toLocaleDateString(undefined, {
       month: 'short',
       year: startDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
-    }));
+    });
+    const band = elText('span', '', label);
     band.classList.add('activitywatch-month-band');
+    band.classList.toggle('is-short-month', (endIndex - startIndex + 1) < 4);
     band.style.gridColumn = `${startIndex + 1} / ${endIndex + 2}`;
+    band.title = label;
     row.appendChild(band);
     startIndex = endIndex + 1;
   }
@@ -972,6 +993,47 @@ function formatActivityWatchChartDuration(seconds, compact = false) {
   if (hours) return `${hours}h`;
   if (minutes) return `${minutes}m`;
   return total ? '<1m' : '';
+}
+
+function activityWatchXAxisLabels(days) {
+  const labels = new Map();
+  if (!Array.isArray(days) || !days.length) return labels;
+  const dayCount = days.length;
+  if (dayCount <= 30) {
+    days.forEach((day, index) => {
+      const label = activityWatchXAxisLabel(day, index, days);
+      if (label) labels.set(day.date, label);
+    });
+    return labels;
+  }
+
+  const candidates = [];
+  days.forEach((day, index) => {
+    const date = dateFromStr(day.date);
+    const selected = day.date === activityWatchDashboardState.selectedDate;
+    if (selected) candidates.push({ day, index, priority: 100, forceMonth: true });
+    if (index === 0 || index === dayCount - 1) candidates.push({ day, index, priority: 90, forceMonth: true });
+    if (date.getDate() === 1) candidates.push({ day, index, priority: 80, forceMonth: true });
+    if (index % 14 === 0) candidates.push({ day, index, priority: 50, forceMonth: false });
+  });
+
+  const chosen = [];
+  const minGap = dayCount > 45 ? ACTIVITYWATCH_WIDE_AXIS_MIN_LABEL_GAP_DAYS : 4;
+  candidates
+    .sort((a, b) => b.priority - a.priority || a.index - b.index)
+    .forEach(candidate => {
+      if (chosen.some(item => Math.abs(item.index - candidate.index) < minGap)) return;
+      chosen.push(candidate);
+    });
+
+  chosen
+    .sort((a, b) => a.index - b.index)
+    .forEach(candidate => {
+      const date = dateFromStr(candidate.day.date);
+      const previousDate = candidate.index > 0 ? dateFromStr(days[candidate.index - 1].date) : null;
+      labels.set(candidate.day.date, activityWatchCompactAxisDate(date, previousDate, candidate.forceMonth));
+    });
+  return labels;
 }
 
 function activityWatchXAxisLabel(day, index, days) {
