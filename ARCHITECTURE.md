@@ -32,7 +32,7 @@ Never load `main.js` before feature files it binds. Do not add imports, exports,
 - `tracker.js`: set tracker, timer, log edit, cues, and shortcuts.
 - `activitywatch-data.js`: ActivityWatch REST client, aggregate storage, sync orchestration.
 - `home-cards.js`: main-screen dashboard card row and refresh timers for the always-on monitor view.
-- `weather-card.js`: Open-Meteo weather card, Open-Meteo/CAMS air quality, Environment Canada MSC GeoMet alerts for Canadian locations, current details including AQI-or-humidity/wind/UV/sun times, daily-brain advisory/highlight/mood rules, dev preview scenarios, location search, cached weather result, request throttling/rate-limit cooldowns, and weather Settings controls.
+- `weather-card.js`: Open-Meteo weather card, Open-Meteo/CAMS air quality, Environment Canada MSC GeoMet alerts for Canadian locations, current details including AQI-or-humidity/wind/UV/sun times, daily-brain advisory/highlight/mood rules, dev preview scenarios, location search, cached weather result, request throttling/rate-limit cooldowns, and weather Settings controls. Air-quality brain advisories start at unhealthy AQI levels (`101+`) and include timing when the peak is later; lower AQI values stay as quiet tile data.
 - `activitywatch-mini-card.js`: current waking-day ActivityWatch mini dashboard card.
 - `activitywatch-dashboard-*.js`: ActivityWatch category dashboard. See `docs/activitywatch.md`.
 - `activitywatch-settings.js`: ActivityWatch Settings tab controls.

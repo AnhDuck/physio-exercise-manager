@@ -821,8 +821,10 @@ function weatherPrimaryAlert(data) {
 function weatherAirQualityCandidate(airQuality) {
   const usAqi = Number(airQuality?.usAqi) || 0;
   if (!usAqi) return null;
-  const label = weatherAirQualityLabel(usAqi);
   const peak = Number(airQuality?.peakUsAqi) || usAqi;
+  const worst = Math.max(usAqi, peak);
+  const label = weatherAirQualityLabel(worst);
+  const timing = weatherAirQualityTiming(airQuality, peak > usAqi ? airQuality.peakTime : airQuality.time);
   if (usAqi >= 151 || peak >= 151) {
     return {
       key: 'air',
@@ -830,7 +832,7 @@ function weatherAirQualityCandidate(airQuality) {
       tileLabel: 'Bad air',
       label: 'Air',
       score: 1200,
-      advisory: `AQI ${Math.round(Math.max(usAqi, peak))} ${label}. Indoor physio is smarter.`,
+      advisory: `AQI ${Math.round(worst)} ${label}${timing}. Indoor physio is smarter.`,
     };
   }
   if (usAqi >= 101 || peak >= 101) {
@@ -840,20 +842,17 @@ function weatherAirQualityCandidate(airQuality) {
       tileLabel: 'Air risk',
       label: 'Air',
       score: 980,
-      advisory: `AQI ${Math.round(Math.max(usAqi, peak))} ${label}. Keep outdoor work light.`,
-    };
-  }
-  if (usAqi >= 51 || peak >= 51) {
-    return {
-      key: 'air',
-      highlight: 'air',
-      tileLabel: 'Moderate air',
-      label: 'Air',
-      score: 64,
-      advisory: `AQI ${Math.round(Math.max(usAqi, peak))} ${label}. Notice breathing on walks.`,
+      advisory: `AQI ${Math.round(worst)} ${label}${timing}. Keep outdoor work light.`,
     };
   }
   return null;
+}
+
+function weatherAirQualityTiming(airQuality, time) {
+  const currentTime = weatherTimestamp(airQuality?.time);
+  const targetTime = weatherTimestamp(time);
+  if (!targetTime || !currentTime || targetTime <= currentTime + 45 * 60 * 1000) return ' now';
+  return ` around ${homeCardFormatTime(time).replace(/\s/g, '')}`;
 }
 
 function weatherClothingCue({ temp, feels, wind, current, rainSoon }) {
