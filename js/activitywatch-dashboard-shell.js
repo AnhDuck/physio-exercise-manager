@@ -42,6 +42,7 @@ function ensureActivityWatchDashboardShell() {
                   <h3 id="activitywatch-chart-title">Last 2 weeks</h3>
                   <span class="activitywatch-section-subtitle" id="activitywatch-chart-subtitle"></span>
                 </div>
+                <div class="activitywatch-chart-actions" id="activitywatch-chart-actions"></div>
               </div>
               <div class="activitywatch-stacked-chart" id="activitywatch-stacked-chart"></div>
             </section>

@@ -246,7 +246,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-category-mode-toggle button {
   min-height: 32px;
-  padding: 0 10px;
+  padding: 0 12px;
   border: 0;
   border-right: 1px solid var(--border);
   background: transparent;
@@ -375,11 +375,17 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   margin-bottom: 10px;
 }
 
-.activitywatch-section-heading > div {
+.activitywatch-section-heading > div:first-child {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 5px 8px;
+  min-width: 0;
+}
+
+.activitywatch-chart-actions {
+  display: flex;
+  justify-content: flex-end;
   min-width: 0;
 }
 

@@ -33,6 +33,7 @@ function renderActivityWatchDashboardControls(days) {
 
   const chartSubtitle = document.getElementById('activitywatch-chart-subtitle');
   const chartTitle = document.getElementById('activitywatch-chart-title');
+  const chartActions = document.getElementById('activitywatch-chart-actions');
   if (chartTitle) {
     chartTitle.textContent = `${activityWatchDashboardRangeLabel(activityWatchDashboardState.rangeDays)} - ${activityWatchDateRangeLabel(days)}`;
   }
@@ -42,6 +43,10 @@ function renderActivityWatchDashboardControls(days) {
       : activityWatchDashboardUsesTopCategories()
         ? 'Stacked top-level category totals by waking day'
         : 'Stacked category totals by waking day';
+  }
+  if (chartActions) {
+    chartActions.innerHTML = '';
+    chartActions.appendChild(buildActivityWatchCategoryModeToggle());
   }
 }
 
@@ -119,8 +124,6 @@ function buildActivityWatchControlActions(days, isSyncing) {
   rangeLabel.appendChild(select);
   actions.appendChild(rangeLabel);
 
-  actions.appendChild(buildActivityWatchCategoryModeToggle());
-
   const advanced = el('button', 'activitywatch-advanced-sync-toggle');
   advanced.type = 'button';
   advanced.title = 'Advanced ActivityWatch sync';
@@ -141,8 +144,8 @@ function buildActivityWatchCategoryModeToggle() {
   toggle.setAttribute('role', 'group');
   toggle.setAttribute('aria-label', 'ActivityWatch category grouping');
   [
-    ['exact', 'Exact'],
-    ['top', 'Top level'],
+    ['exact', 'Categories'],
+    ['top', 'Groups'],
   ].forEach(([mode, label]) => {
     const button = el('button', '');
     button.type = 'button';

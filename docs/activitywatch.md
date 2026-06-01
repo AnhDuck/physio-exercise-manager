@@ -63,7 +63,7 @@ Top row order on desktop is compact stats, sync/status copy, then actions. Mobil
 Chart interaction:
 
 - Default mode is stacked bars.
-- The category mode toggle switches the dashboard between exact category paths and top-level category grouping. Top-level mode combines paths such as `Work > Katana` and plain `Work` into `Work` for chart segments, side-panel rows, hover, and filters without changing stored ActivityWatch summaries.
+- The chart header `Categories` / `Groups` toggle switches the dashboard between exact category paths and top-level category grouping. `Groups` combines paths such as `Work > Katana` and plain `Work` into `Work` for chart segments, side-panel rows, hover, and filters without changing stored ActivityWatch summaries.
 - Unfiltered bars include computed `Other` so visible stacks add up to total active time.
 - `Other` is informational only and must not become a filter chip or locked filter.
 - Bar click selects the day.
