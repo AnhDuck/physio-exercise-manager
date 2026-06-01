@@ -39,7 +39,9 @@ function renderActivityWatchDashboardControls(days) {
   if (chartSubtitle) {
     chartSubtitle.textContent = activityWatchDashboardState.selectedCategory
       ? `Filtered to ${activityWatchDashboardState.selectedCategory}`
-      : 'Stacked category totals by waking day';
+      : activityWatchDashboardUsesTopCategories()
+        ? 'Stacked top-level category totals by waking day'
+        : 'Stacked category totals by waking day';
   }
 }
 
@@ -117,6 +119,8 @@ function buildActivityWatchControlActions(days, isSyncing) {
   rangeLabel.appendChild(select);
   actions.appendChild(rangeLabel);
 
+  actions.appendChild(buildActivityWatchCategoryModeToggle());
+
   const advanced = el('button', 'activitywatch-advanced-sync-toggle');
   advanced.type = 'button';
   advanced.title = 'Advanced ActivityWatch sync';
@@ -130,6 +134,31 @@ function buildActivityWatchControlActions(days, isSyncing) {
   });
   actions.appendChild(advanced);
   return actions;
+}
+
+function buildActivityWatchCategoryModeToggle() {
+  const toggle = el('div', 'activitywatch-category-mode-toggle');
+  toggle.setAttribute('role', 'group');
+  toggle.setAttribute('aria-label', 'ActivityWatch category grouping');
+  [
+    ['exact', 'Exact'],
+    ['top', 'Top level'],
+  ].forEach(([mode, label]) => {
+    const button = el('button', '');
+    button.type = 'button';
+    button.textContent = label;
+    button.classList.toggle('is-active', normalizeActivityWatchDashboardCategoryMode(activityWatchDashboardState.categoryMode) === mode);
+    button.addEventListener('click', () => {
+      if (normalizeActivityWatchDashboardCategoryMode(activityWatchDashboardState.categoryMode) === mode) return;
+      activityWatchDashboardState.categoryMode = mode;
+      activityWatchDashboardState.selectedCategory = '';
+      activityWatchDashboardState.hoveredCategory = '';
+      activityWatchDashboardState.showAllCategories = false;
+      renderActivityWatchDashboard();
+    });
+    toggle.appendChild(button);
+  });
+  return toggle;
 }
 
 function buildActivityWatchPagerButton(title, iconName, onClick) {

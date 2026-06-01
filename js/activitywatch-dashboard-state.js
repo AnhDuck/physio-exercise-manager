@@ -20,6 +20,7 @@ const activityWatchDashboardState = {
   selectedDate: '',
   rangeDays: ACTIVITYWATCH_DASHBOARD_DEFAULT_RANGE_DAYS,
   rangeEndDate: '',
+  categoryMode: 'exact',
   selectedCategory: '',
   hoveredCategory: '',
   detailMode: 'day',
@@ -117,10 +118,37 @@ function updateActivityWatchCategoryHighlight() {
   });
 }
 
+function normalizeActivityWatchDashboardCategoryMode(value) {
+  return value === 'top' ? 'top' : 'exact';
+}
+
+function activityWatchDashboardUsesTopCategories() {
+  return normalizeActivityWatchDashboardCategoryMode(activityWatchDashboardState.categoryMode) === 'top';
+}
+
+function activityWatchDashboardDisplayCategory(category) {
+  const label = String(category || '');
+  if (!activityWatchDashboardUsesTopCategories()) return label;
+  return label.split(ACTIVITYWATCH_CATEGORY_JOINER)[0] || label;
+}
+
+function activityWatchDashboardCategoryTotals(day) {
+  const totals = {};
+  Object.entries(day?.categoryTotals || {}).forEach(([category, seconds]) => {
+    const displayCategory = activityWatchDashboardDisplayCategory(category);
+    totals[displayCategory] = (totals[displayCategory] || 0) + seconds;
+  });
+  return totals;
+}
+
+function activityWatchDashboardCategoryTotal(day, category) {
+  return activityWatchDashboardCategoryTotals(day)[category] || 0;
+}
+
 function topActivityWatchCategories(days, limit) {
   const totals = {};
   days.forEach(day => {
-    Object.entries(day.categoryTotals || {}).forEach(([category, seconds]) => {
+    Object.entries(activityWatchDashboardCategoryTotals(day)).forEach(([category, seconds]) => {
       totals[category] = (totals[category] || 0) + seconds;
     });
   });

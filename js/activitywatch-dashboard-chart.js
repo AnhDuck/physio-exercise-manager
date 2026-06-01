@@ -18,7 +18,7 @@ function renderActivityWatchStackedChart(days) {
 
   const chartCategories = activityWatchDashboardChartCategories(days);
   const maxSeconds = activityWatchDashboardState.selectedCategory
-    ? Math.max(0, ...days.map(day => day.categoryTotals?.[activityWatchDashboardState.selectedCategory] || 0))
+    ? Math.max(0, ...days.map(day => activityWatchDashboardCategoryTotal(day, activityWatchDashboardState.selectedCategory)))
     : Math.max(0, ...days.map(day => day.totalActiveSeconds || 0));
   const axis = activityWatchHourAxis(maxSeconds);
 
@@ -52,7 +52,7 @@ function renderActivityWatchStackedChart(days) {
     });
 
     const plottedSeconds = activityWatchDashboardState.selectedCategory
-      ? day.categoryTotals?.[activityWatchDashboardState.selectedCategory] || 0
+      ? activityWatchDashboardCategoryTotal(day, activityWatchDashboardState.selectedCategory)
       : day.totalActiveSeconds || 0;
     const totalLabelText = activityWatchBarTotalLabel(day, plottedSeconds, index, days.length);
     const totalLabel = elText('span', 'activitywatch-day-bar-total', totalLabelText);
@@ -207,11 +207,11 @@ function activityWatchDashboardCategorySeconds(day, category, visibleCategories)
   if (category === ACTIVITYWATCH_DASHBOARD_OTHER_CATEGORY) {
     return activityWatchDashboardOtherSeconds(day, visibleCategories.filter(item => item !== ACTIVITYWATCH_DASHBOARD_OTHER_CATEGORY));
   }
-  return day.categoryTotals?.[category] || 0;
+  return activityWatchDashboardCategoryTotal(day, category);
 }
 
 function activityWatchDashboardOtherSeconds(day, topCategories) {
-  const shown = topCategories.reduce((sum, category) => sum + (day.categoryTotals?.[category] || 0), 0);
+  const shown = topCategories.reduce((sum, category) => sum + activityWatchDashboardCategoryTotal(day, category), 0);
   return Math.max(0, (day.totalActiveSeconds || 0) - shown);
 }
 

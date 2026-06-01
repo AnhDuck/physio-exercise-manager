@@ -52,7 +52,7 @@ The main-screen ActivityWatch mini card is a glanceable current waking-day surfa
 
 ## Dashboard Rules
 
-The dashboard is category-first, not top-application-first. Dashboard UI state is not persisted. The single dashboard state object includes selected date, range length/end date, selected category, hovered category, detail mode, show-all state, chart scroll state, and advanced sync state.
+The dashboard is category-first, not top-application-first. Dashboard UI state is not persisted. The single dashboard state object includes selected date, range length/end date, category mode, selected category, hovered category, detail mode, show-all state, chart scroll state, and advanced sync state.
 
 Default range is Last 2 weeks ending on the current waking day. Opening the dashboard selects the current waking day when visible. Range paging jumps by the selected range length. Latest returns to the current waking-day range.
 
@@ -63,6 +63,7 @@ Top row order on desktop is compact stats, sync/status copy, then actions. Mobil
 Chart interaction:
 
 - Default mode is stacked bars.
+- The category mode toggle switches the dashboard between exact category paths and top-level category grouping. Top-level mode combines paths such as `Work > Katana` and plain `Work` into `Work` for chart segments, side-panel rows, hover, and filters without changing stored ActivityWatch summaries.
 - Unfiltered bars include computed `Other` so visible stacks add up to total active time.
 - `Other` is informational only and must not become a filter chip or locked filter.
 - Bar click selects the day.

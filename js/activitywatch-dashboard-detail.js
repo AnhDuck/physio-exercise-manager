@@ -113,14 +113,14 @@ function buildActivityWatchDetailModeToggle() {
 }
 
 function activityWatchCategoryRowsForDay(day) {
-  return Object.entries(day?.categoryTotals || {})
+  return Object.entries(activityWatchDashboardCategoryTotals(day))
     .sort((a, b) => b[1] - a[1]);
 }
 
 function activityWatchAggregateCategoryRows(days) {
   const totals = {};
   days.forEach(day => {
-    Object.entries(day.categoryTotals || {}).forEach(([category, seconds]) => {
+    Object.entries(activityWatchDashboardCategoryTotals(day)).forEach(([category, seconds]) => {
       totals[category] = (totals[category] || 0) + seconds;
     });
   });

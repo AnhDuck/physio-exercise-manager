@@ -235,6 +235,42 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   box-shadow: var(--ui-focus-ring);
 }
 
+.activitywatch-category-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--ui-control-bg);
+}
+
+.activitywatch-category-mode-toggle button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-right: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.activitywatch-category-mode-toggle button:last-child {
+  border-right: 0;
+}
+
+.activitywatch-category-mode-toggle button:hover,
+.activitywatch-category-mode-toggle button:focus-visible,
+.activitywatch-category-mode-toggle button.is-active {
+  background: var(--ui-control-hover);
+  color: var(--text);
+  outline: none;
+}
+
 .activitywatch-sync-progress {
   display: grid;
   gap: 6px;
