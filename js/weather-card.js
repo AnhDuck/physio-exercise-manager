@@ -661,7 +661,7 @@ function buildWeatherBrain(data) {
   const sunsetMinutes = weatherMinutesUntil(data?.daily?.sunset, nowMs);
   const rainSoon = weatherNextPrecipitation(hourly, nowMs);
   const alert = weatherPrimaryAlert(data);
-  const airQuality = weatherAirQualityCandidate(data?.airQuality, data?.timezone);
+  const airQuality = weatherAirQualityCandidate(data?.airQuality);
   const candidates = [];
 
   if (airQuality) candidates.push(airQuality);
@@ -818,61 +818,42 @@ function weatherPrimaryAlert(data) {
   return title || summary || '';
 }
 
-function weatherAirQualityCandidate(airQuality, timezone) {
-  const currentAqi = Number(airQuality?.usAqi) || 0;
-  if (!currentAqi) return null;
-  const peakAqi = Number(airQuality?.peakUsAqi) || currentAqi;
-  const currentRounded = Math.round(currentAqi);
-  const peakRounded = Math.round(peakAqi);
-  if (currentAqi >= 151) {
+function weatherAirQualityCandidate(airQuality) {
+  const usAqi = Number(airQuality?.usAqi) || 0;
+  if (!usAqi) return null;
+  const label = weatherAirQualityLabel(usAqi);
+  const peak = Number(airQuality?.peakUsAqi) || usAqi;
+  if (usAqi >= 151 || peak >= 151) {
     return {
       key: 'air',
       highlight: 'air',
       tileLabel: 'Bad air',
       label: 'Air',
+      score: 1200,
+      advisory: `AQI ${Math.round(Math.max(usAqi, peak))} ${label}. Indoor physio is smarter.`,
+    };
+  }
+  if (usAqi >= 101 || peak >= 101) {
+    return {
+      key: 'air',
+      highlight: 'air',
+      tileLabel: 'Air risk',
+      label: 'Air',
       score: 980,
-      advisory: `Bad air now: AQI ${currentRounded}. Indoor physio is smarter.`,
+      advisory: `AQI ${Math.round(Math.max(usAqi, peak))} ${label}. Keep outdoor work light.`,
     };
   }
-  if (currentAqi >= 101) {
+  if (usAqi >= 51 || peak >= 51) {
     return {
       key: 'air',
       highlight: 'air',
-      tileLabel: 'Poor air',
+      tileLabel: 'Moderate air',
       label: 'Air',
-      score: 900,
-      advisory: `Air quality is poor now: AQI ${currentRounded}. Keep outdoor activity light.`,
-    };
-  }
-  const whenPhrase = weatherAirQualityPeakPhrase(airQuality, timezone);
-  if (peakAqi >= 151) {
-    return {
-      key: 'air',
-      highlight: 'air',
-      tileLabel: 'Bad air later',
-      label: 'Air',
-      score: 880,
-      advisory: `Bad air may arrive ${whenPhrase}: AQI ${peakRounded}. Indoor physio may be smarter.`,
-    };
-  }
-  if (peakAqi >= 101) {
-    return {
-      key: 'air',
-      highlight: 'air',
-      tileLabel: 'Poor air later',
-      label: 'Air',
-      score: 840,
-      advisory: `Air quality may be poor ${whenPhrase}: AQI ${peakRounded}. Walk earlier if useful.`,
+      score: 64,
+      advisory: `AQI ${Math.round(Math.max(usAqi, peak))} ${label}. Notice breathing on walks.`,
     };
   }
   return null;
-}
-
-function weatherAirQualityPeakPhrase(airQuality, timezone) {
-  const peakTime = typeof airQuality?.peakTime === 'string' ? airQuality.peakTime.trim() : '';
-  if (!peakTime) return 'later today';
-  const formatted = homeCardFormatTime(peakTime, timezone).replace(/\s/g, '');
-  return formatted ? `around ${formatted}` : 'later today';
 }
 
 function weatherClothingCue({ temp, feels, wind, current, rainSoon }) {
