@@ -145,6 +145,7 @@ function bindStaticEvents() {
   document.getElementById('setting-cue-speech-volume').addEventListener('input', handleSpeechVolumeInput);
   document.getElementById('setting-cue-speech').addEventListener('change', autosaveGeneralSettings);
   document.getElementById('setting-auto-backup-time').addEventListener('change', autosaveAutoBackupTime);
+  document.getElementById('setting-weather-location-search')?.addEventListener('input', scheduleWeatherLocationLiveSearch);
   document.getElementById('setting-weather-location-search')?.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();

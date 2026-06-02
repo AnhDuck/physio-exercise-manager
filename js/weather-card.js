@@ -8,7 +8,8 @@ const WEATHER_FORECAST_BURST_WINDOW_MS = 10 * 60 * 1000;
 const WEATHER_FORECAST_BURST_LIMIT = 60;
 const WEATHER_FORECAST_BURST_COOLDOWN_MS = 5 * 60 * 1000;
 const WEATHER_RATE_LIMIT_COOLDOWN_MS = 65 * 60 * 1000;
-const WEATHER_LOCATION_SEARCH_MIN_GAP_MS = 2 * 1000;
+const WEATHER_LOCATION_SEARCH_DEBOUNCE_MS = 450;
+const WEATHER_LOCATION_SEARCH_MIN_GAP_MS = 500;
 const WEATHER_FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 const WEATHER_GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1/search';
 const WEATHER_CANADA_ALERTS_URL = 'https://api.weather.gc.ca/collections/weather-alerts/items';
@@ -1491,25 +1492,53 @@ function formatWeatherDelay(ms) {
   return `${hours} hour${hours === 1 ? '' : 's'}`;
 }
 
-function searchWeatherLocationsFromSettings() {
+function scheduleWeatherLocationLiveSearch() {
   const input = document.getElementById('setting-weather-location-search');
   const query = input?.value.trim() || '';
+  weatherLocationSearchRequestId++;
+  if (weatherLocationSearchTimer) window.clearTimeout(weatherLocationSearchTimer);
   if (query.length < 3) {
-    renderWeatherLocationSearchStatus('Type at least 3 characters.', true);
+    weatherLocationSearchResults = [];
+    clearWeatherLocationResults();
+    renderWeatherLocationSearchStatus(query ? 'Type at least 3 characters.' : 'Search for a city or postal code.', Boolean(query));
     return;
   }
-  if (weatherLocationSearchPromise) {
-    renderWeatherLocationSearchStatus('Search already running.', false);
+  renderWeatherLocationSearchStatus('Searching after you pause...', false);
+  weatherLocationSearchTimer = window.setTimeout(() => {
+    weatherLocationSearchTimer = null;
+    searchWeatherLocationsFromSettings({ live: true });
+  }, WEATHER_LOCATION_SEARCH_DEBOUNCE_MS);
+}
+
+function searchWeatherLocationsFromSettings(options = {}) {
+  const input = document.getElementById('setting-weather-location-search');
+  const query = input?.value.trim() || '';
+  if (weatherLocationSearchTimer) {
+    window.clearTimeout(weatherLocationSearchTimer);
+    weatherLocationSearchTimer = null;
+  }
+  if (query.length < 3) {
+    weatherLocationSearchResults = [];
+    clearWeatherLocationResults();
+    renderWeatherLocationSearchStatus('Type at least 3 characters.', true);
     return;
   }
   const now = Date.now();
   if (now - weatherLocationSearchLastAt < WEATHER_LOCATION_SEARCH_MIN_GAP_MS) {
-    renderWeatherLocationSearchStatus('Wait a moment before searching again.', true);
+    if (options.live) {
+      weatherLocationSearchTimer = window.setTimeout(() => {
+        weatherLocationSearchTimer = null;
+        searchWeatherLocationsFromSettings({ live: true });
+      }, WEATHER_LOCATION_SEARCH_MIN_GAP_MS - (now - weatherLocationSearchLastAt));
+      renderWeatherLocationSearchStatus('Searching after you pause...', false);
+    } else {
+      renderWeatherLocationSearchStatus('Wait a moment before searching again.', true);
+    }
     return;
   }
   weatherLocationSearchLastAt = now;
   const requestId = ++weatherLocationSearchRequestId;
-  weatherLocationSearchPromise = searchWeatherLocations(query)
+  const promise = searchWeatherLocations(query)
     .then(results => {
       if (requestId !== weatherLocationSearchRequestId) return;
       weatherLocationSearchResults = results;
@@ -1520,8 +1549,9 @@ function searchWeatherLocationsFromSettings() {
       renderWeatherLocationSearchStatus(`Search failed: ${weatherErrorMessage(err)}`, true);
     })
     .finally(() => {
-      if (requestId === weatherLocationSearchRequestId) weatherLocationSearchPromise = null;
+      if (weatherLocationSearchPromise === promise) weatherLocationSearchPromise = null;
     });
+  weatherLocationSearchPromise = promise;
   renderWeatherLocationSearchStatus('Searching...', false);
 }
 
@@ -1561,6 +1591,13 @@ function renderWeatherLocationResults(results) {
   renderWeatherLocationSearchStatus(`${formatNumber(results.length)} locations found.`, false);
 }
 
+function clearWeatherLocationResults() {
+  const list = document.getElementById('setting-weather-location-results');
+  if (!list) return;
+  list.innerHTML = '';
+  list.hidden = true;
+}
+
 function renderWeatherLocationSearchStatus(text, issue = false) {
   const status = document.getElementById('setting-weather-location-status');
   if (!status) return;
@@ -1596,6 +1633,10 @@ function clearWeatherLocationFromSettings() {
   if (!confirm('Clear the saved weather location and cached weather data?')) return;
   weatherForecastRequestId++;
   weatherLocationSearchRequestId++;
+  if (weatherLocationSearchTimer) {
+    window.clearTimeout(weatherLocationSearchTimer);
+    weatherLocationSearchTimer = null;
+  }
   weatherLocationSearchResults = [];
   cfg.location = null;
   cfg.searchText = '';

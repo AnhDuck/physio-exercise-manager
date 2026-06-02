@@ -35,6 +35,7 @@ let weatherLocationSearchPromise = null;
 let weatherLocationSearchResults = [];
 let weatherLocationSearchRequestId = 0;
 let weatherLocationSearchLastAt = 0;
+let weatherLocationSearchTimer = null;
 let browserStorageEstimateRequestId = 0;
 let storageHealth = {
   lastAttempt: null,

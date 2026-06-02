@@ -756,6 +756,7 @@
   grid-template-columns: minmax(180px, 260px) auto auto;
   gap: 7px;
   min-width: min(100%, 440px);
+  align-items: start;
 }
 
 .dashboard-location-controls input,
@@ -805,11 +806,17 @@
   grid-column: 1 / -1;
 }
 
+.dashboard-location-controls .settings-help-text {
+  order: 1;
+}
+
 .dashboard-location-results {
+  order: 2;
   display: grid;
   gap: 6px;
-  max-height: 178px;
+  max-height: min(190px, 34vh);
   overflow: auto;
+  padding-right: 3px;
 }
 
 .dashboard-location-results[hidden] {
@@ -824,7 +831,7 @@
   display: grid;
   gap: 3px;
   width: 100%;
-  min-height: 0;
+  min-height: 54px;
   padding: 9px 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -837,6 +844,10 @@
 .dashboard-location-result:hover {
   border-color: rgba(99,179,255,.52);
   background: rgba(99,179,255,.1);
+}
+
+.dashboard-location-result:focus-visible {
+  background: rgba(99,179,255,.14);
 }
 
 .dashboard-location-result strong {
