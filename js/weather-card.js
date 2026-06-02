@@ -101,6 +101,9 @@ function buildWeatherLoadingState(cfg) {
 
 function buildWeatherHeaderActions() {
   const actions = el('div', 'home-card-actions');
+  if (weatherPreviewEnabled(weatherSettings())) {
+    actions.appendChild(buildWeatherPreviewButton('reset-weather-preview', 'Return to live weather', 'restore'));
+  }
   actions.appendChild(buildWeatherPreviewButton('preview-weather-alert', 'Preview Environment Canada alert', 'warning'));
   actions.appendChild(buildWeatherPreviewButton('randomize-weather-preview', 'Randomize weather preview', 'shuffle'));
   actions.appendChild(buildWeatherRefreshButton());
@@ -491,7 +494,29 @@ function weatherPreviewMode(cfg) {
 }
 
 function weatherPreviewScenarioKeys() {
-  return ['live', 'clear', 'cloudy', 'rain', 'snow', 'wind', 'uv', 'air', 'sunset', 'night', 'jacket', 'warm', 'alert'];
+  return [
+    'live',
+    'wmo-clear',
+    'wmo-mostly-clear',
+    'wmo-partly-cloudy',
+    'wmo-cloudy',
+    'wmo-fog',
+    'wmo-rime-fog',
+    'wmo-drizzle',
+    'wmo-freezing-drizzle',
+    'wmo-light-rain',
+    'wmo-rain',
+    'wmo-heavy-rain',
+    'wmo-freezing-rain',
+    'wmo-light-snow',
+    'wmo-snow',
+    'wmo-heavy-snow',
+    'wmo-snow-grains',
+    'wmo-showers',
+    'wmo-snow-showers',
+    'wmo-thunderstorm',
+    'wmo-thunder-hail',
+  ];
 }
 
 function weatherPreviewResult(cfg, liveData = null) {
@@ -507,18 +532,26 @@ function weatherPreviewResult(cfg, liveData = null) {
 
 function weatherPreviewScenario(mode) {
   const scenarios = {
-    clear: { label: 'Preview: Clear morning', temp: 7, feels: 5, humidity: 66, wind: 6, direction: 135, gust: 10, uv: 0, code: 0, isDay: true, moodHour: 6 },
-    cloudy: { label: 'Preview: Cloudy', temp: 12, feels: 10, humidity: 78, wind: 14, direction: 240, gust: 22, uv: 1, code: 3, isDay: true, moodHour: 11 },
-    rain: { label: 'Preview: Rain soon', temp: 11, feels: 9, humidity: 86, wind: 18, direction: 180, gust: 28, uv: 1, code: 2, isDay: true, rainIn: 90, rainProbability: 75, moodHour: 14 },
-    snow: { label: 'Preview: Snow', temp: 0, feels: -4, humidity: 84, wind: 17, direction: 20, gust: 30, uv: 0, code: 71, isDay: true, moodHour: 9 },
-    wind: { label: 'Preview: Windy', temp: 13, feels: 9, humidity: 58, wind: 34, direction: 90, gust: 48, uv: 2, code: 1, isDay: true, moodHour: 15 },
-    uv: { label: 'Preview: High UV', temp: 24, feels: 25, humidity: 52, wind: 8, direction: 210, gust: 14, uv: 6, code: 0, isDay: true, uvPeak: 8, uvPeakHour: 13, moodHour: 11 },
-    air: { label: 'Preview: Bad air', temp: 24, feels: 25, humidity: 45, wind: 5, direction: 230, gust: 9, uv: 3, code: 3, isDay: true, aqi: 168, pm25: 72, moodHour: 14 },
-    sunset: { label: 'Preview: Sunset walk', temp: 17, feels: 16, humidity: 64, wind: 10, direction: 270, gust: 18, uv: 1, code: 1, isDay: true, sunsetIn: 74, moodHour: 19 },
-    night: { label: 'Preview: Night', temp: 9, feels: 7, humidity: 72, wind: 9, direction: 315, gust: 15, uv: 0, code: 0, isDay: false, moodHour: 22 },
-    jacket: { label: 'Preview: Real jacket', temp: 14, feels: 12, humidity: 70, wind: 12, direction: 110, gust: 18, uv: 1, code: 1, isDay: true, moodHour: 16 },
-    warm: { label: 'Preview: Warm calm', temp: 23, feels: 24, humidity: 48, wind: 6, direction: 200, gust: 11, uv: 2, code: 0, isDay: true, moodHour: 17 },
-    alert: { label: 'Preview: Weather alert', temp: 16, feels: 12, humidity: 68, wind: 39, direction: 80, gust: 58, uv: 2, code: 3, isDay: true, alert: 'Wind warning. Secure loose stuff before walking.', moodHour: 13 },
+    'wmo-clear': { label: 'Preview: Clear', temp: 18, feels: 18, humidity: 48, wind: 7, direction: 160, gust: 12, uv: 4, code: 0, isDay: true, moodHour: 11 },
+    'wmo-mostly-clear': { label: 'Preview: Mostly clear', temp: 18, feels: 17, humidity: 54, wind: 8, direction: 170, gust: 14, uv: 3, code: 1, isDay: true, moodHour: 11 },
+    'wmo-partly-cloudy': { label: 'Preview: Partly cloudy', temp: 17, feels: 16, humidity: 61, wind: 10, direction: 210, gust: 16, uv: 2, code: 2, isDay: true, moodHour: 11 },
+    'wmo-cloudy': { label: 'Preview: Cloudy', temp: 12, feels: 10, humidity: 78, wind: 14, direction: 240, gust: 22, uv: 1, code: 3, isDay: true, moodHour: 11 },
+    'wmo-fog': { label: 'Preview: Fog', temp: 8, feels: 7, humidity: 96, wind: 4, direction: 120, gust: 8, uv: 0, code: 45, isDay: true, moodHour: 8 },
+    'wmo-rime-fog': { label: 'Preview: Rime fog', temp: -2, feels: -5, humidity: 96, wind: 9, direction: 35, gust: 16, uv: 0, code: 48, isDay: true, moodHour: 8 },
+    'wmo-drizzle': { label: 'Preview: Drizzle', temp: 9, feels: 7, humidity: 88, wind: 12, direction: 190, gust: 18, uv: 0, code: 53, isDay: true, moodHour: 10 },
+    'wmo-freezing-drizzle': { label: 'Preview: Freezing drizzle', temp: -1, feels: -5, humidity: 90, wind: 15, direction: 20, gust: 24, uv: 0, code: 57, isDay: true, moodHour: 10 },
+    'wmo-light-rain': { label: 'Preview: Light rain', temp: 11, feels: 9, humidity: 86, wind: 14, direction: 180, gust: 22, uv: 1, code: 61, isDay: true, rainIn: 60, rainProbability: 70, moodHour: 13 },
+    'wmo-rain': { label: 'Preview: Rain', temp: 10, feels: 8, humidity: 90, wind: 18, direction: 185, gust: 28, uv: 0, code: 63, isDay: true, rainIn: 30, rainProbability: 82, moodHour: 13 },
+    'wmo-heavy-rain': { label: 'Preview: Heavy rain', temp: 9, feels: 6, humidity: 94, wind: 24, direction: 190, gust: 38, uv: 0, code: 65, isDay: true, rainIn: 30, rainProbability: 92, moodHour: 13 },
+    'wmo-freezing-rain': { label: 'Preview: Freezing rain', temp: -1, feels: -6, humidity: 92, wind: 18, direction: 30, gust: 31, uv: 0, code: 67, isDay: true, rainIn: 30, rainProbability: 85, moodHour: 12 },
+    'wmo-light-snow': { label: 'Preview: Light snow', temp: 0, feels: -4, humidity: 84, wind: 15, direction: 20, gust: 24, uv: 0, code: 71, isDay: true, snowIn: 60, moodHour: 9 },
+    'wmo-snow': { label: 'Preview: Snow', temp: -2, feels: -6, humidity: 88, wind: 17, direction: 25, gust: 28, uv: 0, code: 73, isDay: true, snowIn: 30, moodHour: 9 },
+    'wmo-heavy-snow': { label: 'Preview: Heavy snow', temp: -4, feels: -9, humidity: 90, wind: 22, direction: 30, gust: 35, uv: 0, code: 75, isDay: true, snowIn: 30, moodHour: 9 },
+    'wmo-snow-grains': { label: 'Preview: Snow grains', temp: -3, feels: -7, humidity: 82, wind: 13, direction: 40, gust: 22, uv: 0, code: 77, isDay: true, snowIn: 60, moodHour: 9 },
+    'wmo-showers': { label: 'Preview: Showers', temp: 13, feels: 11, humidity: 82, wind: 20, direction: 210, gust: 32, uv: 1, code: 81, isDay: true, rainIn: 30, rainProbability: 78, moodHour: 14 },
+    'wmo-snow-showers': { label: 'Preview: Snow showers', temp: -1, feels: -5, humidity: 86, wind: 18, direction: 25, gust: 30, uv: 0, code: 85, isDay: true, snowIn: 30, moodHour: 10 },
+    'wmo-thunderstorm': { label: 'Preview: Thunderstorm', temp: 17, feels: 16, humidity: 88, wind: 31, direction: 160, gust: 48, uv: 1, code: 95, isDay: true, rainIn: 30, rainProbability: 90, moodHour: 15 },
+    'wmo-thunder-hail': { label: 'Preview: Thunderstorm with hail', temp: 12, feels: 8, humidity: 86, wind: 36, direction: 150, gust: 58, uv: 1, code: 96, isDay: true, rainIn: 30, rainProbability: 92, alert: 'Thunderstorm with hail. Check conditions before heading out.', moodHour: 15 },
   };
   return scenarios[mode] || null;
 }
@@ -1029,7 +1062,8 @@ function weatherMetricIconSvg(iconName) {
 
 function weatherCondition(code, isDay = true) {
   if (code === 0) return { label: isDay ? 'Clear' : 'Clear night', icon: isDay ? 'sunny' : 'clear-night' };
-  if ([1, 2].includes(code)) return { label: code === 1 ? 'Mostly clear' : 'Partly cloudy', icon: isDay ? 'partly-cloudy' : 'partly-cloudy-night' };
+  if (code === 1) return { label: isDay ? 'Mostly clear' : 'Mostly clear night', icon: isDay ? 'mostly-clear' : 'mostly-clear-night' };
+  if (code === 2) return { label: 'Partly cloudy', icon: isDay ? 'partly-cloudy' : 'partly-cloudy-night' };
   if (code === 3) return { label: 'Cloudy', icon: 'cloudy' };
   if (code === 45) return { label: 'Fog', icon: 'fog' };
   if (code === 48) return { label: 'Rime fog', icon: 'rime-fog' };
@@ -1071,6 +1105,8 @@ function weatherIconFile(type, isDay = true) {
   const dayNight = {
     sunny: ['clear_day.svg', 'clear_night.svg'],
     'clear-night': ['clear_day.svg', 'clear_night.svg'],
+    'mostly-clear': ['mostly_clear_day.svg', 'mostly_clear_night.svg'],
+    'mostly-clear-night': ['mostly_clear_day.svg', 'mostly_clear_night.svg'],
     'partly-cloudy': ['partly_cloudy_day.svg', 'partly_cloudy_night.svg'],
     'partly-cloudy-night': ['partly_cloudy_day.svg', 'partly_cloudy_night.svg'],
     showers: ['scattered_showers_day.svg', 'scattered_showers_night.svg'],
@@ -1347,10 +1383,19 @@ function randomizeWeatherPreviewMode() {
 
 function previewWeatherAlertMode() {
   const cfg = weatherSettings();
-  cfg.previewMode = 'alert';
+  cfg.previewMode = 'wmo-thunder-hail';
   saveSettings(settings);
   syncWeatherSettingsControls();
   renderHomeCards();
+}
+
+function resetWeatherPreviewMode() {
+  const cfg = weatherSettings();
+  cfg.previewMode = 'live';
+  saveSettings(settings);
+  syncWeatherSettingsControls();
+  renderHomeCards();
+  refreshWeatherIfNeeded('preview-reset');
 }
 
 function normalizeWeatherPreviewSetting(value) {

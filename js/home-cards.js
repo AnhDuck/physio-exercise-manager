@@ -58,6 +58,8 @@ function handleHomeCardActionClick(e) {
     refreshWeatherIfNeeded('manual', { force: true });
   } else if (button.dataset.homeCardAction === 'randomize-weather-preview') {
     if (typeof randomizeWeatherPreviewMode === 'function') randomizeWeatherPreviewMode();
+  } else if (button.dataset.homeCardAction === 'reset-weather-preview') {
+    if (typeof resetWeatherPreviewMode === 'function') resetWeatherPreviewMode();
   } else if (button.dataset.homeCardAction === 'preview-weather-alert') {
     if (typeof previewWeatherAlertMode === 'function') previewWeatherAlertMode();
   } else if (button.dataset.homeCardAction === 'refresh-activitywatch-mini') {
