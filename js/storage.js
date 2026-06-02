@@ -716,6 +716,9 @@ function normalizeWeatherLastResult(value) {
     alerts: Array.isArray(value.alerts)
       ? value.alerts.filter(item => item && typeof item === 'object').slice(0, 6)
       : [],
+    officialCondition: value.officialCondition && typeof value.officialCondition === 'object' && !Array.isArray(value.officialCondition)
+      ? { ...value.officialCondition }
+      : null,
     hourly: Array.isArray(value.hourly)
       ? value.hourly.filter(item => item && typeof item === 'object').slice(0, 12)
       : [],
