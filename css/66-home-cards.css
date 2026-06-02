@@ -328,10 +328,12 @@
   place-items: center;
 }
 
+.weather-icon img,
 .weather-icon svg {
   display: block;
   width: 100%;
   height: 100%;
+  object-fit: contain;
   overflow: visible;
 }
 
@@ -349,52 +351,6 @@
 .weather-hourly-icon {
   width: 28px;
   height: 28px;
-}
-
-.wi-sun {
-  fill: #ffd43b;
-}
-
-.wi-rays,
-.wi-drop,
-.wi-fog {
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-width: 5;
-}
-
-.wi-rays {
-  color: #ffe066;
-}
-
-.wi-cloud {
-  fill: #eef4fb;
-  stroke: rgba(62,68,76,.2);
-  stroke-width: 1.5;
-}
-
-.wi-moon {
-  fill: #8ab8ff;
-}
-
-.wi-drop {
-  color: #7dd3fc;
-}
-
-.wi-fog {
-  color: rgba(232,234,237,.72);
-  stroke-width: 3;
-}
-
-.wi-bolt {
-  fill: #facc15;
-}
-
-.wi-hail {
-  fill: #dbeafe;
-  stroke: rgba(62,68,76,.24);
-  stroke-width: 1;
 }
 
 .weather-facts {

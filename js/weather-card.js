@@ -13,6 +13,7 @@ const WEATHER_FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 const WEATHER_AIR_QUALITY_URL = 'https://air-quality-api.open-meteo.com/v1/air-quality';
 const WEATHER_GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1/search';
 const WEATHER_CANADA_ALERTS_URL = 'https://api.weather.gc.ca/collections/weather-alerts/items';
+const WEATHER_ICON_ASSET_BASE = 'assets/weather-icons/google-weather-set-4/light/';
 
 function weatherSettings() {
   return getHomeCardsSettings().weather;
@@ -1048,42 +1049,50 @@ function weatherCondition(code, isDay = true) {
 function buildWeatherIcon(type, isDay = true, className = 'weather-icon') {
   const icon = el('span', `${className} weather-icon weather-icon-${type}`);
   icon.setAttribute('aria-hidden', 'true');
-  icon.innerHTML = weatherIconSvg(type, isDay);
+  const img = document.createElement('img');
+  img.src = weatherIconAssetPath(type, isDay);
+  img.alt = '';
+  img.decoding = 'async';
+  img.loading = 'lazy';
+  img.addEventListener('error', () => {
+    if (img.dataset.weatherIconFallback) return;
+    img.dataset.weatherIconFallback = 'true';
+    img.src = weatherIconAssetPath('cloudy', true);
+  });
+  icon.appendChild(img);
   return icon;
 }
 
-function weatherIconSvg(type, isDay = true) {
-  const sun = '<circle class="wi-sun" cx="32" cy="32" r="10"></circle><g class="wi-rays"><path d="M32 8v8"></path><path d="M32 48v8"></path><path d="M8 32h8"></path><path d="M48 32h8"></path><path d="M15 15l6 6"></path><path d="M49 15l-6 6"></path><path d="M15 49l6-6"></path><path d="M49 49l-6-6"></path></g>';
-  const moon = '<path class="wi-moon" d="M43 39A18 18 0 0 1 25 13a17 17 0 1 0 18 26z"></path>';
-  const cloud = '<path class="wi-cloud" d="M20 45h27a11 11 0 0 0 1-22 15 15 0 0 0-28-5 13 13 0 0 0 0 27z"></path>';
-  const drizzle = '<path class="wi-drop" d="M28 52l-2 5"></path><path class="wi-drop" d="M42 52l-2 5"></path>';
-  const rain = '<path class="wi-drop" d="M24 51l-3 7"></path><path class="wi-drop" d="M36 51l-3 7"></path><path class="wi-drop" d="M48 51l-3 7"></path>';
-  const heavyRain = `${rain}<path class="wi-drop" d="M18 50l-3 8"></path><path class="wi-drop" d="M54 50l-3 8"></path>`;
-  const snow = '<path class="wi-drop" d="M24 52l-4 4m0-4l4 4"></path><path class="wi-drop" d="M38 52l-4 4m0-4l4 4"></path><path class="wi-drop" d="M52 52l-4 4m0-4l4 4"></path>';
-  const heavySnow = `${snow}<path class="wi-drop" d="M17 52l-3 3m0-3l3 3"></path><path class="wi-drop" d="M59 52l-3 3m0-3l3 3"></path>`;
-  const snowGrains = '<circle class="wi-hail" cx="25" cy="54" r="2.2"></circle><circle class="wi-hail" cx="38" cy="57" r="2.2"></circle><circle class="wi-hail" cx="51" cy="54" r="2.2"></circle>';
-  const fog = '<path class="wi-fog" d="M13 48h38"></path><path class="wi-fog" d="M18 55h28"></path>';
-  const storm = '<path class="wi-bolt" d="M35 44l-8 14 10-3-4 12 10-17-10 3z"></path>';
-  const hail = '<circle class="wi-hail" cx="21" cy="55" r="2.5"></circle><circle class="wi-hail" cx="48" cy="56" r="2.5"></circle>';
-  let body = sun;
-  if (type === 'clear-night') body = moon;
-  if (type === 'partly-cloudy') body = `${sun}${cloud}`;
-  if (type === 'partly-cloudy-night') body = `${moon}${cloud}`;
-  if (type === 'cloudy') body = cloud;
-  if (type === 'drizzle') body = `${cloud}${drizzle}`;
-  if (type === 'rain') body = `${cloud}${rain}`;
-  if (type === 'heavy-rain') body = `${cloud}${heavyRain}`;
-  if (type === 'showers') body = `${isDay ? sun : moon}${cloud}${rain}`;
-  if (type === 'snow') body = `${cloud}${snow}`;
-  if (type === 'heavy-snow') body = `${cloud}${heavySnow}`;
-  if (type === 'snow-grains') body = `${cloud}${snowGrains}`;
-  if (type === 'snow-showers') body = `${isDay ? sun : moon}${cloud}${snow}`;
-  if (type === 'freezing-rain') body = `${cloud}${drizzle}${snowGrains}`;
-  if (type === 'fog') body = `${cloud}${fog}`;
-  if (type === 'rime-fog') body = `${cloud}${fog}${snowGrains}`;
-  if (type === 'storm') body = `${cloud}${storm}`;
-  if (type === 'storm-hail') body = `${cloud}${storm}${hail}`;
-  return `<svg viewBox="0 0 64 64" focusable="false">${body}</svg>`;
+function weatherIconAssetPath(type, isDay = true) {
+  return `${WEATHER_ICON_ASSET_BASE}${weatherIconFile(type, isDay)}`;
+}
+
+function weatherIconFile(type, isDay = true) {
+  const dayNight = {
+    sunny: ['clear_day.svg', 'clear_night.svg'],
+    'clear-night': ['clear_day.svg', 'clear_night.svg'],
+    'partly-cloudy': ['partly_cloudy_day.svg', 'partly_cloudy_night.svg'],
+    'partly-cloudy-night': ['partly_cloudy_day.svg', 'partly_cloudy_night.svg'],
+    showers: ['scattered_showers_day.svg', 'scattered_showers_night.svg'],
+    'snow-showers': ['scattered_snow_showers_day.svg', 'scattered_snow_showers_night.svg'],
+  };
+  const dayNightMatch = dayNight[type];
+  if (dayNightMatch) return dayNightMatch[isDay ? 0 : 1];
+  const files = {
+    cloudy: 'cloudy.svg',
+    drizzle: 'drizzle.svg',
+    rain: 'showers_rain.svg',
+    'heavy-rain': 'heavy_rain.svg',
+    snow: 'showers_snow.svg',
+    'heavy-snow': 'heavy_snow.svg',
+    'snow-grains': 'flurries.svg',
+    'freezing-rain': 'mixed_rain_hail_sleet.svg',
+    fog: 'haze_fog_dust_smoke.svg',
+    'rime-fog': 'haze_fog_dust_smoke.svg',
+    storm: 'thunderstorms.svg',
+    'storm-hail': 'strong_thunderstorms.svg',
+  };
+  return files[type] || 'partly_cloudy_day.svg';
 }
 
 function isWeatherStale(isoString) {
