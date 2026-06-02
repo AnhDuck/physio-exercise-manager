@@ -30,7 +30,9 @@ Do not use the user's production/local origin `http://127.0.0.1:8891` for Codex 
 
 Use the Codex in-app browser first for local UI verification when available. It is controlled through the `node_repl` MCP tool; if the JS tool is not listed, use tool discovery before declaring browser automation unavailable.
 
-Do not run shell-launched headless browser automation, Playwright, Puppeteer, or Node browser automation here; local headless/GPU support is unreliable.
+Do not probe for, import, install, or run standalone browser automation packages. This means no Playwright package checks, no `import('playwright')`, no headless Playwright, no Puppeteer, and no shell-launched Node browser automation. This project intentionally has no browser automation dependency.
+
+If a Codex browser plugin exposes an internal API with a Playwright-shaped name, treat it as part of the in-app browser or Chrome plugin surface, not as permission to install or use standalone Playwright. Prefer normal visible-browser actions, DOM/CUA interaction, and screenshots for verification.
 
 If the in-app browser fails and browser verification is still valuable, use an isolated temporary Chrome profile/window. Do not attach to or automate the user's active Chrome session unless login/cookies/extensions are required and the user explicitly approves it.
 

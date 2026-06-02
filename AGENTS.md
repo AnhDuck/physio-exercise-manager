@@ -37,6 +37,7 @@ Use:
 
 - Any code edit must bump `window.PEM_APP_VERSION` in `index.html`; default to patch SemVer.
 - Preserve the flat global-script architecture. Do not add imports, exports, modules, dependencies, package managers, build tooling, generated assets, or a proxy/server layer.
+- Do not use standalone Playwright, headless Playwright, Playwright installs, Puppeteer, or Node browser automation for this project. Browser checks should use the Codex in-app browser first, or an isolated visible Chrome/profile fallback only when needed.
 - Keep `main.js` last in the manual JS load order. Keep `90-responsive.css` last in the manual CSS load order.
 - Use `textContent` or DOM helpers for user-controlled strings.
 - App-data writes must go through storage safe-save helpers. Do not call `localStorage.setItem` directly for app keys outside storage internals.

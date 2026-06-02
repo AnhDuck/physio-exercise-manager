@@ -4,6 +4,8 @@ This is a static browser app. It has no build step, no package dependency, no mo
 
 ActivityWatch is the exception: browser CORS requires PEM to run from a local HTTP origin, not `file://`. The user's daily origin is `http://127.0.0.1:8891`; Codex verification should use `http://127.0.0.1:8895`.
 
+Browser verification is an external check, not a project dependency. Do not add, install, import, or probe for standalone Playwright, Puppeteer, headless browser packages, or Node browser automation. Use the Codex in-app browser first, with an isolated visible Chrome/profile fallback only when needed.
+
 ## Load Order
 
 CSS order is manual and cascade-sensitive:
@@ -16,7 +18,7 @@ JavaScript order is also manual:
 
 `data.js`, `storage.js`, `constants.js`, `state.js`, `dates.js`, `dom.js`, `sessions.js`, `exercises.js`, `grid.js`, `tracker.js`, `activitywatch-data.js`, `home-cards.js`, `weather-card.js`, `activitywatch-mini-card.js`, `timeline-data.js`, `timeline-filters.js`, `timeline-render.js`, `timeline-notes.js`, `timeline-export.js`, `timeline-edit.js`, `timeline.js`, `backup.js`, `auto-backup.js`, `settings.js`, `activitywatch-dashboard-state.js`, `activitywatch-dashboard-format.js`, `activitywatch-dashboard-sync.js`, `activitywatch-dashboard-controls.js`, `activitywatch-dashboard-chart.js`, `activitywatch-dashboard-detail.js`, `activitywatch-dashboard-shell.js`, `activitywatch-settings.js`, `images.js`, `main.js`.
 
-Never load `main.js` before feature files it binds. Do not add imports, exports, modules, dependencies, bundlers, or build tooling.
+Never load `main.js` before feature files it binds. Do not add imports, exports, modules, dependencies, bundlers, browser automation packages, or build tooling.
 
 ## File Ownership
 
