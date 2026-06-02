@@ -1,4 +1,4 @@
-// Open-Meteo weather card and location settings.
+// Weather card and location settings.
 
 const WEATHER_REFRESH_STALE_MS = 20 * 60 * 1000;
 const WEATHER_REFRESH_ERROR_STALE_MS = 30 * 60 * 1000;
@@ -10,10 +10,10 @@ const WEATHER_FORECAST_BURST_COOLDOWN_MS = 5 * 60 * 1000;
 const WEATHER_RATE_LIMIT_COOLDOWN_MS = 65 * 60 * 1000;
 const WEATHER_LOCATION_SEARCH_MIN_GAP_MS = 2 * 1000;
 const WEATHER_FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
-const WEATHER_AIR_QUALITY_URL = 'https://air-quality-api.open-meteo.com/v1/air-quality';
 const WEATHER_GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1/search';
 const WEATHER_CANADA_ALERTS_URL = 'https://api.weather.gc.ca/collections/weather-alerts/items';
 const WEATHER_CANADA_CITY_PAGE_URL = 'https://api.weather.gc.ca/collections/citypageweather-realtime/items';
+const WEATHER_CANADA_AQHI_URL = 'https://api.weather.gc.ca/collections/aqhi-forecasts-realtime/items';
 const WEATHER_ICON_ASSET_BASE = 'assets/weather-icons/google-weather-set-4/light/';
 
 function weatherSettings() {
@@ -196,20 +196,74 @@ function buildWeatherStatusLine(cfg, data) {
   const pauseMessage = weatherRefreshPauseMessage(cfg);
   if (pauseMessage) line.appendChild(elText('span', 'is-warning', pauseMessage));
   if (cfg.lastError) line.appendChild(elText('span', 'is-warning', `Last refresh failed: ${cfg.lastError}`));
-  weatherSourceLabels(data).forEach(label => {
-    line.appendChild(elText('span', '', label));
-  });
+  const sourceTooltip = weatherSourceTooltip(data);
+  if (sourceTooltip.length) {
+    const chip = el('span', 'weather-source-chip');
+    chip.tabIndex = 0;
+    chip.setAttribute('role', 'button');
+    chip.setAttribute('aria-label', weatherSourceTooltipText(sourceTooltip));
+    chip.appendChild(elText('span', 'weather-source-chip-text', 'Sources'));
+    chip.appendChild(buildWeatherSourceTooltip(sourceTooltip));
+    chip.addEventListener('mouseenter', () => chip.classList.add('is-open'));
+    chip.addEventListener('mouseleave', () => chip.classList.remove('is-open'));
+    chip.addEventListener('focus', () => chip.classList.add('is-open'));
+    chip.addEventListener('blur', () => chip.classList.remove('is-open'));
+    chip.addEventListener('click', () => chip.classList.toggle('is-open'));
+    chip.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') chip.classList.remove('is-open');
+    });
+    line.appendChild(chip);
+  }
   if (Array.isArray(data?.alerts) && data.alerts.length) line.appendChild(elText('span', 'is-warning', 'Environment Canada alert'));
   return line;
 }
 
-function weatherSourceLabels(data) {
+function weatherSourceTooltip(data) {
   const sources = data?.sources || {};
-  const labels = [];
-  if (sources.weather) labels.push(`Weather ${sources.weather}`);
-  if (sources.uv && sources.uv !== sources.weather) labels.push(`UV ${sources.uv}`);
-  if (sources.airQuality) labels.push(`Air quality ${sources.airQuality}`);
-  return labels;
+  const rows = [];
+  if (sources.weather) rows.push({ label: 'Weather', value: sources.weather });
+  if (sources.uv) {
+    rows.push({
+      label: 'UV',
+      value: sources.uv,
+      note: sources.weather === 'Environment Canada' && sources.uv === 'Open-Meteo'
+        ? 'Environment Canada UV was not available for this refresh.'
+        : '',
+    });
+  }
+  if (sources.airQuality) {
+    rows.push({
+      label: 'Air quality',
+      value: `${sources.airQuality} AQHI`,
+      note: data?.airQuality?.location ? `Nearest region: ${data.airQuality.location}` : '',
+    });
+    rows.push({ note: 'AQHI match: nearest Environment Canada region in the local search area.' });
+  } else {
+    rows.push({ label: 'Air quality', value: 'Not available' });
+  }
+  return rows;
+}
+
+function buildWeatherSourceTooltip(rows) {
+  const tooltip = el('span', 'weather-source-tooltip');
+  rows.forEach(row => {
+    if (row.label) {
+      const item = el('span', 'weather-source-tooltip-row');
+      item.appendChild(elText('span', 'weather-source-tooltip-label', row.label));
+      item.appendChild(elText('span', 'weather-source-tooltip-value', row.value));
+      tooltip.appendChild(item);
+    }
+    if (row.note) tooltip.appendChild(elText('span', 'weather-source-tooltip-note', row.note));
+  });
+  return tooltip;
+}
+
+function weatherSourceTooltipText(rows) {
+  return rows.map(row => {
+    if (row.label && row.note) return `${row.label}: ${row.value}. ${row.note}`;
+    if (row.label) return `${row.label}: ${row.value}`;
+    return row.note || '';
+  }).filter(Boolean).join('. ');
 }
 
 function weatherCardStateClass(cfg, brain = null) {
@@ -297,7 +351,7 @@ async function fetchWeatherForLocation(location, cfg = weatherSettings()) {
   });
   const [raw, airQuality, alerts, canadaWeather] = await Promise.all([
     weatherFetchJson(`${WEATHER_FORECAST_URL}?${params.toString()}`, 'Weather'),
-    cfg.airQualityEnabled === false ? Promise.resolve(null) : fetchWeatherAirQuality(location).catch(() => null),
+    cfg.airQualityEnabled === false ? Promise.resolve(null) : fetchWeatherCanadaAirQuality(location).catch(() => null),
     cfg.alertsEnabled === false ? Promise.resolve([]) : fetchWeatherCanadaAlerts(location).catch(() => []),
     fetchWeatherCanadaCityPage(location).catch(() => null),
   ]);
@@ -312,6 +366,8 @@ async function fetchWeatherForLocation(location, cfg = weatherSettings()) {
   const canadaHourly = Array.isArray(canadaWeather?.hourly) ? mergeWeatherCanadaHourlyWithOpenMeteo(canadaWeather.hourly, hourly) : null;
   const useCanadaWeather = Boolean(canadaCurrent);
   const displayHourly = canadaHourly?.length ? canadaHourly : hourly;
+  const displayNearest = nearestWeatherHour(displayHourly, currentTime);
+  const uvSource = displayNearest?.uvSource || (useCanadaWeather ? 'Environment Canada' : 'Open-Meteo');
   const officialCode = canadaCurrent ? weatherConditionCodeFromOfficial(canadaCurrent, isDay) : null;
   return {
     fetchedAt: new Date().toISOString(),
@@ -325,7 +381,7 @@ async function fetchWeatherForLocation(location, cfg = weatherSettings()) {
       windSpeed: useCanadaWeather ? canadaCurrent.windSpeed : weatherNumber(current.wind_speed_10m, weatherNumber(currentWeather.windspeed, nearest?.windSpeed ?? 0)),
       windDirection: useCanadaWeather ? canadaCurrent.windDirection : weatherNumber(current.wind_direction_10m, weatherNumber(currentWeather.winddirection, nearest?.windDirection ?? 0)),
       windGusts: useCanadaWeather ? canadaCurrent.windGusts : nearest?.windGusts || 0,
-      uvIndex: nearest?.uvIndex || 0,
+      uvIndex: displayNearest?.uvIndex || nearest?.uvIndex || 0,
       weatherCode: officialCode ?? weatherCode,
       isDay,
     },
@@ -336,7 +392,7 @@ async function fetchWeatherForLocation(location, cfg = weatherSettings()) {
     airQuality,
     alerts,
     officialCondition: canadaCurrent,
-    sources: weatherDataSources({ useCanadaWeather, airQuality, uvFromOpenMeteo: true }),
+    sources: weatherDataSources({ useCanadaWeather, airQuality, uvSource }),
     hourly: displayHourly,
   };
 }
@@ -355,17 +411,18 @@ async function fetchWeatherCanadaCityPage(location) {
   return normalizeWeatherCanadaCityPage(raw, location);
 }
 
-async function fetchWeatherAirQuality(location) {
+async function fetchWeatherCanadaAirQuality(location) {
+  if (!weatherLocationInCanada(location)) return null;
+  const lat = Number(location.latitude);
+  const lon = Number(location.longitude);
+  const size = .35;
   const params = new URLSearchParams({
-    latitude: String(location.latitude),
-    longitude: String(location.longitude),
-    current: 'us_aqi,pm2_5',
-    hourly: 'us_aqi,pm2_5',
-    timezone: 'auto',
-    forecast_hours: '8',
+    f: 'json',
+    limit: '500',
+    bbox: `${lon - size},${lat - size},${lon + size},${lat + size}`,
   });
-  const raw = await weatherFetchJson(`${WEATHER_AIR_QUALITY_URL}?${params.toString()}`, 'Air quality');
-  return normalizeWeatherAirQuality(raw);
+  const raw = await weatherFetchJson(`${WEATHER_CANADA_AQHI_URL}?${params.toString()}`, 'Environment Canada air quality');
+  return normalizeWeatherCanadaAirQuality(raw, location);
 }
 
 async function fetchWeatherCanadaAlerts(location) {
@@ -456,6 +513,7 @@ function normalizeWeatherHourly(hourly = {}) {
     windGusts: Number(hourly.wind_gusts_10m?.[index]) || 0,
     precipitationProbability: Number(hourly.precipitation_probability?.[index]) || 0,
     uvIndex: Number(hourly.uv_index?.[index]) || 0,
+    uvSource: 'Open-Meteo',
     weatherCode: Number(hourly.weather_code?.[index]) || 0,
     cloudCover: Number(hourly.cloud_cover?.[index]) || 0,
     isDay: Number(hourly.is_day?.[index]) === 1,
@@ -506,6 +564,7 @@ function normalizeWeatherCanadaHourly(hourlyGroup = {}) {
   return rows.map(row => {
     const label = weatherCanadaValue(row.condition);
     const isDay = !weatherCanadaIsNightIcon(row.iconCode);
+    const uv = weatherCanadaUvValue(row);
     return {
       time: weatherCanadaValue(row.timestamp),
       temperature: weatherCanadaNumber(row.temperature?.value, 0),
@@ -515,7 +574,8 @@ function normalizeWeatherCanadaHourly(hourlyGroup = {}) {
       windDirection: weatherCanadaDirection(row.wind?.direction),
       windGusts: 0,
       precipitationProbability: weatherCanadaNumber(row.lop?.value, 0),
-      uvIndex: weatherCanadaNumber(row.uv?.index ?? row.uv, 0),
+      uvIndex: uv.value,
+      uvSource: uv.hasValue ? 'Environment Canada' : '',
       weatherCode: weatherConditionCodeFromOfficial({ label }, isDay) ?? 0,
       isDay,
       officialCondition: label,
@@ -530,8 +590,15 @@ function mergeWeatherCanadaHourlyWithOpenMeteo(canadaHourly, openMeteoHourly) {
       ...hour,
       humidity: hour.humidity || nearest?.humidity || 0,
       uvIndex: hour.uvIndex || nearest?.uvIndex || 0,
+      uvSource: hour.uvSource || (nearest ? 'Open-Meteo' : ''),
     };
   });
+}
+
+function weatherCanadaUvValue(row = {}) {
+  const raw = row.uv?.index ?? row.uv?.value ?? row.uv;
+  if (raw === null || raw === undefined || raw === '') return { value: 0, hasValue: false };
+  return { value: weatherCanadaNumber(raw, 0), hasValue: true };
 }
 
 function weatherFeatureDistance(feature, location) {
@@ -579,38 +646,45 @@ function weatherCanadaIsNightIcon(iconCode) {
   return Number.isFinite(code) && code >= 30;
 }
 
-function weatherDataSources({ useCanadaWeather = false, airQuality = null, uvFromOpenMeteo = false } = {}) {
+function weatherDataSources({ useCanadaWeather = false, airQuality = null, uvSource = '' } = {}) {
   return {
     weather: useCanadaWeather ? 'Environment Canada' : 'Open-Meteo',
-    uv: uvFromOpenMeteo ? 'Open-Meteo' : (useCanadaWeather ? 'Environment Canada' : 'Open-Meteo'),
-    airQuality: airQuality ? 'Open-Meteo/CAMS' : '',
+    uv: uvSource || (useCanadaWeather ? 'Environment Canada' : 'Open-Meteo'),
+    airQuality: airQuality?.source || '',
   };
 }
 
-function normalizeWeatherAirQuality(raw = {}) {
-  const current = raw.current && typeof raw.current === 'object' ? raw.current : {};
-  const hourly = raw.hourly && typeof raw.hourly === 'object' ? raw.hourly : {};
+function normalizeWeatherCanadaAirQuality(raw = {}, location = null) {
+  const features = Array.isArray(raw.features) ? raw.features : [];
   const now = Date.now();
-  const times = Array.isArray(hourly.time) ? hourly.time : [];
-  const future = times.map((time, index) => ({
-    time,
-    usAqi: Number(hourly.us_aqi?.[index]) || 0,
-    pm25: Number(hourly.pm2_5?.[index]) || 0,
-  })).filter(item => new Date(item.time).getTime() >= now - 60 * 60 * 1000).slice(0, 8);
-  const first = future[0] || {};
-  const usAqi = Number(current.us_aqi) || first.usAqi || 0;
-  const pm25 = Number(current.pm2_5) || first.pm25 || 0;
-  if (!usAqi && !pm25) return null;
-  const peak = future.reduce((best, item) => item.usAqi > best.usAqi ? item : best, { usAqi, pm25, time: current.time || first.time || '' });
+  const future = features
+    .map(feature => {
+      const props = feature?.properties && typeof feature.properties === 'object' ? feature.properties : {};
+      const aqhi = weatherNumber(props.aqhi, 0);
+      return {
+        aqhi,
+        time: weatherCanadaValue(props.forecast_datetime),
+        location: weatherCanadaValue(props.location_name_en),
+        publicationTime: weatherCanadaValue(props.publication_datetime),
+        distance: weatherFeatureDistance(feature, location),
+      };
+    })
+    .filter(item => item.aqhi > 0 && weatherTimestamp(item.time) >= now - 60 * 60 * 1000)
+    .sort((a, b) => a.distance - b.distance || weatherTimestamp(a.time) - weatherTimestamp(b.time))
+    .slice(0, 8);
+  const first = future[0];
+  if (!first) return null;
+  const samePlace = future.filter(item => item.location === first.location || Math.abs(item.distance - first.distance) < .001);
+  const peak = samePlace.reduce((best, item) => item.aqhi > best.aqhi ? item : best, first);
   return {
     fetchedAt: new Date().toISOString(),
-    time: current.time || first.time || '',
-    usAqi,
-    pm25,
-    peakUsAqi: peak.usAqi || usAqi,
+    time: first.time || '',
+    aqhi: first.aqhi,
+    peakAqhi: peak.aqhi || first.aqhi,
     peakTime: peak.time || '',
-    label: weatherAirQualityLabel(usAqi),
-    source: 'Open-Meteo Air Quality',
+    label: weatherAirQualityLabel(first.aqhi),
+    location: first.location || '',
+    source: 'Environment Canada',
   };
 }
 
@@ -1019,30 +1093,30 @@ function weatherPrimaryAlert(data) {
 }
 
 function weatherAirQualityCandidate(airQuality) {
-  const usAqi = Number(airQuality?.usAqi) || 0;
-  if (!usAqi) return null;
-  const peak = Number(airQuality?.peakUsAqi) || usAqi;
-  const worst = Math.max(usAqi, peak);
+  const current = weatherAirQualityValue(airQuality);
+  if (!current) return null;
+  const peak = weatherAirQualityPeakValue(airQuality) || current;
+  const worst = Math.max(current, peak);
   const label = weatherAirQualityLabel(worst);
-  const timing = weatherAirQualityTiming(airQuality, peak > usAqi ? airQuality.peakTime : airQuality.time);
-  if (usAqi >= 151 || peak >= 151) {
+  const timing = weatherAirQualityTiming(airQuality, peak > current ? airQuality.peakTime : airQuality.time);
+  if (worst >= 7) {
     return {
       key: 'air',
       highlight: 'air',
       tileLabel: 'Bad air',
       label: 'Air',
       score: 1200,
-      advisory: `AQI ${Math.round(worst)} ${label}${timing}. Indoor physio is smarter.`,
+      advisory: `AQHI ${formatWeatherAirQualityNumber(worst)} ${label}${timing}. Indoor physio is smarter.`,
     };
   }
-  if (usAqi >= 101 || peak >= 101) {
+  if (worst >= 4) {
     return {
       key: 'air',
       highlight: 'air',
       tileLabel: 'Air risk',
       label: 'Air',
       score: 980,
-      advisory: `AQI ${Math.round(worst)} ${label}${timing}. Keep outdoor work light.`,
+      advisory: `AQHI ${formatWeatherAirQualityNumber(worst)} ${label}${timing}. Keep outdoor work light.`,
     };
   }
   return null;
@@ -1184,27 +1258,38 @@ function formatWeatherUvIndex(value) {
 }
 
 function formatWeatherAirQuality(airQuality) {
-  const aqi = Number(airQuality?.usAqi) || 0;
-  if (!aqi) return '--';
-  return `${Math.round(aqi)} ${weatherAirQualityLabel(aqi)}`;
+  const value = weatherAirQualityValue(airQuality);
+  if (!value) return '--';
+  return `${formatWeatherAirQualityNumber(value)} ${weatherAirQualityLabel(value)}`;
 }
 
 function weatherAirQualityLabel(value) {
-  const aqi = Number(value) || 0;
-  if (aqi >= 301) return 'Hazardous';
-  if (aqi >= 201) return 'Very bad';
-  if (aqi >= 151) return 'Bad';
-  if (aqi >= 101) return 'Poor';
-  if (aqi >= 51) return 'Moderate';
-  return 'Good';
+  const aqhi = Number(value) || 0;
+  if (aqhi > 10) return 'Very high';
+  if (aqhi >= 7) return 'High';
+  if (aqhi >= 4) return 'Moderate';
+  return 'Low';
 }
 
 function weatherAirQualityClass(airQuality) {
-  const aqi = Number(airQuality?.usAqi) || 0;
-  if (aqi >= 151) return 'weather-fact-air weather-air-bad';
-  if (aqi >= 101) return 'weather-fact-air weather-air-poor';
-  if (aqi >= 51) return 'weather-fact-air weather-air-moderate';
+  const aqhi = weatherAirQualityValue(airQuality);
+  if (aqhi >= 10) return 'weather-fact-air weather-air-bad';
+  if (aqhi >= 7) return 'weather-fact-air weather-air-poor';
+  if (aqhi >= 4) return 'weather-fact-air weather-air-moderate';
   return 'weather-fact-air weather-air-good';
+}
+
+function weatherAirQualityValue(airQuality) {
+  return Number(airQuality?.aqhi ?? airQuality?.usAqi) || 0;
+}
+
+function weatherAirQualityPeakValue(airQuality) {
+  return Number(airQuality?.peakAqhi ?? airQuality?.peakUsAqi) || 0;
+}
+
+function formatWeatherAirQualityNumber(value) {
+  const rounded = Math.round((Number(value) || 0) * 10) / 10;
+  return rounded > 10 ? '10+' : String(Math.round(rounded));
 }
 
 function weatherUvRiskLabel(index) {
