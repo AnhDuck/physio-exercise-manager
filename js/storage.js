@@ -622,7 +622,7 @@ function defaultHomeCardsSettings() {
   return {
     weather: {
       enabled: true,
-      refreshMinutes: 10,
+      refreshMinutes: 5,
       location: null,
       searchText: '',
       lastResult: null,
@@ -719,6 +719,9 @@ function normalizeWeatherLastResult(value) {
     officialCondition: value.officialCondition && typeof value.officialCondition === 'object' && !Array.isArray(value.officialCondition)
       ? { ...value.officialCondition }
       : null,
+    sources: value.sources && typeof value.sources === 'object' && !Array.isArray(value.sources)
+      ? { ...value.sources }
+      : {},
     hourly: Array.isArray(value.hourly)
       ? value.hourly.filter(item => item && typeof item === 'object').slice(0, 12)
       : [],
