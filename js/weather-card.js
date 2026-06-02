@@ -1261,19 +1261,24 @@ async function searchWeatherLocations(query) {
 }
 
 function renderWeatherLocationResults(results) {
-  const select = document.getElementById('setting-weather-location-results');
-  if (!select) return;
-  select.innerHTML = '';
+  const list = document.getElementById('setting-weather-location-results');
+  if (!list) return;
+  list.innerHTML = '';
+  list.hidden = !results.length;
   if (!results.length) {
-    select.appendChild(new Option('No matching locations', ''));
     renderWeatherLocationSearchStatus('No locations found.', true);
     return;
   }
-  select.appendChild(new Option('Choose a location...', ''));
   results.forEach((location, index) => {
-    select.appendChild(new Option(weatherLocationResultLabel(location), String(index)));
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'dashboard-location-result';
+    button.dataset.weatherLocationIndex = String(index);
+    button.setAttribute('role', 'option');
+    button.appendChild(elText('strong', '', weatherLocationName(location)));
+    button.appendChild(elText('span', '', [location.admin1, location.country].filter(Boolean).join(', ')));
+    list.appendChild(button);
   });
-  select.disabled = false;
   renderWeatherLocationSearchStatus(`${formatNumber(results.length)} locations found.`, false);
 }
 
@@ -1288,9 +1293,8 @@ function weatherLocationResultLabel(location) {
   return [weatherLocationName(location), location.admin1, location.country].filter(Boolean).join(', ');
 }
 
-function applySelectedWeatherLocation() {
-  const select = document.getElementById('setting-weather-location-results');
-  const index = Number.parseInt(select?.value, 10);
+function applySelectedWeatherLocation(indexValue) {
+  const index = Number.parseInt(indexValue, 10);
   const location = weatherLocationSearchResults[index];
   const normalized = normalizeWeatherLocation(location);
   if (!normalized) return;
@@ -1301,6 +1305,7 @@ function applySelectedWeatherLocation() {
   cfg.lastError = '';
   cfg.lastErrorAt = '';
   saveSettings(settings);
+  renderWeatherLocationResults([]);
   syncWeatherSettingsControls();
   renderHomeCards();
   refreshWeatherIfNeeded('location-change', { force: true });
@@ -1319,11 +1324,7 @@ function clearWeatherLocationFromSettings() {
   cfg.lastError = '';
   cfg.lastErrorAt = '';
   saveSettings(settings);
-  const select = document.getElementById('setting-weather-location-results');
-  if (select) {
-    select.innerHTML = '';
-    select.appendChild(new Option('Search for a location', ''));
-  }
+  renderWeatherLocationResults([]);
   syncWeatherSettingsControls();
   renderHomeCards();
   if (typeof showToast === 'function') showToast('Weather location cleared.');
@@ -1378,6 +1379,7 @@ function autosaveWeatherPreviewMode() {
   cfg.previewMode = normalizeWeatherPreviewSetting(input?.value);
   if (input) input.value = cfg.previewMode.startsWith('random:') ? 'random' : cfg.previewMode;
   saveSettings(settings);
+  syncWeatherSettingsControls();
   renderHomeCards();
 }
 

@@ -80,4 +80,4 @@ All app-data writes must go through safe-save helpers in storage internals. Do n
 - ActivityWatch sync/storage/query: `activitywatch-data.js` only when the query or stored aggregate changes.
 - ActivityWatch dashboard UI: `activitywatch-dashboard-*.js`.
 - ActivityWatch setup/settings UI: `activitywatch-settings.js` and the ActivityWatch settings markup in `index.html`.
-- Main-screen dashboard cards: `home-cards.js`, the specific card file, and `66-home-cards.css`. Weather location controls live in the General Settings markup in `index.html`.
+- Main-screen dashboard cards: `home-cards.js`, the specific card file, and `66-home-cards.css`. Weather and ActivityWatch mini-card controls live in the Dashboard Settings markup in `index.html`.

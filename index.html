@@ -6,7 +6,7 @@
   <title>Physio Exercise Management</title>
   <link rel="icon" type="image/svg+xml" href="assets/physio-icon.svg" />
   <script>
-    window.PEM_APP_VERSION = '1.0.105';
+    window.PEM_APP_VERSION = '1.0.107';
     const PEM_CSS_FILES = [
       'css/00-base.css',
       'css/10-header.css',
@@ -251,6 +251,18 @@
             </span>
             <span>General</span>
           </button>
+          <button class="settings-tab" id="settings-tab-dashboard" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-dashboard" data-settings-tab="dashboard">
+            <span class="settings-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M5 17a7 7 0 1 1 14 0"></path>
+                <path d="M8 17h8"></path>
+                <path d="M12 17l3.2-5"></path>
+                <path d="M7.4 12.2l1.1 1.1"></path>
+                <path d="M16.6 12.2l-1.1 1.1"></path>
+              </svg>
+            </span>
+            <span>Dashboard</span>
+          </button>
           <button class="settings-tab" id="settings-tab-blocks" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-blocks" data-settings-tab="blocks">
             <span class="settings-tab-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
@@ -310,7 +322,49 @@
 
           <div class="settings-section">
             <div class="settings-section-header">
-              <h3>Dashboard cards</h3>
+              <h3>Cues &amp; review</h3>
+            </div>
+            <div class="settings-row-group">
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <strong>Set tracker cues</strong>
+                  <span>Choose which cues fire when a set is logged.</span>
+                </div>
+                <div class="cue-check-row">
+                  <label class="cue-check-label"><input type="checkbox" id="setting-cue-sound" /><strong>Sound</strong></label>
+                  <label class="cue-check-label"><input type="checkbox" id="setting-cue-vibrate" /><strong>Vibrate</strong></label>
+                  <label class="cue-check-label"><input type="checkbox" id="setting-cue-speech" /><strong>Speech</strong></label>
+                </div>
+              </div>
+              <label class="settings-action-row cue-volume-label" for="setting-cue-speech-volume">
+                <span class="settings-action-label">
+                  <strong id="setting-cue-speech-volume-label">Speech volume: 100%</strong>
+                  <span>Speech cue volume saves automatically.</span>
+                </span>
+                <input type="range" id="setting-cue-speech-volume" min="0" max="100" step="5" />
+              </label>
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <strong>Physio review</strong>
+                  <span>Clear markers for exercises changed since review.</span>
+                </div>
+                <button class="settings-clear-review" id="settings-clear-review" type="button" data-ui-icon="check">Clear changed markers</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h3>Hidden exercises</h3>
+            </div>
+            <div class="hidden-exercise-settings" id="settings-hidden-exercises"></div>
+          </div>
+        </section>
+
+        <section class="settings-panel" id="settings-panel-dashboard" role="tabpanel" aria-labelledby="settings-tab-dashboard" data-settings-panel="dashboard" hidden>
+          <div class="settings-section is-first">
+            <div class="settings-section-header">
+              <h3>Weather</h3>
             </div>
             <div class="settings-row-group">
               <div class="settings-action-row dashboard-location-row">
@@ -322,9 +376,7 @@
                   <input type="search" id="setting-weather-location-search" placeholder="Search city or postal code" autocomplete="off" spellcheck="false" />
                   <button class="settings-backup-btn" id="setting-weather-location-search-btn" type="button" data-settings-icon="search">Search</button>
                   <button class="settings-backup-btn dashboard-location-clear" id="setting-weather-location-clear-btn" type="button" data-settings-icon="x">Clear</button>
-                  <select id="setting-weather-location-results" aria-label="Weather location results">
-                    <option value="">Search for a location</option>
-                  </select>
+                  <div class="dashboard-location-results" id="setting-weather-location-results" role="listbox" aria-label="Weather location results"></div>
                   <span class="settings-help-text" id="setting-weather-location-status">Search for a city or postal code.</span>
                 </div>
               </div>
@@ -387,6 +439,14 @@
                   <button class="settings-backup-btn" id="setting-weather-preview-random-btn" type="button" data-settings-icon="reconnect">Randomize</button>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <h3>ActivityWatch</h3>
+            </div>
+            <div class="settings-row-group">
               <label class="settings-action-row" for="setting-aw-mini-refresh-minutes">
                 <span class="settings-action-label">
                   <strong>ActivityWatch mini refresh</strong>
@@ -400,46 +460,6 @@
                 </select>
               </label>
             </div>
-          </div>
-
-          <div class="settings-section">
-            <div class="settings-section-header">
-              <h3>Cues &amp; review</h3>
-            </div>
-            <div class="settings-row-group">
-              <div class="settings-action-row">
-                <div class="settings-action-label">
-                  <strong>Set tracker cues</strong>
-                  <span>Choose which cues fire when a set is logged.</span>
-                </div>
-                <div class="cue-check-row">
-                  <label class="cue-check-label"><input type="checkbox" id="setting-cue-sound" /><strong>Sound</strong></label>
-                  <label class="cue-check-label"><input type="checkbox" id="setting-cue-vibrate" /><strong>Vibrate</strong></label>
-                  <label class="cue-check-label"><input type="checkbox" id="setting-cue-speech" /><strong>Speech</strong></label>
-                </div>
-              </div>
-              <label class="settings-action-row cue-volume-label" for="setting-cue-speech-volume">
-                <span class="settings-action-label">
-                  <strong id="setting-cue-speech-volume-label">Speech volume: 100%</strong>
-                  <span>Speech cue volume saves automatically.</span>
-                </span>
-                <input type="range" id="setting-cue-speech-volume" min="0" max="100" step="5" />
-              </label>
-              <div class="settings-action-row">
-                <div class="settings-action-label">
-                  <strong>Physio review</strong>
-                  <span>Clear markers for exercises changed since review.</span>
-                </div>
-                  <button class="settings-clear-review" id="settings-clear-review" type="button" data-ui-icon="check">Clear changed markers</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="settings-section">
-            <div class="settings-section-header">
-              <h3>Hidden exercises</h3>
-            </div>
-            <div class="hidden-exercise-settings" id="settings-hidden-exercises"></div>
           </div>
         </section>
 

@@ -680,7 +680,6 @@
 }
 
 .dashboard-location-controls input,
-.dashboard-location-controls select,
 .dashboard-location-controls button,
 .dashboard-preview-controls select,
 .dashboard-preview-controls button,
@@ -702,9 +701,10 @@
 
 .dashboard-preview-controls {
   display: grid;
-  grid-template-columns: minmax(160px, 240px) auto;
+  grid-template-columns: minmax(190px, 260px) auto;
   gap: 7px;
-  min-width: min(100%, 390px);
+  min-width: min(100%, 360px);
+  max-width: 100%;
 }
 
 .dashboard-preview-controls button {
@@ -712,7 +712,7 @@
 }
 
 .dashboard-location-controls input:focus,
-.dashboard-location-controls select:focus,
+.dashboard-location-result:focus-visible,
 .dashboard-preview-controls select:focus,
 #setting-weather-refresh-minutes:focus,
 #setting-aw-mini-refresh-minutes:focus {
@@ -721,9 +721,71 @@
   box-shadow: var(--ui-focus-ring);
 }
 
-.dashboard-location-controls select,
+.dashboard-location-results,
 .dashboard-location-controls .settings-help-text {
   grid-column: 1 / -1;
+}
+
+.dashboard-location-results {
+  display: grid;
+  gap: 6px;
+  max-height: 178px;
+  overflow: auto;
+}
+
+.dashboard-location-results[hidden] {
+  display: none;
+}
+
+.dashboard-location-results:empty {
+  display: none;
+}
+
+.dashboard-location-result {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  min-height: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+}
+
+.dashboard-location-result:hover {
+  border-color: rgba(99,179,255,.52);
+  background: rgba(99,179,255,.1);
+}
+
+.dashboard-location-result strong {
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-location-result span {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-preview-controls select {
+  width: 100%;
+  max-width: 260px;
+}
+
+.dashboard-preview-controls select:hover {
+  border-color: rgba(99,179,255,.52);
+  background: rgba(99,179,255,.1);
 }
 
 .dashboard-location-controls .settings-help-text {

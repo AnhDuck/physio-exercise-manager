@@ -152,7 +152,11 @@ function bindStaticEvents() {
   });
   document.getElementById('setting-weather-location-search-btn')?.addEventListener('click', searchWeatherLocationsFromSettings);
   document.getElementById('setting-weather-location-clear-btn')?.addEventListener('click', clearWeatherLocationFromSettings);
-  document.getElementById('setting-weather-location-results')?.addEventListener('change', applySelectedWeatherLocation);
+  document.getElementById('setting-weather-location-results')?.addEventListener('click', (e) => {
+    const result = e.target.closest('[data-weather-location-index]');
+    if (!result) return;
+    applySelectedWeatherLocation(result.dataset.weatherLocationIndex);
+  });
   document.getElementById('setting-weather-refresh-minutes')?.addEventListener('change', autosaveWeatherRefreshMinutes);
   document.getElementById('setting-weather-air-quality-enabled')?.addEventListener('change', autosaveWeatherFeatureSettings);
   document.getElementById('setting-weather-alerts-enabled')?.addEventListener('change', autosaveWeatherFeatureSettings);

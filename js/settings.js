@@ -1,6 +1,6 @@
 // Settings modal, review markers, cue settings, and block settings UI.
 
-const SETTINGS_TABS = ['general', 'blocks', 'backup', 'activitywatch', 'data-health'];
+const SETTINGS_TABS = ['general', 'dashboard', 'blocks', 'backup', 'activitywatch', 'data-health'];
 
 function openSettingsModal() {
   ensureBlockSettings();
