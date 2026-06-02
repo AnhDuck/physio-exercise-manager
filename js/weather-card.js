@@ -1138,8 +1138,16 @@ function isWeatherStale(isoString) {
 
 function weatherLocationLabel(location) {
   if (!location) return 'No location';
-  const pieces = [location.name, location.admin1 || location.country].filter(Boolean);
+  const pieces = [weatherLocationName(location), location.admin1 || location.country].filter(Boolean);
   return pieces.join(', ');
+}
+
+function weatherLocationName(location) {
+  const name = String(location?.name || '').trim();
+  const admin1 = String(location?.admin1 || '').trim();
+  if (!name || !admin1) return name;
+  const suffix = ` ${admin1}`.toLowerCase();
+  return name.toLowerCase().endsWith(suffix) ? name.slice(0, -suffix.length).trim() : name;
 }
 
 function weatherErrorMessage(err) {
@@ -1277,7 +1285,7 @@ function renderWeatherLocationSearchStatus(text, issue = false) {
 }
 
 function weatherLocationResultLabel(location) {
-  return [location.name, location.admin1, location.country].filter(Boolean).join(', ');
+  return [weatherLocationName(location), location.admin1, location.country].filter(Boolean).join(', ');
 }
 
 function applySelectedWeatherLocation() {
