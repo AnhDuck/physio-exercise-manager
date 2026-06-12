@@ -64,6 +64,10 @@ function handleHomeCardActionClick(e) {
     if (typeof previewWeatherAlertMode === 'function') previewWeatherAlertMode();
   } else if (button.dataset.homeCardAction === 'refresh-activitywatch-mini') {
     refreshActivityWatchMiniIfNeeded('manual', { force: true });
+  } else if (button.dataset.homeCardAction === 'toggle-activitywatch-mini-mode') {
+    if (typeof setActivityWatchMiniCategoryMode === 'function') {
+      setActivityWatchMiniCategoryMode(button.dataset.activitywatchMiniMode);
+    }
   } else if (button.dataset.homeCardAction === 'open-activitywatch-dashboard') {
     if (typeof openActivityWatchDashboard === 'function') openActivityWatchDashboard();
   } else if (button.dataset.homeCardAction === 'open-weather-settings') {

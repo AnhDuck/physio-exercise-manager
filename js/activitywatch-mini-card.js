@@ -6,6 +6,10 @@ function activityWatchMiniSettings() {
   return getHomeCardsSettings().activityWatchMini;
 }
 
+function activityWatchMiniCategoryMode() {
+  return normalizeActivityWatchMiniCategoryMode(activityWatchMiniSettings().categoryMode);
+}
+
 function buildActivityWatchMiniCard() {
   const cfg = activityWatchMiniSettings();
   const card = el('article', `home-card activitywatch-mini-card ${activityWatchMiniStateClass()}`);
@@ -22,6 +26,7 @@ function buildActivityWatchMiniCard() {
   header.appendChild(title);
 
   const actions = el('div', 'home-card-actions');
+  actions.appendChild(buildActivityWatchMiniCategoryModeToggle());
   const openBtn = el('button', 'home-card-icon-btn');
   openBtn.type = 'button';
   openBtn.dataset.homeCardAction = 'open-activitywatch-dashboard';
@@ -42,6 +47,25 @@ function buildActivityWatchMiniCard() {
   card.appendChild(buildActivityWatchMiniCategoryList(day));
   card.appendChild(buildActivityWatchMiniStatus(day, cfg));
   return card;
+}
+
+function buildActivityWatchMiniCategoryModeToggle() {
+  const toggle = el('div', 'activitywatch-mini-mode-toggle');
+  const currentMode = activityWatchMiniCategoryMode();
+  toggle.setAttribute('aria-label', 'ActivityWatch card category display');
+  [
+    { mode: 'exact', label: 'Categories' },
+    { mode: 'top', label: 'Groups' },
+  ].forEach(({ mode, label }) => {
+    const button = elText('button', '', label);
+    button.type = 'button';
+    button.dataset.homeCardAction = 'toggle-activitywatch-mini-mode';
+    button.dataset.activitywatchMiniMode = mode;
+    button.classList.toggle('is-active', currentMode === mode);
+    button.setAttribute('aria-pressed', String(currentMode === mode));
+    toggle.appendChild(button);
+  });
+  return toggle;
 }
 
 function buildActivityWatchMiniRefreshButton() {
@@ -135,14 +159,34 @@ function refreshActivityWatchMiniIfNeeded(trigger = 'auto', options = {}) {
 function activityWatchMiniCategories(day) {
   const total = Math.max(0, Number(day?.totalActiveSeconds) || 0);
   if (!total) return [];
-  return Object.entries(day.categoryTotals || {})
+  const totals = {};
+  Object.entries(day.categoryTotals || {}).forEach(([name, seconds]) => {
+    const displayName = activityWatchMiniDisplayCategory(name);
+    totals[displayName] = (totals[displayName] || 0) + Math.max(0, Number(seconds) || 0);
+  });
+  return Object.entries(totals)
     .map(([name, seconds]) => ({
       name,
-      seconds: Math.max(0, Number(seconds) || 0),
-      percent: total ? (Math.max(0, Number(seconds) || 0) / total) * 100 : 0,
+      seconds,
+      percent: total ? (seconds / total) * 100 : 0,
     }))
     .filter(item => item.seconds > 0)
     .sort((a, b) => b.seconds - a.seconds);
+}
+
+function activityWatchMiniDisplayCategory(category) {
+  const label = String(category || '');
+  if (activityWatchMiniCategoryMode() !== 'top') return label;
+  return label.split(ACTIVITYWATCH_CATEGORY_JOINER)[0] || label;
+}
+
+function setActivityWatchMiniCategoryMode(mode) {
+  const cfg = activityWatchMiniSettings();
+  const nextMode = normalizeActivityWatchMiniCategoryMode(mode);
+  if (normalizeActivityWatchMiniCategoryMode(cfg.categoryMode) === nextMode) return;
+  cfg.categoryMode = nextMode;
+  saveSettings(settings);
+  renderHomeCards();
 }
 
 function activityWatchMiniStateClass() {

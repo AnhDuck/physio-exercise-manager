@@ -100,6 +100,7 @@
 
 .home-card-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: 7px;
@@ -673,6 +674,43 @@
   width: 100%;
   height: 100%;
   background: linear-gradient(90deg, rgba(255,255,255,.08), rgba(255,255,255,.035));
+}
+
+.activitywatch-mini-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(160,164,173,.32);
+  border-radius: 6px;
+  background: rgba(255,255,255,.045);
+}
+
+.activitywatch-mini-mode-toggle button {
+  min-height: 32px;
+  padding: 0 9px;
+  border: 0;
+  border-right: 1px solid rgba(160,164,173,.26);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.activitywatch-mini-mode-toggle button:last-child {
+  border-right: 0;
+}
+
+.activitywatch-mini-mode-toggle button:hover,
+.activitywatch-mini-mode-toggle button:focus-visible,
+.activitywatch-mini-mode-toggle button.is-active {
+  background: rgba(99,179,255,.16);
+  color: var(--text);
+  outline: none;
 }
 
 .activitywatch-mini-list {

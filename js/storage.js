@@ -637,6 +637,7 @@ function defaultHomeCardsSettings() {
     activityWatchMini: {
       enabled: true,
       refreshMinutes: 5,
+      categoryMode: 'exact',
     },
   };
 }
@@ -677,7 +678,12 @@ function normalizeActivityWatchMiniSettings(value = {}, defaults = defaultHomeCa
     ...source,
     enabled: source.enabled !== false,
     refreshMinutes: clampRefreshMinutes(source.refreshMinutes, defaults.refreshMinutes, 1, 30),
+    categoryMode: normalizeActivityWatchMiniCategoryMode(source.categoryMode),
   };
+}
+
+function normalizeActivityWatchMiniCategoryMode(value) {
+  return value === 'top' ? 'top' : 'exact';
 }
 
 function normalizeWeatherLocation(value) {
