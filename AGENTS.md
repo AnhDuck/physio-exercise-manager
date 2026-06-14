@@ -7,6 +7,7 @@
 - If a tradeoff matters, explain the practical effect first.
 - Before broad architecture, storage, or workflow changes, describe the plan and wait for approval.
 - Verify your own changes as much as reasonably needed by default. Do not wait for Bill to ask for verification when behavior, UI, storage, or workflow could have changed.
+- Prefer spending extra tool calls on verification over asking Bill to manually validate routine changes.
 - When reporting work, say what changed, what was checked, and anything that still needs attention.
 
 ## Project Shape

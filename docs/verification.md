@@ -12,31 +12,35 @@ Get-ChildItem -Path js -Filter *.js | Sort-Object Name | ForEach-Object { node -
 
 ## Browser Verification
 
-Verify changes as much as reasonably needed by default. Behavior, UI, storage, and workflow changes should include a direct check that the changed behavior works, plus a quick guard that nearby protected behavior still looks intact. Prefer a local static server over `file://`:
+Verify changes as much as reasonably needed by default. Behavior, UI, storage, and workflow changes should include a direct check that the changed behavior works, plus a quick guard that nearby protected behavior still looks intact. Spend tool calls on verification so Bill does not have to manually validate routine changes.
+
+Prefer the stable local dev server over `file://`:
 
 ```powershell
 python -m http.server 8895 --bind 127.0.0.1
 ```
 
+First check whether `http://127.0.0.1:8895` is already serving PEM. If it is, reuse it. Do not restart the server for ordinary HTML, CSS, or JavaScript edits; this static server reads files from disk on each request, so a versioned URL reload is enough. Restart or replace the server only when it is unreachable, serving the wrong workspace/root, returning broken responses, blocking required verification, or the user asks for a restart.
+
 Open:
 
 `http://127.0.0.1:8895/index.html?v=<PEM_APP_VERSION>`
 
-Confirm the visible header version matches. If it does not match, the browser result is invalid; reload the versioned URL, fix server/root, or start the correct server.
+Confirm the visible header version matches. If it does not match, the browser result is invalid; reload the versioned URL first. If reload still shows the wrong version, check that `8895` is serving this workspace before restarting anything.
 
 If an agent starts the `8895` dev server for verification, leave it running when finished unless the user asks to stop it, the process is clearly unhealthy, or it is blocking required work. Do not shut it down just as cleanup.
 
 Do not use the user's production/local origin `http://127.0.0.1:8891` for Codex verification unless explicitly requested. That origin is for the user's real browser data, folder backup permission, and ActivityWatch CORS setup. Prefer stable Codex dev origin `http://127.0.0.1:8895` across chats so browser storage and permissions remain consistent.
 
-The `8895` origin intentionally seeds Abbotsford Weather and representative ActivityWatch data on every page load through `js/dev-sample-data.js`. Do not disable that seeding for normal Codex verification; populated dashboard states are the default test surface.
+The `8895` origin intentionally seeds Abbotsford Weather and representative ActivityWatch data on every page load through `js/dev-sample-data.js`. Do not disable that seeding for normal Codex verification; populated dashboard states are the default test surface because empty states miss most layout and behavior regressions.
 
-For desktop layout checks, aim the browser viewport at exactly `1920x1080` using the Codex in-app browser viewport override when available. Confirm the actual page viewport before trusting the result:
+For Bill's normal desktop layout checks, aim the browser viewport at exactly `1536x864` using the Codex in-app browser viewport override when available. This matches Bill's 1920x1080 monitor at 125% Windows display scaling, because browser layout uses CSS pixels rather than physical monitor pixels. This is the production-like desktop viewport for routine UI verification. Confirm the actual page viewport before trusting the result:
 
 ```js
-window.innerWidth === 1920 && window.innerHeight === 1080
+window.innerWidth === 1536 && window.innerHeight === 864
 ```
 
-The Codex UI may visually scale that 1920x1080 viewport down to fit the app pane; that is acceptable. `document.documentElement.clientWidth`, `visualViewport.width`, or screenshots may be a few pixels narrower when a vertical scrollbar is present. If exact 1920x1080 cannot be set, use the closest available 16:9 viewport within 20% of those dimensions, then report the exact `window.innerWidth` and `window.innerHeight` used. If the viewport is not 16:9 or is outside that 20% range, treat desktop layout verification as incomplete and say so.
+The Codex UI may visually scale that viewport down to fit the app pane; that is acceptable. `document.documentElement.clientWidth`, `visualViewport.width`, or screenshots may be a few pixels narrower when a vertical scrollbar is present. If exact `1536x864` cannot be set, use the closest available 16:9 viewport within 20% of those dimensions, then report the exact `window.innerWidth` and `window.innerHeight` used. If the viewport is not 16:9 or is outside that 20% range, treat desktop layout verification as incomplete and say so. Use `1920x1080` only when intentionally testing a true 1920-CSS-pixel-wide desktop layout, not as the default match for Bill's monitor.
 
 ## Browser Tool Preference
 
