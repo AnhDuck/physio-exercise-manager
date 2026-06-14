@@ -16,7 +16,7 @@ Keep `90-responsive.css` last. See `css/README.md` before changing styles.
 
 JavaScript order is also manual:
 
-`data.js`, `storage.js`, `constants.js`, `state.js`, `dates.js`, `dom.js`, `sessions.js`, `exercises.js`, `grid.js`, `tracker.js`, `activitywatch-data.js`, `home-cards.js`, `weather-format.js`, `weather-preview.js`, `weather-normalize.js`, `weather-api.js`, `weather-sync.js`, `weather-settings.js`, `weather-card.js`, `activitywatch-mini-card.js`, `timeline-data.js`, `timeline-filters.js`, `timeline-render.js`, `timeline-notes.js`, `timeline-export.js`, `timeline-edit.js`, `timeline.js`, `backup.js`, `auto-backup.js`, `settings.js`, `activitywatch-dashboard-state.js`, `activitywatch-dashboard-format.js`, `activitywatch-dashboard-sync.js`, `activitywatch-dashboard-controls.js`, `activitywatch-dashboard-chart.js`, `activitywatch-dashboard-detail.js`, `activitywatch-dashboard-shell.js`, `activitywatch-settings.js`, `images.js`, `main.js`.
+`data.js`, `storage.js`, `constants.js`, `state.js`, `dates.js`, `dom.js`, `sessions.js`, `exercises.js`, `grid.js`, `tracker.js`, `activitywatch-data.js`, `dev-sample-data.js`, `home-cards.js`, `weather-format.js`, `weather-preview.js`, `weather-normalize.js`, `weather-api.js`, `weather-sync.js`, `weather-settings.js`, `weather-card.js`, `activitywatch-mini-card.js`, `timeline-data.js`, `timeline-filters.js`, `timeline-render.js`, `timeline-notes.js`, `timeline-export.js`, `timeline-edit.js`, `timeline.js`, `backup.js`, `auto-backup.js`, `settings.js`, `activitywatch-dashboard-state.js`, `activitywatch-dashboard-format.js`, `activitywatch-dashboard-sync.js`, `activitywatch-dashboard-controls.js`, `activitywatch-dashboard-chart.js`, `activitywatch-dashboard-detail.js`, `activitywatch-dashboard-shell.js`, `activitywatch-settings.js`, `images.js`, `main.js`.
 
 Never load `main.js` before feature files it binds. Do not add imports, exports, modules, dependencies, bundlers, browser automation packages, or build tooling.
 
@@ -33,15 +33,16 @@ Never load `main.js` before feature files it binds. Do not add imports, exports,
 - `grid.js`: compact calendar grid and week navigation.
 - `tracker.js`: set tracker, timer, log edit, cues, and shortcuts.
 - `activitywatch-data.js`: ActivityWatch REST client, aggregate storage, sync orchestration.
-- `home-cards.js`: main-screen dashboard card row and refresh timers for the always-on monitor view.
+- `dev-sample-data.js`: Codex verification-only sample seed for `http://127.0.0.1:8895`; it refreshes Abbotsford Weather and representative ActivityWatch data on every page load before render so UI checks exercise populated dashboard states. It must not run on the user's real `8891` origin.
+- `home-cards.js`: main-screen dashboard card row, in-memory collapsed/expanded state, downward-scroll auto-collapse, manual dashboard toggle, and refresh timers for the always-on monitor view.
 - `weather-format.js`: weather display labels, units, WMO and official condition mapping, icon file mapping for `assets/weather-icons/google-weather-set-4/light/`, source labels, AQHI/UV/wind/sun formatting, and daily-brain advisory/highlight/mood rules.
 - `weather-preview.js`: Open-Meteo WMO weather-state preview modes, random preview scenarios, alert preview data, and preview setting normalization.
 - `weather-normalize.js`: Open-Meteo and Environment Canada MSC GeoMet current conditions/hourly forecasts/sun times/alerts/AQHI response normalization into the cached weather result shape.
 - `weather-api.js`: Open-Meteo forecast/geocoding/air-quality and Environment Canada fetches, fetch timeout fallback, HTTP/fetch error helpers, and location search API calls.
 - `weather-sync.js`: weather refresh orchestration, stale checks, request guards, request burst/rate-limit cooldowns, in-flight refresh state handling, and save/render after refresh.
 - `weather-settings.js`: Weather Settings controls, location search UI, selected location apply/clear, refresh interval, AQHI and alerts toggles, and preview controls.
-- `weather-card.js`: Weather card DOM rendering only: setup/loading states, current details including AQHI-or-humidity/wind/UV/sun times, hourly strip, actions, advisory rendering, and Sources chip tooltip DOM. For Canadian locations, Environment Canada is the primary weather, AQHI, and UV source when available; Open-Meteo remains the outside-Canada weather fallback and may fill Canada gaps such as UV. The status line uses one compact Sources chip with a hover/focus tooltip listing providers, and the AQHI tooltip detail includes the nearest Environment Canada AQHI region chosen from the local search area. AQHI brain advisories start at moderate AQHI levels (`4+`) and include timing when the peak is later; lower AQHI values stay as quiet tile data.
-- `activitywatch-mini-card.js`: current waking-day ActivityWatch mini dashboard card.
+- `weather-card.js`: Weather card DOM rendering only: full and collapsed summary states, setup/loading states, current details including AQHI-or-humidity/wind/UV/sun times, hourly strip, actions, advisory rendering, and Sources chip tooltip DOM. For Canadian locations, Environment Canada is the primary weather, AQHI, and UV source when available; Open-Meteo remains the outside-Canada weather fallback and may fill Canada gaps such as UV. The status line uses one compact Sources chip with a hover/focus tooltip listing providers, and the AQHI tooltip detail includes the nearest Environment Canada AQHI region chosen from the local search area. AQHI brain advisories start at moderate AQHI levels (`4+`) and include timing when the peak is later; lower AQHI values stay as quiet tile data.
+- `activitywatch-mini-card.js`: current waking-day ActivityWatch mini dashboard card, including the collapsed summary with total active time, stacked activity bar labels, open-dashboard action, and refresh action.
 - `activitywatch-dashboard-*.js`: ActivityWatch category dashboard. See `docs/activitywatch.md`.
 - `activitywatch-settings.js`: ActivityWatch Settings tab controls.
 - `timeline-*.js`: notes, events, Markdown, filters, export, and edit flows.
@@ -65,7 +66,7 @@ localStorage keys:
 - `pem_events`: timeline events.
 - `pem_activitywatch`: aggregate ActivityWatch summaries only.
 
-Dashboard card preferences, weather request cooldown metadata, and the cached last weather result live inside `pem_settings.homeCards` so backups and imports continue to use the existing settings safe-save path. Weather, air quality, and official-alert refreshes share the same weather cadence to avoid extra background polling.
+Dashboard card preferences, weather request cooldown metadata, and the cached last weather result live inside `pem_settings.homeCards` so backups and imports continue to use the existing settings safe-save path. Weather, air quality, and official-alert refreshes share the same weather cadence to avoid extra background polling. The dashboard row's collapsed/expanded UI state is intentionally in-memory only; a fresh app load starts expanded. On the Codex verification origin `http://127.0.0.1:8895`, `dev-sample-data.js` overwrites Weather and ActivityWatch sample data on every load so verification does not fall back to empty states.
 
 All app-data writes must go through safe-save helpers in storage internals. Do not call `localStorage.setItem` directly for app keys outside storage internals.
 
@@ -88,4 +89,4 @@ All app-data writes must go through safe-save helpers in storage internals. Do n
 - ActivityWatch sync/storage/query: `activitywatch-data.js` only when the query or stored aggregate changes.
 - ActivityWatch dashboard UI: `activitywatch-dashboard-*.js`.
 - ActivityWatch setup/settings UI: `activitywatch-settings.js` and the ActivityWatch settings markup in `index.html`.
-- Main-screen dashboard cards: `home-cards.js`, the specific card file, and `66-home-cards.css`. Weather and ActivityWatch mini-card controls live in the Dashboard Settings markup in `index.html`.
+- Main-screen dashboard cards: `home-cards.js`, the specific card file, `66-home-cards.css`, and responsive overrides in `90-responsive.css`. Weather and ActivityWatch mini-card controls live in the Dashboard Settings markup in `index.html`.

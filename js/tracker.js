@@ -290,17 +290,21 @@ function renderSetTracker() {
   info.appendChild(titleRow);
 
   const metaRow = el('div', 'set-tracker-meta');
-  metaRow.appendChild(elText('span', 'set-tracker-meta-pill set-tracker-set-count', `${progress.completedSets}/${progress.targetSets} sets`));
+  metaRow.appendChild(elText('span', 'set-tracker-meta-pill set-tracker-set-count', trackerCompletedSetText(progress)));
+  metaRow.appendChild(elText('span', 'set-tracker-meta-pill set-tracker-current-set', trackerCurrentSetText(progress)));
   metaRow.appendChild(elText('span', 'set-tracker-meta-pill', `${ex.reps} reps`));
   if (ex.resistance) metaRow.appendChild(elText('span', 'set-tracker-meta-pill', ex.resistance));
   metaRow.appendChild(elText('span', 'set-tracker-meta-pill set-tracker-status-pill', trackerStatusText(progress)));
   info.appendChild(metaRow);
 
   const progressWrap = el('div', 'set-tracker-progress');
-  progressWrap.setAttribute('aria-label', `${progress.completedSets} of ${progress.targetSets} sets complete`);
+  progressWrap.setAttribute('aria-label', `${trackerCompletedSetText(progress)}. ${trackerCurrentSetText(progress)}.`);
   progressWrap.style.setProperty('--set-count', Math.max(1, progress.targetSets));
+  const currentSet = trackerCurrentSetNumber(progress);
   for (let i = 1; i <= progress.targetSets; i++) {
-    progressWrap.appendChild(el('span', 'set-segment' + (i <= progress.completedSets ? ' filled' : '')));
+    const segment = el('span', 'set-segment' + (i <= progress.completedSets ? ' filled' : '') + (i === currentSet ? ' current' : ''));
+    segment.title = i <= progress.completedSets ? `Set ${i} complete` : (i === currentSet ? `Current set ${i}` : `Set ${i} not started`);
+    progressWrap.appendChild(segment);
   }
   info.appendChild(progressWrap);
   main.appendChild(info);
@@ -320,7 +324,7 @@ function renderSetTracker() {
 
   const timer = el('div', 'set-tracker-timer');
   const sinceSetMetric = el('div', 'set-tracker-metric set-tracker-metric-since');
-  sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-label', 'Current set'));
+  sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-label', 'Current set timer'));
   sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-value', trackerCurrentSetTimeValue(progress)));
   const timerDetail = trackerTimerDetail(progress);
   if (timerDetail) sinceSetMetric.appendChild(elText('div', 'set-tracker-timer-detail', timerDetail));
@@ -601,6 +605,22 @@ function trackerTimerDetail(progress) {
   const parts = [];
   if (progress.timerCapped) parts.push('stopped at 60m');
   return parts.join(' | ');
+}
+
+function trackerCompletedSetText(progress) {
+  const completed = Math.min(progress.targetSets, Math.max(0, progress.completedSets || 0));
+  return `${completed} of ${progress.targetSets} sets completed`;
+}
+
+function trackerCurrentSetNumber(progress) {
+  if (isProgressComplete(progress)) return null;
+  return Math.min(progress.targetSets, Math.max(1, (progress.completedSets || 0) + 1));
+}
+
+function trackerCurrentSetText(progress) {
+  const currentSet = trackerCurrentSetNumber(progress);
+  if (!currentSet) return `All ${progress.targetSets} sets complete`;
+  return `Current set: ${currentSet} of ${progress.targetSets}`;
 }
 
 function trackerStatusText(progress) {

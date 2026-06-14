@@ -12,7 +12,7 @@ Get-ChildItem -Path js -Filter *.js | Sort-Object Name | ForEach-Object { node -
 
 ## Browser Verification
 
-Only use browser/UI verification when it adds value. Prefer a local static server over `file://`:
+Verify changes as much as reasonably needed by default. Behavior, UI, storage, and workflow changes should include a direct check that the changed behavior works, plus a quick guard that nearby protected behavior still looks intact. Prefer a local static server over `file://`:
 
 ```powershell
 python -m http.server 8895 --bind 127.0.0.1
@@ -24,7 +24,19 @@ Open:
 
 Confirm the visible header version matches. If it does not match, the browser result is invalid; reload the versioned URL, fix server/root, or start the correct server.
 
+If an agent starts the `8895` dev server for verification, leave it running when finished unless the user asks to stop it, the process is clearly unhealthy, or it is blocking required work. Do not shut it down just as cleanup.
+
 Do not use the user's production/local origin `http://127.0.0.1:8891` for Codex verification unless explicitly requested. That origin is for the user's real browser data, folder backup permission, and ActivityWatch CORS setup. Prefer stable Codex dev origin `http://127.0.0.1:8895` across chats so browser storage and permissions remain consistent.
+
+The `8895` origin intentionally seeds Abbotsford Weather and representative ActivityWatch data on every page load through `js/dev-sample-data.js`. Do not disable that seeding for normal Codex verification; populated dashboard states are the default test surface.
+
+For desktop layout checks, aim the browser viewport at exactly `1920x1080` using the Codex in-app browser viewport override when available. Confirm the actual page viewport before trusting the result:
+
+```js
+window.innerWidth === 1920 && window.innerHeight === 1080
+```
+
+The Codex UI may visually scale that 1920x1080 viewport down to fit the app pane; that is acceptable. `document.documentElement.clientWidth`, `visualViewport.width`, or screenshots may be a few pixels narrower when a vertical scrollbar is present. If exact 1920x1080 cannot be set, use the closest available 16:9 viewport within 20% of those dimensions, then report the exact `window.innerWidth` and `window.innerHeight` used. If the viewport is not 16:9 or is outside that 20% range, treat desktop layout verification as incomplete and say so.
 
 ## Browser Tool Preference
 
@@ -42,7 +54,7 @@ If launching fallback Chrome with `Start-Process`, every argument must be a sepa
 
 For broad local UI checks, cover compact grid, notes, settings, set tracker, backup warnings, image modal entry points, and ActivityWatch dashboard interactions when ActivityWatch changed.
 
-For Home Cards changes, smoke-check desktop and mobile widths: the cards appear between the date header and first exercise group, Weather setup/search/refresh/clear controls render in the Dashboard Settings tab, Weather location live search starts after typing at least 3 characters and pausing briefly while the Search button and Enter still work, stale/error/rate-limit text is visible when data is missing or old, and ActivityWatch mini still opens the full dashboard. Weather's air quality and Environment Canada alert toggles should render in Settings, the card's alert-preview, random-preview, and live-preview reset buttons should stay in sync with the Settings preview dropdown, and the AQHI tile should replace humidity without making the card taller. Weather preview should cover the configured Open-Meteo WMO state options, including mostly clear, drizzle, freezing rain, showers, snow grains, and hail storms. For Canadian locations, the source status line should show one compact Sources chip; its hover/focus tooltip should list weather, UV, and air-quality providers, show Environment Canada UV when official UV is available, and include the nearest Environment Canada AQHI region used for air quality. Avoid live Open-Meteo fetch testing when the hourly limit is already near or recently exceeded.
+For Home Cards changes, smoke-check desktop and mobile widths: the cards appear between the date header and first exercise group, one downward wheel gesture near the top does not auto-collapse the dashboard row, a second downward gesture does, upward scrolling does not auto-expand it, the collapsed row keeps Weather and ActivityWatch summaries readable, and the dashboard toggle manually expands/collapses it. Weather setup/search/refresh/clear controls render in the Dashboard Settings tab, Weather location live search starts after typing at least 3 characters and pausing briefly while the Search button and Enter still work, stale/error/rate-limit text is visible when data is missing or old, and ActivityWatch mini still opens the full dashboard from both expanded and collapsed states. Weather's air quality and Environment Canada alert toggles should render in Settings, the card's alert-preview, random-preview, and live-preview reset buttons should stay in sync with the Settings preview dropdown, and the AQHI tile should replace humidity without making the card taller. Weather preview should cover the configured Open-Meteo WMO state options, including mostly clear, drizzle, freezing rain, showers, snow grains, and hail storms. For Canadian locations, the source status line should show one compact Sources chip; its hover/focus tooltip should list weather, UV, and air-quality providers, show Environment Canada UV when official UV is available, and include the nearest Environment Canada AQHI region used for air quality. Avoid live Open-Meteo fetch testing when the hourly limit is already near or recently exceeded.
 
 For ActivityWatch dashboard changes, smoke-check:
 

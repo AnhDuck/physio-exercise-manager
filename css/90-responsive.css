@@ -92,8 +92,21 @@
     grid-template-columns: 1fr 1fr;
   }
 
+  .home-cards-row.is-collapsed .home-cards-grid {
+    grid-template-columns: minmax(220px, .75fr) minmax(320px, 1.25fr);
+    padding-right: 40px;
+  }
+
+  .activitywatch-compact-main {
+    grid-template-columns: minmax(108px, auto) minmax(0, 1fr);
+  }
+
   .home-card {
     min-height: 230px;
+  }
+
+  .home-card-compact {
+    min-height: 0;
   }
 
   .weather-temp {
@@ -367,15 +380,60 @@
     padding: 8px;
   }
 
+  .home-cards-toggle {
+    top: 8px;
+    right: 8px;
+  }
+
   .home-cards-grid {
     grid-template-columns: 1fr;
     gap: 8px;
     max-width: none;
   }
 
+  .home-cards-row.is-collapsed .home-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding-right: 38px;
+  }
+
   .home-card {
     min-height: 0;
     padding: 12px;
+  }
+
+  .home-card-compact {
+    height: auto;
+    min-height: 52px;
+    padding: 8px 9px;
+  }
+
+  .weather-compact-card {
+    grid-template-columns: 38px minmax(0, 1fr) 32px;
+  }
+
+  .activitywatch-compact-card {
+    grid-template-columns: minmax(0, 1fr);
+    padding-right: 8px;
+  }
+
+  .activitywatch-compact-main {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .activitywatch-compact-stack {
+    height: 24px;
+  }
+
+  .activitywatch-compact-card .home-card-actions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+  }
+
+  .activitywatch-compact-copy {
+    padding-right: 78px;
   }
 
   .weather-hourly-strip {

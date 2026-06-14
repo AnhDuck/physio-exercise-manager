@@ -1,10 +1,13 @@
 // Weather card rendering.
 
-function buildWeatherCard() {
+function buildWeatherCard(options = {}) {
+  const compact = Boolean(options.compact);
   const cfg = weatherSettings();
   const liveData = cfg.lastResult;
   const data = weatherPreviewResult(cfg, liveData) || liveData;
   const brain = data?.current ? buildWeatherBrain(data) : null;
+  if (compact) return buildWeatherCompactCard(cfg, data, brain);
+
   const card = el('article', `home-card weather-card ${weatherCardStateClass(cfg, brain)}`);
   card.setAttribute('aria-label', 'Weather');
 
@@ -51,6 +54,46 @@ function buildWeatherCard() {
 
   card.appendChild(buildWeatherHourlyStrip(data));
   card.appendChild(buildWeatherStatusLine(cfg, data));
+  return card;
+}
+
+function buildWeatherCompactCard(cfg, data, brain) {
+  const card = el('article', `home-card home-card-compact weather-compact-card ${weatherCardStateClass(cfg, brain)}`);
+  card.setAttribute('aria-label', 'Weather summary');
+
+  if (!cfg.location && !weatherPreviewEnabled(cfg)) {
+    const empty = el('div', 'weather-compact-empty');
+    empty.appendChild(elText('span', 'home-card-kicker', 'Weather'));
+    const btn = elText('button', 'home-card-action', 'Set location');
+    btn.type = 'button';
+    btn.dataset.homeCardAction = 'open-weather-settings';
+    empty.appendChild(btn);
+    card.appendChild(empty);
+    return card;
+  }
+
+  if (!data?.current) {
+    card.appendChild(buildWeatherIcon('cloudy', true, 'weather-compact-icon'));
+    const copy = el('div', 'weather-compact-copy');
+    copy.appendChild(elText('span', 'home-card-kicker', 'Weather'));
+    copy.appendChild(elText('strong', '', weatherRefreshPauseMessage(cfg) || cfg.lastError || 'Waiting for weather'));
+    card.appendChild(copy);
+    card.appendChild(buildWeatherRefreshButton());
+    return card;
+  }
+
+  const condition = weatherDisplayCondition(data);
+  card.appendChild(buildWeatherIcon(condition.icon, data.current.isDay, 'weather-compact-icon'));
+
+  const copy = el('div', 'weather-compact-copy');
+  copy.appendChild(elText('span', 'home-card-kicker', 'Weather'));
+  const main = el('div', 'weather-compact-main');
+  main.appendChild(elText('strong', 'weather-compact-temp', `${Math.round(data.current.temperature)}\u00B0`));
+  main.appendChild(elText('span', 'weather-compact-condition', condition.label));
+  copy.appendChild(main);
+  card.appendChild(copy);
+
+  card.appendChild(buildWeatherRefreshButton());
   return card;
 }
 

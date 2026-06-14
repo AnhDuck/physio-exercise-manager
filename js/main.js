@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   settings  = loadSettings();
   events    = loadEvents();
   if (typeof loadActivityWatchData === 'function') loadActivityWatchData();
+  if (typeof ensureVerificationSampleData === 'function') ensureVerificationSampleData();
   runMigrations();
   currentWeekStart = getMonday(new Date());
   lastTodayStr = todayStr();

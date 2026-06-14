@@ -9,16 +9,18 @@ function getHomeCardsSettings() {
 }
 
 function buildHomeCardsRow() {
-  const row = el('section', 'home-cards-row');
+  const row = el('section', `home-cards-row${homeCardsCollapsed ? ' is-collapsed' : ''}`);
   row.setAttribute('aria-label', 'Dashboard cards');
+
+  row.appendChild(buildHomeCardsToggleButton());
 
   const cards = el('div', 'home-cards-grid');
   const cfg = getHomeCardsSettings();
   if (cfg.weather.enabled && typeof buildWeatherCard === 'function') {
-    cards.appendChild(buildWeatherCard());
+    cards.appendChild(buildWeatherCard({ compact: homeCardsCollapsed }));
   }
   if (cfg.activityWatchMini.enabled && typeof buildActivityWatchMiniCard === 'function') {
-    cards.appendChild(buildActivityWatchMiniCard());
+    cards.appendChild(buildActivityWatchMiniCard({ compact: homeCardsCollapsed }));
   }
 
   row.appendChild(cards);
@@ -33,12 +35,15 @@ function renderHomeCards() {
 
 function startHomeCards() {
   stopHomeCards();
+  homeCardsLastScrollY = window.scrollY || 0;
   maybeRefreshHomeCards('startup');
   homeCardsTimer = window.setInterval(() => maybeRefreshHomeCards('auto'), HOME_CARDS_REFRESH_CHECK_MS);
   homeCardsClockTimer = window.setInterval(renderHomeCards, HOME_CARDS_CLOCK_MS);
   document.addEventListener('click', handleHomeCardActionClick);
   document.addEventListener('visibilitychange', handleHomeCardsVisibilityChange);
   window.addEventListener('focus', handleHomeCardsFocus);
+  window.addEventListener('scroll', handleHomeCardsAutoCollapse, { passive: true });
+  window.addEventListener('wheel', handleHomeCardsWheelIntent, { passive: true });
 }
 
 function stopHomeCards() {
@@ -49,6 +54,8 @@ function stopHomeCards() {
   document.removeEventListener('click', handleHomeCardActionClick);
   document.removeEventListener('visibilitychange', handleHomeCardsVisibilityChange);
   window.removeEventListener('focus', handleHomeCardsFocus);
+  window.removeEventListener('scroll', handleHomeCardsAutoCollapse);
+  window.removeEventListener('wheel', handleHomeCardsWheelIntent);
 }
 
 function handleHomeCardActionClick(e) {
@@ -74,7 +81,77 @@ function handleHomeCardActionClick(e) {
     openSettingsModal();
     setSettingsTab('general', true);
     window.setTimeout(() => document.getElementById('setting-weather-location-search')?.focus(), 0);
+  } else if (button.dataset.homeCardAction === 'toggle-home-cards') {
+    setHomeCardsCollapsed(!homeCardsCollapsed);
   }
+}
+
+function buildHomeCardsToggleButton() {
+  const button = el('button', 'home-cards-toggle');
+  button.type = 'button';
+  button.dataset.homeCardAction = 'toggle-home-cards';
+  button.setAttribute('aria-expanded', String(!homeCardsCollapsed));
+  button.title = homeCardsCollapsed ? 'Expand dashboard cards' : 'Collapse dashboard cards';
+  button.setAttribute('aria-label', button.title);
+  button.appendChild(buildAppIconSvg(homeCardsCollapsed ? 'chevron-down' : 'chevron-up'));
+  button.appendChild(elText('span', 'ui-button-text', homeCardsCollapsed ? 'Dashboard' : 'Collapse'));
+  return button;
+}
+
+function setHomeCardsCollapsed(collapsed) {
+  const next = Boolean(collapsed);
+  if (homeCardsCollapsed === next) return;
+  homeCardsCollapsed = next;
+  homeCardsLastScrollY = window.scrollY || 0;
+  homeCardsDownScrollIntent = 0;
+  homeCardsLastWheelAt = 0;
+  renderHomeCards();
+}
+
+function handleHomeCardsAutoCollapse() {
+  const scrollY = window.scrollY || 0;
+  const delta = scrollY - homeCardsLastScrollY;
+  const scrollingDown = delta > 0;
+  homeCardsLastScrollY = scrollY;
+  if (homeCardsCollapsed) return;
+  if (!scrollingDown) {
+    homeCardsDownScrollIntent = 0;
+    return;
+  }
+
+  const row = document.querySelector('.home-cards-row');
+  if (!row) return;
+  const rect = row.getBoundingClientRect();
+  const rowHeight = Math.max(1, rect.height);
+  if (Date.now() - homeCardsLastWheelAt > 140) {
+    homeCardsDownScrollIntent += Math.min(120, delta);
+  }
+  const hiddenRatio = Math.max(0, -rect.top) / rowHeight;
+  if (homeCardsShouldAutoCollapse(rect, hiddenRatio)) setHomeCardsCollapsed(true);
+}
+
+function handleHomeCardsWheelIntent(event) {
+  if (homeCardsCollapsed || !event || event.deltaY <= 0) {
+    if (event?.deltaY < 0) homeCardsDownScrollIntent = 0;
+    return;
+  }
+
+  const row = document.querySelector('.home-cards-row');
+  if (!row) return;
+  const rect = row.getBoundingClientRect();
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  if (rect.bottom < 0 || rect.top > viewportHeight) return;
+
+  homeCardsLastWheelAt = Date.now();
+  homeCardsDownScrollIntent += Math.min(120, Math.max(0, event.deltaY));
+  const hiddenRatio = Math.max(0, -rect.top) / Math.max(1, rect.height);
+  if (homeCardsShouldAutoCollapse(rect, hiddenRatio)) setHomeCardsCollapsed(true);
+}
+
+function homeCardsShouldAutoCollapse(rect, hiddenRatio) {
+  const rowHeight = Math.max(1, rect?.height || 0);
+  const intentThreshold = Math.min(260, Math.max(220, rowHeight * 0.5));
+  return hiddenRatio >= 0.85 || homeCardsDownScrollIntent >= intentThreshold;
 }
 
 function handleHomeCardsVisibilityChange() {

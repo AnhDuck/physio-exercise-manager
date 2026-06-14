@@ -6,6 +6,7 @@
 - Explain in plain language for a non-technical user. File names and basic coding terms are fine; avoid deep implementation detail unless asked.
 - If a tradeoff matters, explain the practical effect first.
 - Before broad architecture, storage, or workflow changes, describe the plan and wait for approval.
+- Verify your own changes as much as reasonably needed by default. Do not wait for Bill to ask for verification when behavior, UI, storage, or workflow could have changed.
 - When reporting work, say what changed, what was checked, and anything that still needs attention.
 
 ## Project Shape

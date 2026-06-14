@@ -10,7 +10,8 @@ function activityWatchMiniCategoryMode() {
   return normalizeActivityWatchMiniCategoryMode(activityWatchMiniSettings().categoryMode);
 }
 
-function buildActivityWatchMiniCard() {
+function buildActivityWatchMiniCard(options = {}) {
+  const compact = Boolean(options.compact);
   const cfg = activityWatchMiniSettings();
   const card = el('article', `home-card activitywatch-mini-card ${activityWatchMiniStateClass()}`);
   card.setAttribute('aria-label', 'ActivityWatch today');
@@ -18,6 +19,7 @@ function buildActivityWatchMiniCard() {
   const dateStr = typeof activityWatchCurrentWakingDateStr === 'function' ? activityWatchCurrentWakingDateStr() : todayStr();
   const day = typeof getActivityWatchDay === 'function' ? getActivityWatchDay(dateStr) : null;
   const total = day?.totalActiveSeconds || 0;
+  if (compact) return buildActivityWatchMiniCompactCard(cfg, day, total);
 
   const header = el('div', 'activitywatch-mini-header');
   const title = el('div', 'activitywatch-mini-title');
@@ -46,6 +48,31 @@ function buildActivityWatchMiniCard() {
   card.appendChild(buildActivityWatchMiniStack(day));
   card.appendChild(buildActivityWatchMiniCategoryList(day));
   card.appendChild(buildActivityWatchMiniStatus(day, cfg));
+  return card;
+}
+
+function buildActivityWatchMiniCompactCard(cfg, day, total) {
+  const card = el('article', `home-card home-card-compact activitywatch-compact-card ${activityWatchMiniStateClass()}`);
+  card.setAttribute('aria-label', 'ActivityWatch today summary');
+
+  const main = el('div', 'activitywatch-compact-main');
+  const copy = el('div', 'activitywatch-compact-copy');
+  copy.appendChild(elText('span', 'home-card-kicker', 'ActivityWatch Today'));
+  copy.appendChild(elText('strong', '', formatActivityWatchDuration(total)));
+  main.appendChild(copy);
+  main.appendChild(buildActivityWatchMiniCompactStack(day));
+  card.appendChild(main);
+
+  const actions = el('div', 'home-card-actions');
+  const openBtn = el('button', 'home-card-icon-btn');
+  openBtn.type = 'button';
+  openBtn.dataset.homeCardAction = 'open-activitywatch-dashboard';
+  openBtn.title = 'Open ActivityWatch dashboard';
+  openBtn.setAttribute('aria-label', 'Open ActivityWatch dashboard');
+  openBtn.appendChild(buildAppIconSvg('chart'));
+  actions.appendChild(openBtn);
+  actions.appendChild(buildActivityWatchMiniRefreshButton());
+  card.appendChild(actions);
   return card;
 }
 
@@ -92,6 +119,25 @@ function buildActivityWatchMiniStack(day) {
     segment.style.width = `${Math.max(2, item.percent)}%`;
     segment.style.background = activityWatchCategoryColor(item.name);
     segment.title = `${item.name}: ${formatActivityWatchDuration(item.seconds)} (${formatActivityWatchMiniPercent(item.percent)})`;
+    stack.appendChild(segment);
+  });
+  return stack;
+}
+
+function buildActivityWatchMiniCompactStack(day) {
+  const stack = el('div', 'activitywatch-mini-stack activitywatch-compact-stack');
+  const categories = activityWatchMiniCategories(day);
+  if (!day?.totalActiveSeconds || !categories.length) {
+    stack.appendChild(el('span', 'activitywatch-mini-stack-empty'));
+    return stack;
+  }
+  categories.forEach(item => {
+    const segment = el('span', 'activitywatch-mini-stack-segment activitywatch-compact-segment');
+    segment.style.width = `${Math.max(2, item.percent)}%`;
+    segment.style.background = activityWatchCategoryColor(item.name);
+    segment.title = `${item.name}: ${formatActivityWatchDuration(item.seconds)} (${formatActivityWatchMiniPercent(item.percent)})`;
+    const label = activityWatchCompactSegmentLabel(item);
+    if (label) segment.appendChild(elText('span', '', label));
     stack.appendChild(segment);
   });
   return stack;
@@ -212,6 +258,13 @@ function formatActivityWatchMiniPercent(percent) {
   const value = Math.max(0, Number(percent) || 0);
   if (value > 0 && value < 1) return '<1%';
   return `${Math.round(value)}%`;
+}
+
+function activityWatchCompactSegmentLabel(item) {
+  if (!item || item.percent < 10) return '';
+  const duration = formatActivityWatchDuration(item.seconds);
+  if (item.percent >= 18) return `${duration} ${formatActivityWatchMiniPercent(item.percent)}`;
+  return duration;
 }
 
 function activityWatchMiniEmptyText() {
