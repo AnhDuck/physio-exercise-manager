@@ -397,6 +397,10 @@
     padding-right: 38px;
   }
 
+  .home-cards-row.is-collapsed {
+    top: calc(var(--header-h) + var(--calendar-header-mobile-h));
+  }
+
   .home-card {
     min-height: 0;
     padding: 12px;

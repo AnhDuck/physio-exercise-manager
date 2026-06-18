@@ -10,10 +10,14 @@
 }
 
 .home-cards-row.is-collapsed {
+  position: sticky;
+  top: var(--calendar-header-compact-h);
+  z-index: 80;
   padding: 6px 12px;
   background:
     linear-gradient(180deg, rgba(255,255,255,.032), rgba(255,255,255,.012)),
     var(--bg-header);
+  box-shadow: 0 8px 18px rgba(0,0,0,.16);
 }
 
 .home-cards-grid {
