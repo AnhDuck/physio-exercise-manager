@@ -80,6 +80,8 @@ function bindStaticEvents() {
     }
   });
   document.addEventListener('keydown', handleSetTrackerKeydown);
+  window.addEventListener('focus', updateSetTrackerFocusIndicator);
+  window.addEventListener('blur', updateSetTrackerFocusIndicator);
   if (typeof closeCompletedActionMenu === 'function') {
     document.addEventListener('click', () => closeCompletedActionMenu());
   }

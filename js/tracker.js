@@ -253,7 +253,13 @@ function renderSetTracker() {
   const done = isProgressComplete(progress);
   const isHistoricalOnly = activeTracker?.readOnly || !isExerciseActive(ex) || ex.missing;
   const group = GROUPS[ex.group] || {};
-  const panel = el('section', 'set-tracker' + (done ? ' complete' : '') + (isHistoricalOnly ? ' historical-only' : ''));
+  const panel = el(
+    'section',
+    'set-tracker' +
+      (done ? ' complete' : '') +
+      (isHistoricalOnly ? ' historical-only' : '') +
+      (trackerWindowFocused() ? '' : ' is-window-unfocused')
+  );
   panel.style.setProperty('--tracker-color', group.color || 'var(--accent-green)');
 
   const utility = el('div', 'set-tracker-utility');
@@ -282,6 +288,7 @@ function renderSetTracker() {
   if (sessionDayLabel) {
     startMeta.appendChild(elText('div', 'set-tracker-session-day', sessionDayLabel));
   }
+  startMeta.appendChild(buildTrackerFocusIndicator());
   info.appendChild(startMeta);
   const titleRow = el('div', 'set-tracker-title-row');
   titleRow.appendChild(elText('div', 'set-tracker-name', ex.name));
@@ -341,6 +348,31 @@ function renderSetTracker() {
   panel.appendChild(actions);
 
   root.appendChild(panel);
+}
+
+function trackerWindowFocused() {
+  return document.hasFocus();
+}
+
+function trackerFocusIndicatorText() {
+  return trackerWindowFocused() ? 'Arrows ready' : 'Click PEM for arrows';
+}
+
+function buildTrackerFocusIndicator() {
+  const indicator = elText('div', 'set-tracker-focus-indicator', trackerFocusIndicatorText());
+  indicator.setAttribute('role', 'status');
+  indicator.setAttribute('aria-live', 'polite');
+  indicator.title = 'Left and right arrow shortcuts only work when PEM has keyboard focus.';
+  return indicator;
+}
+
+function updateSetTrackerFocusIndicator() {
+  const tracker = document.querySelector('.set-tracker');
+  const indicator = document.querySelector('.set-tracker-focus-indicator');
+  if (!tracker || !indicator) return;
+  const isFocused = trackerWindowFocused();
+  tracker.classList.toggle('is-window-unfocused', !isFocused);
+  indicator.textContent = trackerFocusIndicatorText();
 }
 
 function buildTrackerIconButton(iconName, label, className, onClick) {

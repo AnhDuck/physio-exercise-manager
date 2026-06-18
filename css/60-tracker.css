@@ -82,6 +82,43 @@
   color: var(--text-muted);
 }
 
+.set-tracker-focus-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 22px;
+  padding: 4px 8px;
+  border: 1px solid rgba(52,211,153,.5);
+  border-radius: 999px;
+  background: rgba(16,185,129,.12);
+  color: #bbf7d0;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.set-tracker-focus-indicator::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 0 3px rgba(52,211,153,.14);
+}
+
+.set-tracker.is-window-unfocused .set-tracker-focus-indicator {
+  border-color: rgba(251,191,36,.58);
+  background: rgba(180,83,9,.16);
+  color: #fde68a;
+}
+
+.set-tracker.is-window-unfocused .set-tracker-focus-indicator::before {
+  background: #fbbf24;
+  box-shadow: 0 0 0 3px rgba(251,191,36,.16);
+}
+
 .set-tracker-title-row {
   display: flex;
   align-items: center;
