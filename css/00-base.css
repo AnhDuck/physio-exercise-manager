@@ -19,8 +19,8 @@
   --day-col-w:    minmax(68px, 1fr);
   --label-col-w:  minmax(600px, 50vw);
   --header-h:     56px;
-  --calendar-header-compact-h: 39px;
-  --calendar-header-mobile-h: 99px;
+  --calendar-header-compact-h: 47px;
+  --calendar-header-mobile-h: 106px;
   --header-pad-x: 24px;
   --drawer-toggle-size: 34px;
   --notes-panel-w: 360px;
