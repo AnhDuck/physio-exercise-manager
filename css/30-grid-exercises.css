@@ -660,6 +660,38 @@
   line-height: 1;
 }
 
+.dose-marker::after {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  z-index: 220;
+  width: max-content;
+  max-width: min(260px, calc(100vw - 32px));
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #111;
+  color: var(--text);
+  box-shadow: 0 8px 18px rgba(0,0,0,.32);
+  content: attr(data-tooltip);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25;
+  opacity: 0;
+  pointer-events: none;
+  text-align: left;
+  text-transform: none;
+  transform: translate(-50%, 0);
+  visibility: hidden;
+  white-space: pre-line;
+}
+
+.dose-marker:hover::after,
+.dose-marker:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+}
+
 /* ── Instruction rows ────────────────────────────────────────────── */
 .instruction-row {
   display: none;

@@ -301,7 +301,9 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber, blockInfo =
     cell.appendChild(btn);
     if (doseEvents.length) {
       const marker = elText('button', 'dose-marker', String(doseEvents.length));
-      marker.title = 'Dose change logged';
+      const tooltip = doseEventsTooltip(doseEvents);
+      marker.setAttribute('data-tooltip', tooltip);
+      marker.setAttribute('aria-label', tooltip);
       marker.addEventListener('click', (e) => {
         e.stopPropagation();
         openNotesModal(dateS);
@@ -314,6 +316,25 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber, blockInfo =
   frag.appendChild(row);
   if (instructionRow) frag.appendChild(instructionRow);
   return frag;
+}
+
+function doseEventsTooltip(doseEvents) {
+  const labels = {
+    sets: 'Sets',
+    reps: 'Reps',
+    resistance: 'Resistance',
+    frequency: 'Frequency',
+  };
+  return doseEvents
+    .map(ev => Object.entries(ev.changes || {})
+      .map(([field, change]) => {
+        const from = change?.from || 'blank';
+        const to = change?.to || 'blank';
+        return `${labels[field] || field}: ${from} -> ${to}`;
+      })
+      .join(' / '))
+    .filter(Boolean)
+    .join('\n') || 'Dose change logged';
 }
 
 function buildInstructionRow(ex) {
