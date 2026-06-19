@@ -77,7 +77,7 @@ All app-data writes must go through safe-save helpers in storage internals. Do n
 - Hidden exercises stay in `pem_exercises` to preserve linked session and timeline data.
 - Exercise blocks are group-scoped in `settings.blocks[group]`; exercises store only `blockId`.
 - Stored events are `note`, `dose-change`, and `exercise-added`. Timeline exercise logs are derived from session progress and must not be stored in `pem_events`.
-- Folder auto-backup writes a dated daily file plus `physio-exercise-auto-backup-latest.json`, reads and validates latest after writing, cleans old dated files, and records status/history.
+- Folder auto-backup writes a dated daily file at the scheduled time, rolling hourly recovery files while the app is open, plus `physio-exercise-auto-backup-latest.json`; it reads and validates latest after writing, cleans old daily/hourly files, and records status/history.
 
 ## Where To Edit
 

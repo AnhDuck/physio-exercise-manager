@@ -6,21 +6,26 @@ const AUTO_BACKUP_STORE = 'handles';
 const AUTO_BACKUP_DIR_KEY = 'backup-directory';
 const AUTO_BACKUP_PICKER_ID = 'pem-auto-backup-folder';
 const AUTO_BACKUP_DATED_PREFIX = 'physio-exercise-auto-backup-';
+const AUTO_BACKUP_HOURLY_PREFIX = 'physio-exercise-auto-backup-hourly-';
 const AUTO_BACKUP_LATEST_FILE = 'physio-exercise-auto-backup-latest.json';
 const AUTO_BACKUP_KEEP_DAYS = 31;
+const AUTO_BACKUP_HOURLY_KEEP_HOURS = 48;
 const AUTO_BACKUP_HISTORY_LIMIT = 20;
 const AUTO_BACKUP_TIMER_MS = 60 * 1000;
 const AUTO_BACKUP_DATED_FILE_RE = /^physio-exercise-auto-backup-(\d{4}-\d{2}-\d{2})\.json$/;
+const AUTO_BACKUP_HOURLY_FILE_RE = /^physio-exercise-auto-backup-hourly-(\d{4}-\d{2}-\d{2})-(\d{2})00\.json$/;
 const DATA_HEALTH_ISSUE_CODES = ['storage-failure', 'storage-test', 'storage-test-mode', 'storage-unavailable', 'data-safety'];
 const AUTO_BACKUP_DEFAULT_SETTINGS = {
   time: '06:00',
   folderName: '',
   lastScheduledBackupDate: '',
+  lastHourlyBackupHour: '',
   lastSuccessAt: '',
   lastErrorAt: '',
   lastError: '',
   needsReconnect: false,
   lastMissedBackupDate: '',
+  lastMissedHourlyBackupHour: '',
   lastVerifiedAt: '',
   lastVerifiedFile: '',
   lastVerifiedSummary: null,
@@ -48,11 +53,13 @@ function normalizeRuntimeAutoBackupSettings(value = {}) {
     time,
     folderName: typeof source.folderName === 'string' ? source.folderName : AUTO_BACKUP_DEFAULT_SETTINGS.folderName,
     lastScheduledBackupDate: typeof source.lastScheduledBackupDate === 'string' ? source.lastScheduledBackupDate : AUTO_BACKUP_DEFAULT_SETTINGS.lastScheduledBackupDate,
+    lastHourlyBackupHour: typeof source.lastHourlyBackupHour === 'string' ? source.lastHourlyBackupHour : AUTO_BACKUP_DEFAULT_SETTINGS.lastHourlyBackupHour,
     lastSuccessAt: typeof source.lastSuccessAt === 'string' ? source.lastSuccessAt : AUTO_BACKUP_DEFAULT_SETTINGS.lastSuccessAt,
     lastErrorAt: typeof source.lastErrorAt === 'string' ? source.lastErrorAt : AUTO_BACKUP_DEFAULT_SETTINGS.lastErrorAt,
     lastError: typeof source.lastError === 'string' ? source.lastError : AUTO_BACKUP_DEFAULT_SETTINGS.lastError,
     needsReconnect: Boolean(source.needsReconnect),
     lastMissedBackupDate: typeof source.lastMissedBackupDate === 'string' ? source.lastMissedBackupDate : AUTO_BACKUP_DEFAULT_SETTINGS.lastMissedBackupDate,
+    lastMissedHourlyBackupHour: typeof source.lastMissedHourlyBackupHour === 'string' ? source.lastMissedHourlyBackupHour : AUTO_BACKUP_DEFAULT_SETTINGS.lastMissedHourlyBackupHour,
     lastVerifiedAt: typeof source.lastVerifiedAt === 'string' ? source.lastVerifiedAt : AUTO_BACKUP_DEFAULT_SETTINGS.lastVerifiedAt,
     lastVerifiedFile: typeof source.lastVerifiedFile === 'string' ? source.lastVerifiedFile : AUTO_BACKUP_DEFAULT_SETTINGS.lastVerifiedFile,
     lastVerifiedSummary: source.lastVerifiedSummary && typeof source.lastVerifiedSummary === 'object' && !Array.isArray(source.lastVerifiedSummary)
@@ -177,19 +184,19 @@ async function maybeRunAutoBackup(trigger = 'auto') {
 
   const auto = getAutoBackupSettings();
   const now = new Date();
-  const pending = pendingScheduledAutoBackup(auto, now);
+  const pending = pendingAutoBackup(auto, now);
   if (!pending) return;
   if (!auto.folderName) return;
   if (!isFolderAutoBackupSupported()) {
-    recordAutoBackupMissed(pending.dateStr, pending.dueAt, 'Folder backup is unavailable in this browser. Download a JSON backup or open the app in Chrome or Edge desktop.');
+    recordAutoBackupMissed(pending, 'Folder backup is unavailable in this browser. Download a JSON backup or open the app in Chrome or Edge desktop.');
     return;
   }
   if (auto.needsReconnect) {
-    recordAutoBackupMissed(pending.dateStr, pending.dueAt, auto.lastError || 'Reconnect the backup folder to resume automatic backups.');
+    recordAutoBackupMissed(pending, auto.lastError || 'Reconnect the backup folder to resume automatic backups.');
     return;
   }
 
-  await runFolderBackup('auto', { promptPermission: false, trigger });
+  await runFolderBackup('auto', { promptPermission: false, trigger, schedule: pending.type });
 }
 
 async function chooseAutoBackupFolder() {
@@ -250,8 +257,11 @@ async function runFolderBackup(type, options = {}) {
 
   const startedAt = new Date();
   const today = toDateStr(startedAt);
+  const schedule = options.schedule === 'hourly' ? 'hourly' : 'daily';
   const datedFile = `${AUTO_BACKUP_DATED_PREFIX}${today}.json`;
-  const files = [datedFile, AUTO_BACKUP_LATEST_FILE];
+  const hourlyFile = hourlyAutoBackupFileName(startedAt);
+  const archiveFile = schedule === 'hourly' ? hourlyFile : datedFile;
+  const files = [archiveFile, AUTO_BACKUP_LATEST_FILE];
 
   try {
     const handle = await getReadyAutoBackupDirectoryHandle(Boolean(options.promptPermission));
@@ -259,7 +269,7 @@ async function runFolderBackup(type, options = {}) {
 
     const backup = buildFullBackup();
     const json = JSON.stringify(backup, null, 2);
-    await writeAutoBackupFile(handle, datedFile, json);
+    await writeAutoBackupFile(handle, archiveFile, json);
     await writeAutoBackupFile(handle, AUTO_BACKUP_LATEST_FILE, json);
     const verified = await verifyAutoBackupFile(handle, AUTO_BACKUP_LATEST_FILE);
 
@@ -279,7 +289,8 @@ async function runFolderBackup(type, options = {}) {
       folderName: handle.name || getAutoBackupSettings().folderName,
       message: cleanupMessage,
       verified,
-      countsAsScheduled: type === 'auto' || isAtOrAfterAutoBackupTime(startedAt, getAutoBackupSettings().time),
+      schedule,
+      countsAsScheduled: schedule === 'daily' && (type === 'auto' || isAtOrAfterAutoBackupTime(startedAt, getAutoBackupSettings().time)),
     });
   } catch (err) {
     recordAutoBackupFailure(type, err, { files });
@@ -367,14 +378,21 @@ async function cleanupOldAutoBackupFiles(directoryHandle, now = new Date()) {
   cutoff.setHours(0, 0, 0, 0);
   cutoff.setDate(cutoff.getDate() - (AUTO_BACKUP_KEEP_DAYS - 1));
   const cutoffDateStr = toDateStr(cutoff);
+  const hourlyCutoff = new Date(now);
+  hourlyCutoff.setMinutes(0, 0, 0);
+  hourlyCutoff.setHours(hourlyCutoff.getHours() - (AUTO_BACKUP_HOURLY_KEEP_HOURS - 1));
   let deletedCount = 0;
 
   for await (const [name, entry] of directoryHandle.entries()) {
     if (entry.kind !== 'file') continue;
-    const match = AUTO_BACKUP_DATED_FILE_RE.exec(name);
-    if (!match) continue;
-    const fileDate = match[1];
-    if (fileDate < cutoffDateStr) {
+    const datedMatch = AUTO_BACKUP_DATED_FILE_RE.exec(name);
+    if (datedMatch && datedMatch[1] < cutoffDateStr) {
+      await directoryHandle.removeEntry(name);
+      deletedCount++;
+      continue;
+    }
+    const hourlyMatch = AUTO_BACKUP_HOURLY_FILE_RE.exec(name);
+    if (hourlyMatch && autoBackupHourlyFileDate(hourlyMatch) < hourlyCutoff) {
       await directoryHandle.removeEntry(name);
       deletedCount++;
     }
@@ -399,6 +417,7 @@ function recordAutoBackupSuccess(type, result) {
   if (result.countsAsScheduled) {
     auto.lastScheduledBackupDate = toDateStr(at);
   }
+  auto.lastHourlyBackupHour = autoBackupHourKey(at);
   pushAutoBackupHistory({
     id: `${at.getTime()}-${type}`,
     type,
@@ -406,6 +425,7 @@ function recordAutoBackupSuccess(type, result) {
     at: at.toISOString(),
     folderName: auto.folderName,
     files: result.files || [],
+    schedule: result.schedule || 'daily',
     message: result.message || 'Backup saved.',
   });
   saveSettings(settings);
@@ -436,24 +456,31 @@ function recordAutoBackupFailure(type, err, details = {}) {
   showToast(`Backup failed: ${message}`);
 }
 
-function recordAutoBackupMissed(dateStr, dueAt, message) {
+function recordAutoBackupMissed(pending, message) {
   const auto = getAutoBackupSettings();
-  if (auto.lastMissedBackupDate === dateStr) {
+  if (!pending) return;
+  if (pending.type === 'daily' && auto.lastMissedBackupDate === pending.dateStr) {
+    renderAutoBackupSettings();
+    return;
+  }
+  if (pending.type === 'hourly' && auto.lastMissedHourlyBackupHour === pending.hourKey) {
     renderAutoBackupSettings();
     return;
   }
 
-  auto.lastMissedBackupDate = dateStr;
+  if (pending.type === 'daily') auto.lastMissedBackupDate = pending.dateStr;
+  if (pending.type === 'hourly') auto.lastMissedHourlyBackupHour = pending.hourKey;
   auto.lastError = message;
-  auto.lastErrorAt = dueAt.toISOString();
+  auto.lastErrorAt = pending.dueAt.toISOString();
   if (auto.folderName) auto.needsReconnect = true;
   pushAutoBackupHistory({
-    id: `${dueAt.getTime()}-auto-missed`,
+    id: `${pending.dueAt.getTime()}-auto-${pending.type}-missed`,
     type: 'auto',
     status: 'missed',
-    at: dueAt.toISOString(),
+    at: pending.dueAt.toISOString(),
     folderName: auto.folderName,
     files: [],
+    schedule: pending.type,
     message,
   });
   saveSettings(settings);
@@ -487,6 +514,10 @@ function scheduledAutoBackupDueAtDate(dateStr, timeStr) {
   return due;
 }
 
+function pendingAutoBackup(auto, now = new Date()) {
+  return pendingScheduledAutoBackup(auto, now) || pendingHourlyAutoBackup(auto, now);
+}
+
 function pendingScheduledAutoBackup(auto, now = new Date()) {
   const today = toDateStr(now);
   let pendingDate = today;
@@ -504,7 +535,32 @@ function pendingScheduledAutoBackup(auto, now = new Date()) {
   if (pendingDate > today) return null;
   const dueAt = scheduledAutoBackupDueAtDate(pendingDate, auto.time);
   if (now < dueAt) return null;
-  return { dateStr: pendingDate, dueAt };
+  return { type: 'daily', dateStr: pendingDate, dueAt };
+}
+
+function pendingHourlyAutoBackup(auto, now = new Date()) {
+  const currentHour = autoBackupHourKey(now);
+  if (!currentHour || auto.lastHourlyBackupHour === currentHour || auto.lastMissedHourlyBackupHour === currentHour) return null;
+  const dueAt = new Date(now);
+  dueAt.setMinutes(0, 0, 0);
+  return { type: 'hourly', hourKey: currentHour, dueAt };
+}
+
+function autoBackupHourKey(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+  return `${toDateStr(date)}-${String(date.getHours()).padStart(2, '0')}`;
+}
+
+function hourlyAutoBackupFileName(date) {
+  return `${AUTO_BACKUP_HOURLY_PREFIX}${autoBackupHourKey(date)}00.json`;
+}
+
+function autoBackupHourlyFileDate(match) {
+  const hour = Number(match[2]);
+  if (hour < 0 || hour > 23) return new Date(NaN);
+  const date = dateFromStr(match[1]);
+  date.setHours(hour, 0, 0, 0);
+  return date;
 }
 
 function latestAutoBackupScheduleDate(values) {
@@ -517,7 +573,7 @@ function latestAutoBackupScheduleDate(values) {
 function getAutoBackupHealth(now = new Date()) {
   const auto = getAutoBackupSettings();
   const supported = isFolderAutoBackupSupported();
-  const pending = pendingScheduledAutoBackup(auto, now);
+  const pending = pendingAutoBackup(auto, now);
   const storageIssue = getStorageHealthIssue();
   const dataSafety = getDataSafetyReport();
 
@@ -588,7 +644,9 @@ function getAutoBackupHealth(now = new Date()) {
       ok: false,
       code: 'due',
       title: 'Backup is due now',
-      detail: 'The scheduled backup has not completed yet. Keep this page open or run a backup now.',
+      detail: pending.type === 'hourly'
+        ? 'The hourly recovery backup has not completed yet. Keep this page open or run a backup now.'
+        : 'The scheduled daily backup has not completed yet. Keep this page open or run a backup now.',
       action: 'Backup now',
     };
   }
@@ -944,6 +1002,7 @@ function normalizeAutoBackupHistoryEntry(entry) {
     status: ['error', 'missed'].includes(entry.status) ? entry.status : 'success',
     at,
     count: Math.max(1, Number(entry.count) || 1),
+    schedule: entry.schedule === 'hourly' ? 'hourly' : 'daily',
     message: typeof entry.message === 'string' ? entry.message : '',
   };
 }
@@ -992,7 +1051,11 @@ function autoBackupHistoryTitle(item) {
   if (item.status === 'error') {
     return `Backup failed - ${formatAutoBackupDateTime(item.at)}`;
   }
-  const label = item.type === 'auto' ? 'Auto backup saved' : 'Manual backup saved';
+  const label = item.type === 'manual'
+    ? 'Manual backup saved'
+    : item.schedule === 'hourly'
+      ? 'Hourly recovery backup saved'
+      : 'Daily backup saved';
   return `${label} - ${formatAutoBackupDateTime(item.at)}`;
 }
 
@@ -1008,20 +1071,34 @@ function nextAutoBackupDueText(auto, now = new Date()) {
   if (!auto.folderName) return 'Choose a folder';
   if (auto.needsReconnect) return 'Reconnect folder';
 
-  const today = toDateStr(now);
-  const due = dateFromStr(today);
-  const [hour, minute] = auto.time.split(':').map(Number);
-  due.setHours(hour, minute, 0, 0);
+  const pending = pendingAutoBackup(auto, now);
+  if (pending?.type === 'hourly') return 'Hourly recovery due now';
+  if (pending?.type === 'daily') return 'Daily backup due now';
 
-  if (auto.lastScheduledBackupDate !== today && now >= due) {
-    return 'Due now';
+  const dailyDue = nextScheduledAutoBackupDueAt(auto, now);
+  const hourlyDue = nextHourlyAutoBackupDueAt(now);
+  if (dailyDue && dailyDue <= hourlyDue) {
+    return `Daily ${formatAutoBackupDateTime(dailyDue.toISOString())}`;
   }
+  return `Hourly ${formatAutoBackupDateTime(hourlyDue.toISOString())}`;
+}
+
+function nextScheduledAutoBackupDueAt(auto, now = new Date()) {
+  const today = toDateStr(now);
+  const due = scheduledAutoBackupDueAtDate(today, auto.time);
 
   if (auto.lastScheduledBackupDate === today || now >= due) {
     due.setDate(due.getDate() + 1);
   }
 
-  return formatAutoBackupDateTime(due.toISOString());
+  return due;
+}
+
+function nextHourlyAutoBackupDueAt(now = new Date()) {
+  const due = new Date(now);
+  due.setMinutes(0, 0, 0);
+  due.setHours(due.getHours() + 1);
+  return due;
 }
 
 function formatAutoBackupDateTime(value) {
