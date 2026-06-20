@@ -90,6 +90,7 @@ function syncSettingsControls() {
     const input = document.getElementById('setting-aw-mini-refresh-minutes');
     if (input) input.value = String(activityWatchMiniSettings().refreshMinutes);
   }
+  if (typeof syncWorkloadSettingsControls === 'function') syncWorkloadSettingsControls();
   if (typeof syncActivityWatchSettingsControls === 'function') syncActivityWatchSettingsControls();
   syncSpeechVolumeControl();
 }

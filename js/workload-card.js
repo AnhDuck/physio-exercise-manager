@@ -183,6 +183,27 @@ function handleWorkloadCardKeydown(event) {
   event.target.blur();
 }
 
+function syncWorkloadSettingsControls() {
+  const input = document.getElementById('setting-workload-card-enabled');
+  if (!input) return;
+  input.checked = getHomeCardsSettings().workload?.enabled !== false;
+}
+
+function autosaveWorkloadCardEnabled() {
+  const input = document.getElementById('setting-workload-card-enabled');
+  const homeCards = getHomeCardsSettings();
+  homeCards.workload = normalizeWorkloadCardSettings(homeCards.workload);
+  homeCards.workload.enabled = input ? input.checked : homeCards.workload.enabled !== false;
+  saveSettings(settings);
+  syncWorkloadSettingsControls();
+  if (homeCards.workload.enabled) {
+    if (typeof startWorkloadCard === 'function') startWorkloadCard();
+  } else if (typeof stopWorkloadCard === 'function') {
+    stopWorkloadCard();
+  }
+  renderHomeCards();
+}
+
 function startWorkloadTimer() {
   syncWorkloadTimerRollover();
   if (workloadData.timer.running) return;
@@ -393,3 +414,5 @@ window.startWorkloadCard = startWorkloadCard;
 window.stopWorkloadCard = stopWorkloadCard;
 window.buildWorkloadCard = buildWorkloadCard;
 window.handleWorkloadHomeCardAction = handleWorkloadHomeCardAction;
+window.syncWorkloadSettingsControls = syncWorkloadSettingsControls;
+window.autosaveWorkloadCardEnabled = autosaveWorkloadCardEnabled;

@@ -168,6 +168,7 @@ function bindStaticEvents() {
   document.getElementById('setting-weather-preview-mode')?.addEventListener('change', autosaveWeatherPreviewMode);
   document.getElementById('setting-weather-preview-random-btn')?.addEventListener('click', randomizeWeatherPreviewMode);
   document.getElementById('setting-aw-mini-refresh-minutes')?.addEventListener('change', autosaveActivityWatchMiniRefreshMinutes);
+  document.getElementById('setting-workload-card-enabled')?.addEventListener('change', autosaveWorkloadCardEnabled);
   document.getElementById('setting-activitywatch-server-url')?.addEventListener('change', saveActivityWatchServerUrlSetting);
   document.getElementById('settings-activitywatch-refresh')?.addEventListener('click', refreshActivityWatchFromSettings);
   document.addEventListener('keydown', handleSettingsKeydown);

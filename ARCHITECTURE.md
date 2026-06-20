@@ -35,7 +35,7 @@ Never load `main.js` before feature files it binds. Do not add imports, exports,
 - `activitywatch-data.js`: ActivityWatch REST client, aggregate storage, sync orchestration.
 - `dev-sample-data.js`: Codex verification-only sample seed for `http://127.0.0.1:8895`; it refreshes Abbotsford Weather and representative ActivityWatch data on every page load before render so UI checks exercise populated dashboard states. It must not run on the user's real `8891` origin.
 - `home-cards.js`: main-screen dashboard card row, in-memory collapsed/expanded state, downward-scroll auto-collapse, manual dashboard toggle, and refresh timers for the always-on monitor view.
-- `workload-card.js`: Workload Today dashboard card, one-button work timer, manual total edits, personal-day rollover splitting, long-timer review flagging, and ActivityWatch Work-category comparison.
+- `workload-card.js`: optional Workload Today dashboard card, Dashboard Settings visibility toggle, one-button work timer, manual total edits, personal-day rollover splitting, long-timer review flagging, and ActivityWatch Work-category comparison.
 - `weather-format.js`: weather display labels, units, WMO and official condition mapping, icon file mapping for `assets/weather-icons/google-weather-set-4/light/`, source labels, AQHI/UV/wind/sun formatting, and daily-brain advisory/highlight/mood rules.
 - `weather-preview.js`: Open-Meteo WMO weather-state preview modes, random preview scenarios, alert preview data, and preview setting normalization.
 - `weather-normalize.js`: Open-Meteo and Environment Canada MSC GeoMet current conditions/hourly forecasts/sun times/alerts/AQHI response normalization into the cached weather result shape.
@@ -68,7 +68,7 @@ localStorage keys:
 - `pem_activitywatch`: aggregate ActivityWatch summaries only.
 - `pem_workload`: Workload Today daily totals, active timer state, and review flags.
 
-Dashboard card preferences, weather request cooldown metadata, and the cached last weather result live inside `pem_settings.homeCards` so backups and imports continue to use the existing settings safe-save path. Weather, air quality, and official-alert refreshes share the same weather cadence to avoid extra background polling. The dashboard row's collapsed/expanded UI state is intentionally in-memory only; a fresh app load starts expanded. On the Codex verification origin `http://127.0.0.1:8895`, `dev-sample-data.js` overwrites Weather and ActivityWatch sample data on every load so verification does not fall back to empty states.
+Dashboard card preferences, including the Workload Today visibility toggle, weather request cooldown metadata, and the cached last weather result live inside `pem_settings.homeCards` so backups and imports continue to use the existing settings safe-save path. When Workload Today is disabled, the home row should return to the old two-card Weather/ActivityWatch layout while preserving `pem_workload` data. Weather, air quality, and official-alert refreshes share the same weather cadence to avoid extra background polling. The dashboard row's collapsed/expanded UI state is intentionally in-memory only; a fresh app load starts expanded. On the Codex verification origin `http://127.0.0.1:8895`, `dev-sample-data.js` overwrites Weather and ActivityWatch sample data on every load so verification does not fall back to empty states.
 
 All app-data writes must go through safe-save helpers in storage internals. Do not call `localStorage.setItem` directly for app keys outside storage internals.
 

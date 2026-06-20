@@ -9,20 +9,21 @@ function getHomeCardsSettings() {
 }
 
 function buildHomeCardsRow() {
-  const row = el('section', `home-cards-row${homeCardsCollapsed ? ' is-collapsed' : ''}`);
+  const cfg = getHomeCardsSettings();
+  const showWorkload = workloadCardEnabled(cfg);
+  const row = el('section', `home-cards-row${homeCardsCollapsed ? ' is-collapsed' : ''}${showWorkload ? ' has-workload-card' : ''}`);
   row.setAttribute('aria-label', 'Dashboard cards');
 
   row.appendChild(buildHomeCardsToggleButton());
 
   const cards = el('div', 'home-cards-grid');
-  const cfg = getHomeCardsSettings();
   if (cfg.weather.enabled && typeof buildWeatherCard === 'function') {
     cards.appendChild(buildWeatherCard({ compact: homeCardsCollapsed }));
   }
   if (cfg.activityWatchMini.enabled && typeof buildActivityWatchMiniCard === 'function') {
     cards.appendChild(buildActivityWatchMiniCard({ compact: homeCardsCollapsed }));
   }
-  if (typeof window.buildWorkloadCard === 'function') {
+  if (showWorkload && typeof window.buildWorkloadCard === 'function') {
     cards.appendChild(window.buildWorkloadCard({ compact: homeCardsCollapsed }));
   }
 
@@ -42,12 +43,16 @@ function startHomeCards() {
   maybeRefreshHomeCards('startup');
   homeCardsTimer = window.setInterval(() => maybeRefreshHomeCards('auto'), HOME_CARDS_REFRESH_CHECK_MS);
   homeCardsClockTimer = window.setInterval(renderHomeCards, HOME_CARDS_CLOCK_MS);
-  if (typeof window.startWorkloadCard === 'function') window.startWorkloadCard();
+  if (workloadCardEnabled() && typeof window.startWorkloadCard === 'function') window.startWorkloadCard();
   document.addEventListener('click', handleHomeCardActionClick);
   document.addEventListener('visibilitychange', handleHomeCardsVisibilityChange);
   window.addEventListener('focus', handleHomeCardsFocus);
   window.addEventListener('scroll', handleHomeCardsAutoCollapse, { passive: true });
   window.addEventListener('wheel', handleHomeCardsWheelIntent, { passive: true });
+}
+
+function workloadCardEnabled(cfg = getHomeCardsSettings()) {
+  return cfg.workload?.enabled !== false;
 }
 
 function stopHomeCards() {

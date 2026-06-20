@@ -97,11 +97,11 @@
     padding-right: 40px;
   }
 
-  .home-cards-grid .weather-card {
+  .home-cards-row.has-workload-card .home-cards-grid .weather-card {
     grid-column: 1 / -1;
   }
 
-  .home-cards-row.is-collapsed .home-cards-grid .weather-compact-card {
+  .home-cards-row.is-collapsed.has-workload-card .home-cards-grid .weather-compact-card {
     display: none;
   }
 
@@ -417,7 +417,7 @@
     padding-right: 38px;
   }
 
-  .home-cards-row.is-collapsed .home-cards-grid .weather-compact-card {
+  .home-cards-row.is-collapsed.has-workload-card .home-cards-grid .weather-compact-card {
     display: grid;
   }
 

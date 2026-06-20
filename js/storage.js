@@ -645,6 +645,9 @@ function defaultHomeCardsSettings() {
       refreshMinutes: 5,
       categoryMode: 'exact',
     },
+    workload: {
+      enabled: true,
+    },
   };
 }
 
@@ -654,6 +657,7 @@ function normalizeHomeCardsSettings(value = {}) {
   return {
     weather: normalizeWeatherCardSettings(source.weather, defaults.weather),
     activityWatchMini: normalizeActivityWatchMiniSettings(source.activityWatchMini, defaults.activityWatchMini),
+    workload: normalizeWorkloadCardSettings(source.workload, defaults.workload),
   };
 }
 
@@ -685,6 +689,15 @@ function normalizeActivityWatchMiniSettings(value = {}, defaults = defaultHomeCa
     enabled: source.enabled !== false,
     refreshMinutes: clampRefreshMinutes(source.refreshMinutes, defaults.refreshMinutes, 1, 30),
     categoryMode: normalizeActivityWatchMiniCategoryMode(source.categoryMode),
+  };
+}
+
+function normalizeWorkloadCardSettings(value = {}, defaults = defaultHomeCardsSettings().workload) {
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  return {
+    ...defaults,
+    ...source,
+    enabled: source.enabled !== false,
   };
 }
 

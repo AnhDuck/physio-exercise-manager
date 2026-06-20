@@ -35,6 +35,16 @@
   padding-right: 42px;
 }
 
+.home-cards-row:not(.has-workload-card) .home-cards-grid {
+  grid-template-columns: minmax(330px, .95fr) minmax(330px, 1.05fr);
+  max-width: 1260px;
+}
+
+.home-cards-row.is-collapsed:not(.has-workload-card) .home-cards-grid {
+  grid-template-columns: minmax(230px, 340px) minmax(360px, 1fr);
+  max-width: 1260px;
+}
+
 .home-cards-toggle {
   position: absolute;
   z-index: 3;
