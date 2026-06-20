@@ -35,7 +35,7 @@ Never load `main.js` before feature files it binds. Do not add imports, exports,
 - `activitywatch-data.js`: ActivityWatch REST client, aggregate storage, sync orchestration.
 - `dev-sample-data.js`: Codex verification-only sample seed for `http://127.0.0.1:8895`; it refreshes Abbotsford Weather and representative ActivityWatch data on every page load before render so UI checks exercise populated dashboard states. It must not run on the user's real `8891` origin.
 - `home-cards.js`: main-screen dashboard card row, in-memory collapsed/expanded state, downward-scroll auto-collapse, manual dashboard toggle, and refresh timers for the always-on monitor view.
-- `workload-card.js`: optional Workload Today dashboard card, Dashboard Settings visibility toggle, one-button work timer, manual total edits, personal-day rollover splitting, long-timer review flagging, and ActivityWatch Work-category comparison.
+- `workload-card.js`: optional Workload Today dashboard card, Dashboard Settings visibility toggle, one-button work timer, quick total adjustments, personal-day rollover splitting, long-timer review flagging, and ActivityWatch Work-category comparison.
 - `weather-format.js`: weather display labels, units, WMO and official condition mapping, icon file mapping for `assets/weather-icons/google-weather-set-4/light/`, source labels, AQHI/UV/wind/sun formatting, and daily-brain advisory/highlight/mood rules.
 - `weather-preview.js`: Open-Meteo WMO weather-state preview modes, random preview scenarios, alert preview data, and preview setting normalization.
 - `weather-normalize.js`: Open-Meteo and Environment Canada MSC GeoMet current conditions/hourly forecasts/sun times/alerts/AQHI response normalization into the cached weather result shape.

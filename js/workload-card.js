@@ -8,15 +8,11 @@ let workloadCardTickTimer = null;
 function startWorkloadCard() {
   syncWorkloadTimerRollover();
   syncWorkloadCardTicker();
-  document.addEventListener('change', handleWorkloadCardInputChange);
-  document.addEventListener('keydown', handleWorkloadCardKeydown);
 }
 
 function stopWorkloadCard() {
   window.clearInterval(workloadCardTickTimer);
   workloadCardTickTimer = null;
-  document.removeEventListener('change', handleWorkloadCardInputChange);
-  document.removeEventListener('keydown', handleWorkloadCardKeydown);
 }
 
 function syncWorkloadCardTicker() {
@@ -49,22 +45,25 @@ function buildWorkloadCard(options = {}) {
   title.appendChild(elText('span', 'home-card-kicker', 'Workload Today'));
   title.appendChild(elText('strong', '', workloadDateLabel(dateStr)));
   header.appendChild(title);
-  const status = elText('span', `workload-state-pill${workloadData.timer.running ? ' is-running' : ''}`, workloadData.timer.running ? 'Timer running' : 'Timer stopped');
-  header.appendChild(status);
   card.appendChild(header);
 
   const main = el('div', 'workload-main');
-  main.appendChild(elText('div', 'workload-total', formatWorkloadDuration(totalSeconds)));
-  const timerLine = workloadData.timer.running
-    ? `Current timer: ${formatWorkloadDuration(runningSeconds)}`
-    : 'Timer ready';
-  main.appendChild(elText('div', 'workload-timer-line', timerLine));
+  const timerSeconds = workloadData.timer.running ? runningSeconds : 0;
+  main.appendChild(elText('div', 'workload-timer-value', formatWorkloadClockDuration(timerSeconds)));
+  main.appendChild(elText('div', 'workload-total-note', `Today total ${formatWorkloadDuration(totalSeconds)}`));
   card.appendChild(main);
 
-  const primary = elText('button', 'workload-primary-btn', workloadData.timer.running ? 'Stop + add' : 'Start work');
+  const primary = elText('button', `workload-primary-btn ${workloadData.timer.running ? 'is-stop' : 'is-start'}`, workloadData.timer.running ? 'Stop' : 'Start work');
   primary.type = 'button';
   primary.dataset.homeCardAction = workloadData.timer.running ? 'workload-stop' : 'workload-start';
   card.appendChild(primary);
+
+  if (workloadData.timer.running) {
+    const reset = elText('button', 'workload-reset-btn', 'Reset');
+    reset.type = 'button';
+    reset.dataset.homeCardAction = 'workload-reset';
+    card.appendChild(reset);
+  }
 
   const manual = el('div', 'workload-manual-grid');
   [
@@ -78,7 +77,6 @@ function buildWorkloadCard(options = {}) {
     button.dataset.workloadDeltaSeconds = String(item.seconds);
     manual.appendChild(button);
   });
-  manual.appendChild(buildWorkloadSetTotalControl(totalSeconds));
   card.appendChild(manual);
 
   const comparison = buildWorkloadComparison(dateStr, totalSeconds);
@@ -90,11 +88,6 @@ function buildWorkloadCard(options = {}) {
   } else {
     footer.appendChild(elText('span', '', `Day starts ${workloadPersonalDayStartTime()}`));
   }
-  const reset = elText('button', 'workload-reset-btn', 'Reset timer');
-  reset.type = 'button';
-  reset.dataset.homeCardAction = 'workload-reset';
-  reset.disabled = !workloadData.timer.running;
-  footer.appendChild(reset);
   card.appendChild(footer);
 
   return card;
@@ -114,26 +107,11 @@ function buildWorkloadCompactCard(card, dateStr, totalSeconds, runningSeconds, d
   copy.appendChild(elText('span', 'workload-compact-state', state));
   card.appendChild(copy);
 
-  const button = elText('button', 'workload-compact-btn', workloadData.timer.running ? 'Stop + add' : 'Start');
+  const button = elText('button', `workload-compact-btn ${workloadData.timer.running ? 'is-stop' : 'is-start'}`, workloadData.timer.running ? 'Stop' : 'Start');
   button.type = 'button';
   button.dataset.homeCardAction = workloadData.timer.running ? 'workload-stop' : 'workload-start';
   card.appendChild(button);
   return card;
-}
-
-function buildWorkloadSetTotalControl(totalSeconds) {
-  const wrap = el('label', 'workload-set-total');
-  wrap.appendChild(elText('span', '', 'Set total'));
-  const input = el('input', '');
-  input.id = 'workload-set-total-input';
-  input.type = 'text';
-  input.inputMode = 'decimal';
-  input.autocomplete = 'off';
-  input.spellcheck = false;
-  input.value = formatWorkloadDuration(totalSeconds);
-  input.setAttribute('aria-label', 'Set today work total');
-  wrap.appendChild(input);
-  return wrap;
 }
 
 function buildWorkloadComparison(dateStr, totalSeconds) {
@@ -142,12 +120,12 @@ function buildWorkloadComparison(dateStr, totalSeconds) {
   const comparison = el('div', 'workload-comparison');
 
   const computer = el('div', 'workload-comparison-row');
-  computer.appendChild(elText('span', '', 'Computer work'));
+  computer.appendChild(elText('span', '', 'Computer'));
   computer.appendChild(elText('strong', '', formatWorkloadDuration(awSeconds)));
   comparison.appendChild(computer);
 
   const manual = el('div', 'workload-comparison-row');
-  manual.appendChild(elText('span', '', 'Manual/physical estimate'));
+  manual.appendChild(elText('span', '', 'Manual / physical'));
   manual.appendChild(elText('strong', '', formatWorkloadDuration(manualSeconds)));
   comparison.appendChild(manual);
 
@@ -169,18 +147,6 @@ function handleWorkloadHomeCardAction(button) {
   } else if (action === 'workload-reset') {
     resetWorkloadTimer();
   }
-}
-
-function handleWorkloadCardInputChange(event) {
-  if (event.target?.id !== 'workload-set-total-input') return;
-  setWorkloadTodayTotalFromText(event.target.value);
-}
-
-function handleWorkloadCardKeydown(event) {
-  if (event.target?.id !== 'workload-set-total-input' || event.key !== 'Enter') return;
-  event.preventDefault();
-  setWorkloadTodayTotalFromText(event.target.value);
-  event.target.blur();
 }
 
 function syncWorkloadSettingsControls() {
@@ -246,24 +212,6 @@ function adjustWorkloadToday(deltaSeconds) {
   const dateStr = workloadCurrentDateStr();
   const day = workloadDay(dateStr);
   day.totalSeconds = Math.max(0, Math.round(day.totalSeconds + deltaSeconds));
-  day.updatedAt = new Date().toISOString();
-  workloadData.daysByDate[dateStr] = day;
-  saveWorkloadData();
-  renderHomeCards();
-}
-
-function setWorkloadTodayTotalFromText(text) {
-  syncWorkloadTimerRollover();
-  const parsed = parseWorkloadDurationText(text);
-  if (parsed === null) {
-    alert('Use minutes, seconds, 1h 30m 15s, 1:30, or 0:01:30 for the Workload total.');
-    renderHomeCards();
-    return;
-  }
-  const dateStr = workloadCurrentDateStr();
-  const day = workloadDay(dateStr);
-  const activeSeconds = workloadRunningSecondsForDate(dateStr);
-  day.totalSeconds = Math.max(0, Math.round(parsed - activeSeconds));
   day.updatedAt = new Date().toISOString();
   workloadData.daysByDate[dateStr] = day;
   saveWorkloadData();
@@ -386,23 +334,14 @@ function formatWorkloadDuration(seconds) {
   return '0s';
 }
 
-function parseWorkloadDurationText(value) {
-  const text = String(value || '').trim().toLowerCase();
-  if (!text) return null;
-  const clock = /^(\d{1,2}):(\d{1,2}):(\d{1,2})$/.exec(text);
-  if (clock) return ((Number(clock[1]) * 3600) + (Number(clock[2]) * 60) + Number(clock[3]));
-  const colon = /^(\d{1,2}):(\d{1,2})$/.exec(text);
-  if (colon) return ((Number(colon[1]) * 60) + Number(colon[2])) * 60;
-  const numberOnly = /^\d+(\.\d+)?$/.exec(text);
-  if (numberOnly) return Math.round(Number(text) * 60);
-  const hourMatch = /(\d+(?:\.\d+)?)\s*h/.exec(text);
-  const minuteMatch = /(\d+(?:\.\d+)?)\s*m/.exec(text);
-  const secondMatch = /(\d+(?:\.\d+)?)\s*s/.exec(text);
-  if (!hourMatch && !minuteMatch && !secondMatch) return null;
-  const hours = hourMatch ? Number(hourMatch[1]) : 0;
-  const minutes = minuteMatch ? Number(minuteMatch[1]) : 0;
-  const seconds = secondMatch ? Number(secondMatch[1]) : 0;
-  return Math.round(((hours * 60) + minutes) * 60 + seconds);
+function formatWorkloadClockDuration(seconds) {
+  const totalSeconds = Math.max(0, Math.round(Number(seconds) || 0));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const remainingSeconds = totalSeconds % 60;
+  const paddedMinutes = hours ? String(minutes).padStart(2, '0') : String(minutes);
+  const paddedSeconds = String(remainingSeconds).padStart(2, '0');
+  return hours ? `${hours}:${paddedMinutes}:${paddedSeconds}` : `${paddedMinutes}:${paddedSeconds}`;
 }
 
 function workloadDateLabel(dateStr) {

@@ -109,16 +109,8 @@
     grid-template-columns: minmax(108px, auto) minmax(0, 1fr);
   }
 
-  .workload-total {
-    font-size: 34px;
-  }
-
   .workload-manual-grid {
     grid-template-columns: repeat(3, minmax(0, auto));
-  }
-
-  .workload-set-total {
-    grid-column: 1 / -1;
   }
 
   .home-card {
@@ -455,16 +447,12 @@
     flex-direction: column;
   }
 
-  .workload-total {
-    font-size: 30px;
+  .workload-timer-value {
+    font-size: 48px;
   }
 
   .workload-manual-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .workload-set-total {
-    grid-column: 1 / -1;
   }
 
   .workload-compact-card {
