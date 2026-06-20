@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   sessions  = loadSessions();
   settings  = loadSettings();
   events    = loadEvents();
+  loadWorkloadData();
   if (typeof loadActivityWatchData === 'function') loadActivityWatchData();
   if (typeof ensureVerificationSampleData === 'function') ensureVerificationSampleData();
   runMigrations();

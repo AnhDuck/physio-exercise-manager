@@ -5,6 +5,7 @@ let exercises = [];
 let sessions  = {};
 let settings  = {};
 let events    = [];
+let workloadData = defaultWorkloadData();
 let currentWeekStart = null; // Monday of displayed week (Date)
 let editingExId = null;      // exercise id being edited in modal
 let uploadTargetId = null;   // exercise id awaiting image upload

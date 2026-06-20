@@ -93,12 +93,32 @@
   }
 
   .home-cards-row.is-collapsed .home-cards-grid {
-    grid-template-columns: minmax(220px, .75fr) minmax(320px, 1.25fr);
+    grid-template-columns: minmax(230px, 1fr) minmax(300px, 1.2fr);
     padding-right: 40px;
+  }
+
+  .home-cards-grid .weather-card {
+    grid-column: 1 / -1;
+  }
+
+  .home-cards-row.is-collapsed .home-cards-grid .weather-compact-card {
+    display: none;
   }
 
   .activitywatch-compact-main {
     grid-template-columns: minmax(108px, auto) minmax(0, 1fr);
+  }
+
+  .workload-total {
+    font-size: 34px;
+  }
+
+  .workload-manual-grid {
+    grid-template-columns: repeat(3, minmax(0, auto));
+  }
+
+  .workload-set-total {
+    grid-column: 1 / -1;
   }
 
   .home-card {
@@ -397,6 +417,10 @@
     padding-right: 38px;
   }
 
+  .home-cards-row.is-collapsed .home-cards-grid .weather-compact-card {
+    display: grid;
+  }
+
   .home-cards-row.is-collapsed {
     top: calc(var(--header-h) + var(--calendar-header-mobile-h));
   }
@@ -419,6 +443,32 @@
   .activitywatch-compact-card {
     grid-template-columns: minmax(0, 1fr);
     padding-right: 8px;
+  }
+
+  .workload-card {
+    height: auto;
+  }
+
+  .workload-card-header,
+  .workload-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .workload-total {
+    font-size: 30px;
+  }
+
+  .workload-manual-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .workload-set-total {
+    grid-column: 1 / -1;
+  }
+
+  .workload-compact-card {
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .activitywatch-compact-main {

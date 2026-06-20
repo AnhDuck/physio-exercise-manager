@@ -4,6 +4,7 @@ const KEYS = {
   SETTINGS:  'pem_settings',
   EVENTS:    'pem_events',
   ACTIVITYWATCH: 'pem_activitywatch',
+  WORKLOAD: 'pem_workload',
 };
 
 const STORAGE_LABELS = {
@@ -12,6 +13,7 @@ const STORAGE_LABELS = {
   [KEYS.SETTINGS]: 'Settings',
   [KEYS.EVENTS]: 'Timeline',
   [KEYS.ACTIVITYWATCH]: 'ActivityWatch',
+  [KEYS.WORKLOAD]: 'Workload',
 };
 const APP_STORAGE_KEYS = Object.values(KEYS);
 const STORAGE_TIER_GROWING_BYTES = 2 * 1024 * 1024;
@@ -688,6 +690,85 @@ function normalizeActivityWatchMiniSettings(value = {}, defaults = defaultHomeCa
 
 function normalizeActivityWatchMiniCategoryMode(value) {
   return value === 'top' ? 'top' : 'exact';
+}
+
+function defaultWorkloadData() {
+  return {
+    version: 1,
+    daysByDate: {},
+    timer: {
+      running: false,
+      date: '',
+      startedAt: '',
+      updatedAt: '',
+    },
+  };
+}
+
+function loadWorkloadData() {
+  const raw = safeGetLocalStorageItem(KEYS.WORKLOAD);
+  workloadData = normalizeWorkloadDataForStorage(raw ? JSON.parse(raw) : null);
+  return workloadData;
+}
+
+function saveWorkloadData() {
+  workloadData = normalizeWorkloadDataForStorage(workloadData);
+  safeSetLocalStorageItem(KEYS.WORKLOAD, JSON.stringify(workloadData), STORAGE_LABELS[KEYS.WORKLOAD]);
+}
+
+function getWorkloadBackupData() {
+  return normalizeWorkloadDataForStorage(workloadData);
+}
+
+function normalizeWorkloadDataForStorage(value) {
+  const defaults = defaultWorkloadData();
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const daysByDate = {};
+  Object.entries(source.daysByDate || {}).forEach(([dateStr, day]) => {
+    if (!isValidWorkloadDate(dateStr)) return;
+    const normalized = normalizeWorkloadDay(dateStr, day);
+    if (normalized.totalSeconds || normalized.needsReview || normalized.reviewNote) {
+      daysByDate[dateStr] = normalized;
+    }
+  });
+
+  return {
+    ...defaults,
+    ...source,
+    version: 1,
+    daysByDate,
+    timer: normalizeWorkloadTimer(source.timer),
+  };
+}
+
+function normalizeWorkloadDay(dateStr, value = {}) {
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  return {
+    date: dateStr,
+    totalSeconds: Math.max(0, Math.round(Number(source.totalSeconds) || 0)),
+    needsReview: Boolean(source.needsReview),
+    reviewNote: typeof source.reviewNote === 'string' ? source.reviewNote : '',
+    updatedAt: typeof source.updatedAt === 'string' ? source.updatedAt : '',
+  };
+}
+
+function normalizeWorkloadTimer(value = {}) {
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const startedAt = typeof source.startedAt === 'string' && !Number.isNaN(new Date(source.startedAt).getTime())
+    ? source.startedAt
+    : '';
+  return {
+    running: Boolean(source.running && startedAt),
+    date: isValidWorkloadDate(source.date) ? source.date : '',
+    startedAt,
+    updatedAt: typeof source.updatedAt === 'string' ? source.updatedAt : '',
+  };
+}
+
+function isValidWorkloadDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return false;
+  const date = dateFromStr(value);
+  return toDateStr(date) === value;
 }
 
 function normalizeWeatherLocation(value) {

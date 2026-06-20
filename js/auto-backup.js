@@ -848,6 +848,7 @@ function renderStorageSettings(health) {
     [KEYS.SETTINGS]: 'settings-storage-settings',
     [KEYS.EVENTS]: 'settings-storage-events',
     [KEYS.ACTIVITYWATCH]: 'settings-storage-activitywatch',
+    [KEYS.WORKLOAD]: 'settings-storage-workload',
   };
 
   if (saveState && saveDetail) {
@@ -1133,7 +1134,10 @@ function backupSummaryText(summary) {
   const activityWatchText = summary.activityWatchDayCount
     ? `, ${formatNumber(summary.activityWatchDayCount)} ActivityWatch days`
     : '';
-  return `${formatNumber(summary.exerciseCount || 0)} exercises, ${formatNumber(summary.sessionDateCount || 0)} session days, ${formatNumber(summary.timelineEventCount || 0)} timeline items${activityWatchText}`;
+  const workloadText = summary.workloadDayCount
+    ? `, ${formatNumber(summary.workloadDayCount)} workload days`
+    : '';
+  return `${formatNumber(summary.exerciseCount || 0)} exercises, ${formatNumber(summary.sessionDateCount || 0)} session days, ${formatNumber(summary.timelineEventCount || 0)} timeline items${activityWatchText}${workloadText}`;
 }
 
 function autoBackupErrorMessage(err) {

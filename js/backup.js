@@ -15,7 +15,7 @@ function exportFullBackup() {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-  showToast(`Downloaded JSON with ${formatNumber(backup.summary.exerciseCount)} exercises, ${formatNumber(backup.summary.sessionDateCount)} session days, ${formatNumber(backup.summary.timelineEventCount)} timeline items, and ${formatNumber(backup.summary.activityWatchDayCount)} ActivityWatch days.`);
+  showToast(`Downloaded JSON with ${formatNumber(backup.summary.exerciseCount)} exercises, ${formatNumber(backup.summary.sessionDateCount)} session days, ${formatNumber(backup.summary.timelineEventCount)} timeline items, ${formatNumber(backup.summary.activityWatchDayCount)} ActivityWatch days, and ${formatNumber(backup.summary.workloadDayCount)} workload days.`);
 }
 
 function buildFullBackup() {
@@ -27,6 +27,9 @@ function buildFullBackup() {
     activityWatch: typeof getActivityWatchBackupData === 'function'
       ? deepClone(getActivityWatchBackupData())
       : deepClone(typeof defaultActivityWatchData === 'function' ? defaultActivityWatchData() : {}),
+    workload: typeof getWorkloadBackupData === 'function'
+      ? deepClone(getWorkloadBackupData())
+      : deepClone(typeof defaultWorkloadData === 'function' ? defaultWorkloadData() : {}),
   };
 
   return {
@@ -59,6 +62,9 @@ function buildBackupSummary(data) {
     timelineEventCount: Array.isArray(data.events) ? data.events.length : 0,
     activityWatchDayCount: data.activityWatch?.daysByDate && typeof data.activityWatch.daysByDate === 'object'
       ? Object.keys(data.activityWatch.daysByDate).length
+      : 0,
+    workloadDayCount: data.workload?.daysByDate && typeof data.workload.daysByDate === 'object'
+      ? Object.keys(data.workload.daysByDate).length
       : 0,
     customImageCount: Array.isArray(data.exercises) ? data.exercises.filter(ex => Boolean(ex.image)).length : 0,
     sessionDateRange,
@@ -117,6 +123,7 @@ function importBackupJson(jsonText) {
     `Session days: ${formatNumber(summary.sessionDateCount || 0)}`,
     `Timeline items: ${formatNumber(summary.timelineEventCount || 0)}`,
     `ActivityWatch days: ${formatNumber(summary.activityWatchDayCount || 0)}`,
+    `Workload days: ${formatNumber(summary.workloadDayCount || 0)}`,
   ].join('\n');
 
   if (confirm('Download current data before replacing it?')) {
@@ -135,6 +142,7 @@ function importBackupJson(jsonText) {
     safeSetLocalStorageItem(KEYS.SETTINGS, JSON.stringify(sanitizeLegacySettings(backup.data.settings)), STORAGE_LABELS[KEYS.SETTINGS]);
     safeSetLocalStorageItem(KEYS.EVENTS, JSON.stringify(backup.data.events), STORAGE_LABELS[KEYS.EVENTS]);
     safeSetLocalStorageItem(KEYS.ACTIVITYWATCH, JSON.stringify(normalizeActivityWatchDataForStorage(backup.data.activityWatch)), STORAGE_LABELS[KEYS.ACTIVITYWATCH]);
+    safeSetLocalStorageItem(KEYS.WORKLOAD, JSON.stringify(normalizeWorkloadDataForStorage(backup.data.workload)), STORAGE_LABELS[KEYS.WORKLOAD]);
   } catch (err) {
     restoreAppStorageValues(originalValues);
     alert(`Import failed:\n\n- The backup was valid, but browser storage could not save it.\n- Your previous browser data was restored.\n- ${storageErrorMessage(err)}`);
@@ -163,6 +171,9 @@ function validateBackup(backup) {
   if (!Array.isArray(backup.data.events)) errors.push('data.events must be an array.');
   if (backup.data.activityWatch !== undefined && !isPlainObject(backup.data.activityWatch)) {
     errors.push('data.activityWatch must be an object when present.');
+  }
+  if (backup.data.workload !== undefined && !isPlainObject(backup.data.workload)) {
+    errors.push('data.workload must be an object when present.');
   }
   return errors;
 }
@@ -197,6 +208,7 @@ function getDataSafetyReport(data = {}) {
   const dataSettings = data.settings ?? settings;
   const dataEvents = data.events ?? events;
   const dataActivityWatch = data.activityWatch ?? (typeof getActivityWatchBackupData === 'function' ? getActivityWatchBackupData() : {});
+  const dataWorkload = data.workload ?? (typeof getWorkloadBackupData === 'function' ? getWorkloadBackupData() : {});
   const issues = [];
   const checkedAt = new Date().toISOString();
 
@@ -205,6 +217,7 @@ function getDataSafetyReport(data = {}) {
   if (!isPlainObject(dataSettings)) issues.push('Settings are not saved as an object.');
   if (!Array.isArray(dataEvents)) issues.push('Timeline items are not saved as a list.');
   if (!isPlainObject(dataActivityWatch)) issues.push('ActivityWatch summaries are not saved as an object.');
+  if (!isPlainObject(dataWorkload)) issues.push('Workload data is not saved as an object.');
   if (issues.length) return { ok: false, issues, checkedAt, summary: null };
 
   const exerciseIds = new Set();
@@ -260,6 +273,7 @@ function getDataSafetyReport(data = {}) {
       settings: dataSettings,
       events: dataEvents,
       activityWatch: dataActivityWatch,
+      workload: dataWorkload,
     }),
   };
 }

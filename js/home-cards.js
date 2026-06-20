@@ -22,6 +22,9 @@ function buildHomeCardsRow() {
   if (cfg.activityWatchMini.enabled && typeof buildActivityWatchMiniCard === 'function') {
     cards.appendChild(buildActivityWatchMiniCard({ compact: homeCardsCollapsed }));
   }
+  if (typeof window.buildWorkloadCard === 'function') {
+    cards.appendChild(window.buildWorkloadCard({ compact: homeCardsCollapsed }));
+  }
 
   row.appendChild(cards);
   return row;
@@ -39,6 +42,7 @@ function startHomeCards() {
   maybeRefreshHomeCards('startup');
   homeCardsTimer = window.setInterval(() => maybeRefreshHomeCards('auto'), HOME_CARDS_REFRESH_CHECK_MS);
   homeCardsClockTimer = window.setInterval(renderHomeCards, HOME_CARDS_CLOCK_MS);
+  if (typeof window.startWorkloadCard === 'function') window.startWorkloadCard();
   document.addEventListener('click', handleHomeCardActionClick);
   document.addEventListener('visibilitychange', handleHomeCardsVisibilityChange);
   window.addEventListener('focus', handleHomeCardsFocus);
@@ -51,6 +55,7 @@ function stopHomeCards() {
   if (homeCardsClockTimer) window.clearInterval(homeCardsClockTimer);
   homeCardsTimer = null;
   homeCardsClockTimer = null;
+  if (typeof window.stopWorkloadCard === 'function') window.stopWorkloadCard();
   document.removeEventListener('click', handleHomeCardActionClick);
   document.removeEventListener('visibilitychange', handleHomeCardsVisibilityChange);
   window.removeEventListener('focus', handleHomeCardsFocus);
@@ -83,6 +88,8 @@ function handleHomeCardActionClick(e) {
     window.setTimeout(() => document.getElementById('setting-weather-location-search')?.focus(), 0);
   } else if (button.dataset.homeCardAction === 'toggle-home-cards') {
     setHomeCardsCollapsed(!homeCardsCollapsed);
+  } else if (button.dataset.homeCardAction.startsWith('workload-') && typeof window.handleWorkloadHomeCardAction === 'function') {
+    window.handleWorkloadHomeCardAction(button);
   }
 }
 
