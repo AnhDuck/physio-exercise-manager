@@ -6,7 +6,7 @@
   <title>Physio Exercise Management</title>
   <link rel="icon" type="image/svg+xml" href="assets/physio-icon.svg" />
   <script>
-    window.PEM_APP_VERSION = '1.0.140';
+    window.PEM_APP_VERSION = '1.0.141';
     const PEM_CSS_FILES = [
       'css/00-base.css',
       'css/10-header.css',
@@ -474,6 +474,39 @@
                 </span>
                 <input type="checkbox" id="setting-workload-card-enabled" />
               </label>
+              <label class="settings-action-row" for="setting-workload-running-border-enabled">
+                <span class="settings-action-label">
+                  <strong>Running border</strong>
+                  <span>Show a red border around the whole app while the work timer is running.</span>
+                </span>
+                <input type="checkbox" id="setting-workload-running-border-enabled" />
+              </label>
+              <label class="settings-action-row" for="setting-workload-reminder-minutes">
+                <span class="settings-action-label">
+                  <strong>Reminder interval</strong>
+                  <span>Play a sound and show a toast while the work timer is still running.</span>
+                </span>
+                <select id="setting-workload-reminder-minutes">
+                  <option value="0">Off</option>
+                  <option value="15">Every 15 minutes</option>
+                  <option value="20">Every 20 minutes</option>
+                  <option value="30">Every 30 minutes</option>
+                </select>
+              </label>
+              <div class="settings-action-row">
+                <span class="settings-action-label">
+                  <strong>Reminder sound</strong>
+                  <span>Choose a short cue that is obvious without being needlessly distracting.</span>
+                </span>
+                <div class="dashboard-workload-sound-controls">
+                  <select id="setting-workload-reminder-sound" aria-label="Workload reminder sound">
+                    <option value="soft-chime">Soft chime</option>
+                    <option value="beep">Beep</option>
+                    <option value="double-tap">Double tap</option>
+                  </select>
+                  <button class="settings-backup-btn" id="setting-workload-reminder-test-btn" type="button" data-settings-icon="play">Test sound</button>
+                </div>
+              </div>
             </div>
           </div>
         </section>

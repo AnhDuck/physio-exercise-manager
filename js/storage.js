@@ -662,6 +662,9 @@ function defaultHomeCardsSettings() {
     },
     workload: {
       enabled: true,
+      runningBorderEnabled: true,
+      reminderMinutes: 15,
+      reminderSound: 'soft-chime',
     },
   };
 }
@@ -713,7 +716,19 @@ function normalizeWorkloadCardSettings(value = {}, defaults = defaultHomeCardsSe
     ...defaults,
     ...source,
     enabled: source.enabled !== false,
+    runningBorderEnabled: source.runningBorderEnabled !== false,
+    reminderMinutes: normalizeWorkloadReminderMinutes(source.reminderMinutes, defaults.reminderMinutes),
+    reminderSound: normalizeWorkloadReminderSound(source.reminderSound, defaults.reminderSound),
   };
+}
+
+function normalizeWorkloadReminderMinutes(value, fallback = 15) {
+  const minutes = Number(value);
+  return [0, 15, 20, 30].includes(minutes) ? minutes : fallback;
+}
+
+function normalizeWorkloadReminderSound(value, fallback = 'soft-chime') {
+  return ['soft-chime', 'beep', 'double-tap'].includes(value) ? value : fallback;
 }
 
 function normalizeActivityWatchMiniCategoryMode(value) {

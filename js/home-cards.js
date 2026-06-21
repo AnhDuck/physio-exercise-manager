@@ -43,7 +43,7 @@ function startHomeCards() {
   maybeRefreshHomeCards('startup');
   homeCardsTimer = window.setInterval(() => maybeRefreshHomeCards('auto'), HOME_CARDS_REFRESH_CHECK_MS);
   homeCardsClockTimer = window.setInterval(renderHomeCards, HOME_CARDS_CLOCK_MS);
-  if (workloadCardEnabled() && typeof window.startWorkloadCard === 'function') window.startWorkloadCard();
+  if (typeof window.startWorkloadCard === 'function') window.startWorkloadCard();
   document.addEventListener('click', handleHomeCardActionClick);
   document.addEventListener('visibilitychange', handleHomeCardsVisibilityChange);
   window.addEventListener('focus', handleHomeCardsFocus);

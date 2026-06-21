@@ -494,6 +494,7 @@
 
   .dashboard-location-controls,
   .dashboard-preview-controls,
+  .dashboard-workload-sound-controls,
   .dashboard-location-row {
     grid-template-columns: 1fr;
   }

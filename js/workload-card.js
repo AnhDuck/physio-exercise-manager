@@ -2,17 +2,29 @@
 
 const WORKLOAD_REVIEW_THRESHOLD_SECONDS = 6 * 60 * 60;
 const WORKLOAD_TICK_MS = 1000;
+const WORKLOAD_REMINDER_SOUND_OPTIONS = {
+  'soft-chime': 'Soft chime',
+  beep: 'Beep',
+  'double-tap': 'Double tap',
+};
 
 let workloadCardTickTimer = null;
+let workloadReminderTimer = null;
+let workloadAudioContext = null;
+let workloadAudioUnlockBound = false;
 
 function startWorkloadCard() {
   syncWorkloadTimerRollover();
   syncWorkloadCardTicker();
+  syncWorkloadTimerCues();
 }
 
 function stopWorkloadCard() {
   window.clearInterval(workloadCardTickTimer);
+  window.clearTimeout(workloadReminderTimer);
   workloadCardTickTimer = null;
+  workloadReminderTimer = null;
+  updateWorkloadRunningVisualCue();
 }
 
 function syncWorkloadCardTicker() {
@@ -21,6 +33,7 @@ function syncWorkloadCardTicker() {
   if (!workloadData?.timer?.running) return;
   workloadCardTickTimer = window.setInterval(() => {
     syncWorkloadTimerRollover();
+    syncWorkloadTimerCues();
     if (document.activeElement?.closest?.('.workload-card')) return;
     if (typeof renderHomeCards === 'function') renderHomeCards();
   }, WORKLOAD_TICK_MS);
@@ -149,24 +162,47 @@ function handleWorkloadHomeCardAction(button) {
 }
 
 function syncWorkloadSettingsControls() {
-  const input = document.getElementById('setting-workload-card-enabled');
-  if (!input) return;
-  input.checked = getHomeCardsSettings().workload?.enabled !== false;
+  const cfg = workloadCueSettings();
+  const cardEnabled = document.getElementById('setting-workload-card-enabled');
+  const borderEnabled = document.getElementById('setting-workload-running-border-enabled');
+  const reminderMinutes = document.getElementById('setting-workload-reminder-minutes');
+  const reminderSound = document.getElementById('setting-workload-reminder-sound');
+  if (cardEnabled) cardEnabled.checked = cfg.enabled !== false;
+  if (borderEnabled) borderEnabled.checked = cfg.runningBorderEnabled !== false;
+  if (reminderMinutes) reminderMinutes.value = String(cfg.reminderMinutes);
+  if (reminderSound) reminderSound.value = cfg.reminderSound;
 }
 
 function autosaveWorkloadCardEnabled() {
   const input = document.getElementById('setting-workload-card-enabled');
+  const workload = workloadCueSettings();
+  workload.enabled = input ? input.checked : workload.enabled !== false;
+  saveWorkloadCueSettings(workload);
+  if (typeof startWorkloadCard === 'function') startWorkloadCard();
+  renderHomeCards();
+}
+
+function autosaveWorkloadCueSettings() {
+  const workload = workloadCueSettings();
+  const borderEnabled = document.getElementById('setting-workload-running-border-enabled');
+  const reminderMinutes = document.getElementById('setting-workload-reminder-minutes');
+  const reminderSound = document.getElementById('setting-workload-reminder-sound');
+  workload.runningBorderEnabled = borderEnabled ? borderEnabled.checked : workload.runningBorderEnabled !== false;
+  workload.reminderMinutes = normalizeWorkloadReminderMinutes(reminderMinutes?.value, workload.reminderMinutes);
+  workload.reminderSound = normalizeWorkloadReminderSound(reminderSound?.value, workload.reminderSound);
+  saveWorkloadCueSettings(workload);
+  syncWorkloadTimerCues();
+}
+
+function saveWorkloadCueSettings(workload) {
   const homeCards = getHomeCardsSettings();
-  homeCards.workload = normalizeWorkloadCardSettings(homeCards.workload);
-  homeCards.workload.enabled = input ? input.checked : homeCards.workload.enabled !== false;
+  homeCards.workload = normalizeWorkloadCardSettings(workload);
   saveSettings(settings);
   syncWorkloadSettingsControls();
-  if (homeCards.workload.enabled) {
-    if (typeof startWorkloadCard === 'function') startWorkloadCard();
-  } else if (typeof stopWorkloadCard === 'function') {
-    stopWorkloadCard();
-  }
-  renderHomeCards();
+}
+
+function testWorkloadReminderSound() {
+  playWorkloadReminderSound(workloadCueSettings().reminderSound);
 }
 
 function startWorkloadTimer() {
@@ -181,6 +217,7 @@ function startWorkloadTimer() {
   };
   saveWorkloadData();
   syncWorkloadCardTicker();
+  syncWorkloadTimerCues({ started: true });
   renderHomeCards();
 }
 
@@ -193,6 +230,7 @@ function stopWorkloadTimerAndAdd() {
   workloadData.timer = defaultWorkloadData().timer;
   saveWorkloadData();
   syncWorkloadCardTicker();
+  syncWorkloadTimerCues();
   renderHomeCards();
   showToast(result.needsReview ? 'Work timer added and marked Needs review.' : `Added ${formatWorkloadDuration(result.seconds)} to Workload Today.`);
 }
@@ -203,6 +241,7 @@ function resetWorkloadTimer() {
   workloadData.timer = defaultWorkloadData().timer;
   saveWorkloadData();
   syncWorkloadCardTicker();
+  syncWorkloadTimerCues();
   renderHomeCards();
 }
 
@@ -225,6 +264,7 @@ function syncWorkloadTimerRollover(now = new Date()) {
   if (Number.isNaN(startedAt.getTime())) {
     workloadData.timer = defaultWorkloadData().timer;
     saveWorkloadData();
+    syncWorkloadTimerCues();
     return true;
   }
 
@@ -242,7 +282,112 @@ function syncWorkloadTimerRollover(now = new Date()) {
   }
 
   if (changed) saveWorkloadData();
+  if (changed) syncWorkloadTimerCues();
   return changed;
+}
+
+function workloadCueSettings() {
+  const homeCards = getHomeCardsSettings();
+  homeCards.workload = normalizeWorkloadCardSettings(homeCards.workload);
+  return homeCards.workload;
+}
+
+function syncWorkloadTimerCues(options = {}) {
+  updateWorkloadRunningVisualCue();
+  scheduleWorkloadReminderCue();
+  if (options.started) playWorkloadReminderSound(workloadCueSettings().reminderSound);
+}
+
+function updateWorkloadRunningVisualCue() {
+  const showCue = Boolean(workloadData?.timer?.running && workloadCueSettings().runningBorderEnabled !== false);
+  document.body?.classList.toggle('workload-timer-running', showCue);
+}
+
+function scheduleWorkloadReminderCue() {
+  window.clearTimeout(workloadReminderTimer);
+  workloadReminderTimer = null;
+  if (!workloadData?.timer?.running) return;
+  const minutes = workloadCueSettings().reminderMinutes;
+  if (!minutes) return;
+  const startedAt = new Date(workloadData.timer.startedAt).getTime();
+  if (!startedAt) return;
+  const intervalMs = minutes * 60 * 1000;
+  const elapsedMs = Math.max(0, Date.now() - startedAt);
+  const nextElapsedMs = Math.max(intervalMs, (Math.floor(elapsedMs / intervalMs) + 1) * intervalMs);
+  const delayMs = Math.max(1000, nextElapsedMs - elapsedMs);
+  workloadReminderTimer = window.setTimeout(runWorkloadReminderCue, delayMs);
+}
+
+function runWorkloadReminderCue() {
+  if (!workloadData?.timer?.running) return;
+  const dateStr = workloadData.timer.date || workloadCurrentDateStr();
+  const runningSeconds = workloadRunningSecondsForDate(dateStr);
+  playWorkloadReminderSound(workloadCueSettings().reminderSound);
+  if (typeof showToast === 'function') {
+    showToast(`Work timer still running: ${formatWorkloadDuration(runningSeconds)}`);
+  }
+  scheduleWorkloadReminderCue();
+}
+
+function playWorkloadReminderSound(soundId) {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return;
+  workloadAudioContext = workloadAudioContext || new AudioCtx();
+  if (workloadAudioContext.state === 'suspended') {
+    workloadAudioContext.resume().catch(() => {});
+    bindWorkloadAudioUnlock();
+  }
+
+  const sound = normalizeWorkloadReminderSound(soundId);
+  if (sound === 'beep') {
+    playWorkloadToneSequence([{ frequency: 880, duration: 0.16, type: 'square', volume: 0.13 }]);
+  } else if (sound === 'double-tap') {
+    playWorkloadToneSequence([
+      { frequency: 520, duration: 0.055, type: 'triangle', volume: 0.18 },
+      { frequency: 420, duration: 0.055, type: 'triangle', volume: 0.16, gap: 0.085 },
+    ]);
+  } else {
+    playWorkloadToneSequence([
+      { frequency: 659, duration: 0.18, type: 'sine', volume: 0.11 },
+      { frequency: 880, duration: 0.28, type: 'sine', volume: 0.09, gap: 0.035 },
+    ]);
+  }
+}
+
+function playWorkloadToneSequence(notes) {
+  if (!workloadAudioContext) return;
+  let offset = 0;
+  notes.forEach(note => {
+    const startAt = workloadAudioContext.currentTime + offset;
+    const duration = Math.max(0.04, Number(note.duration) || 0.12);
+    const gain = workloadAudioContext.createGain();
+    const osc = workloadAudioContext.createOscillator();
+    osc.type = note.type || 'sine';
+    osc.frequency.setValueAtTime(Number(note.frequency) || 660, startAt);
+    gain.gain.setValueAtTime(0.0001, startAt);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.01, Number(note.volume) || 0.1), startAt + 0.018);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+    osc.connect(gain);
+    gain.connect(workloadAudioContext.destination);
+    osc.start(startAt);
+    osc.stop(startAt + duration + 0.03);
+    offset += duration + Math.max(0.02, Number(note.gap) || 0.045);
+  });
+}
+
+function bindWorkloadAudioUnlock() {
+  if (workloadAudioUnlockBound) return;
+  workloadAudioUnlockBound = true;
+  const unlock = () => {
+    if (workloadAudioContext?.state === 'suspended') {
+      workloadAudioContext.resume().catch(() => {});
+    }
+    document.removeEventListener('pointerdown', unlock);
+    document.removeEventListener('keydown', unlock);
+    workloadAudioUnlockBound = false;
+  };
+  document.addEventListener('pointerdown', unlock, { once: true });
+  document.addEventListener('keydown', unlock, { once: true });
 }
 
 function commitWorkloadTimerSegment(dateStr, startedAt, endedAt) {
@@ -389,5 +534,7 @@ window.buildWorkloadCard = buildWorkloadCard;
 window.handleWorkloadHomeCardAction = handleWorkloadHomeCardAction;
 window.syncWorkloadSettingsControls = syncWorkloadSettingsControls;
 window.autosaveWorkloadCardEnabled = autosaveWorkloadCardEnabled;
+window.autosaveWorkloadCueSettings = autosaveWorkloadCueSettings;
+window.testWorkloadReminderSound = testWorkloadReminderSound;
 window.getWorkloadActivityWatchOverlayForDate = getWorkloadActivityWatchOverlayForDate;
 window.getWorkloadActivityWatchOverlayTotals = getWorkloadActivityWatchOverlayTotals;
