@@ -35,6 +35,10 @@ function renderActivityWatchDetailPanel(days) {
     root.appendChild(filterBar);
   }
   root.appendChild(buildActivityWatchDetailModeToggle());
+  const overlayMode = activityWatchDashboardWorkloadOverlayMode();
+  if (overlayMode) {
+    root.appendChild(buildActivityWatchOverlaySummary(mode === 'range' ? days : [selectedDay], overlayMode, mode));
+  }
 
   if (!rows.length) {
     root.appendChild(elText('div', 'activitywatch-empty', mode === 'range'
@@ -115,6 +119,41 @@ function buildActivityWatchDetailModeToggle() {
 function activityWatchCategoryRowsForDay(day) {
   return Object.entries(activityWatchDashboardCategoryTotals(day))
     .sort((a, b) => b[1] - a[1]);
+}
+
+function buildActivityWatchOverlaySummary(days, overlayMode, detailMode) {
+  const summary = el('div', 'activitywatch-overlay-summary');
+  const safeDays = (days || []).filter(Boolean);
+  const totals = activityWatchDashboardOverlayTotals(safeDays);
+  const header = el('div', 'activitywatch-overlay-summary-header');
+  header.appendChild(elText('strong', '', overlayMode === 'tendon' ? 'Total tendon load' : 'Workload overlay'));
+  header.appendChild(elText('span', '', overlayMode === 'tendon'
+    ? 'Total computer active time + Manual / untracked estimate'
+    : detailMode === 'range'
+      ? 'Work group reconciliation for the visible range'
+      : 'Work group reconciliation for the selected day'));
+  summary.appendChild(header);
+
+  const grid = el('div', 'activitywatch-overlay-metrics');
+  grid.appendChild(buildActivityWatchOverlayMetric('Workload total', totals.workloadTotalSeconds));
+  if (overlayMode === 'tendon') {
+    grid.appendChild(buildActivityWatchOverlayMetric('Total computer active time', totals.activityWatchTotalSeconds));
+  }
+  grid.appendChild(buildActivityWatchOverlayMetric('Computer Work', totals.activityWatchWorkSeconds));
+  grid.appendChild(buildActivityWatchOverlayMetric('Manual / untracked estimate', totals.manualResidualSeconds));
+  summary.appendChild(grid);
+
+  if (totals.conflict) {
+    summary.appendChild(elText('div', 'activitywatch-overlay-conflict', 'Data conflict: ActivityWatch Work exceeds Workload total for at least one day shown.'));
+  }
+  return summary;
+}
+
+function buildActivityWatchOverlayMetric(label, seconds) {
+  const metric = el('div', 'activitywatch-overlay-metric');
+  metric.appendChild(elText('span', '', label));
+  metric.appendChild(elText('strong', '', formatActivityWatchDuration(seconds)));
+  return metric;
 }
 
 function activityWatchAggregateCategoryRows(days) {

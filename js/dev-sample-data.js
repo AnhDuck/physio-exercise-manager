@@ -36,6 +36,15 @@ function ensureVerificationSampleData() {
       console.error('Could not seed verification ActivityWatch sample data.', err);
     }
   }
+
+  if (typeof defaultWorkloadData === 'function' && typeof saveWorkloadData === 'function') {
+    workloadData = buildVerificationSampleWorkloadData();
+    try {
+      saveWorkloadData();
+    } catch (err) {
+      console.error('Could not seed verification Workload sample data.', err);
+    }
+  }
 }
 
 function isPemVerificationSampleOrigin() {
@@ -171,6 +180,46 @@ function buildVerificationSampleActivityWatchData() {
     lastErrorAt: '',
     lastError: '',
   });
+}
+
+function buildVerificationSampleWorkloadData() {
+  const nowIso = new Date().toISOString();
+  const current = typeof activityWatchCurrentWakingDateStr === 'function'
+    ? activityWatchCurrentWakingDateStr()
+    : todayStr();
+  const daysByDate = {};
+  Array.from({ length: 30 }, (_, index) => {
+    const date = dateFromStr(current);
+    date.setDate(date.getDate() - (29 - index));
+    const dateStr = toDateStr(date);
+    const awWork = daysByDateFromActivityWatchSample(dateStr);
+    const isConflictSample = index === 26;
+    const manualBase = (index % 5) * 900;
+    const totalSeconds = isConflictSample
+      ? Math.max(1800, awWork - 1200)
+      : awWork + 3600 + manualBase;
+    daysByDate[dateStr] = normalizeWorkloadDay(dateStr, {
+      totalSeconds,
+      updatedAt: nowIso,
+      needsReview: false,
+      reviewNote: '',
+    });
+  });
+
+  return normalizeWorkloadDataForStorage({
+    ...defaultWorkloadData(),
+    daysByDate,
+    timer: defaultWorkloadData().timer,
+  });
+}
+
+function daysByDateFromActivityWatchSample(dateStr) {
+  const day = activityWatchData?.daysByDate?.[dateStr];
+  const joiner = typeof ACTIVITYWATCH_CATEGORY_JOINER === 'string' ? ACTIVITYWATCH_CATEGORY_JOINER : ' > ';
+  return Object.entries(day?.categoryTotals || {}).reduce((sum, [category, seconds]) => {
+    const topLevel = String(category || '').split(joiner)[0];
+    return topLevel === 'Work' ? sum + Math.max(0, Number(seconds) || 0) : sum;
+  }, 0);
 }
 
 function buildVerificationSampleActivityWatchDay(dateStr, index, syncedAt) {

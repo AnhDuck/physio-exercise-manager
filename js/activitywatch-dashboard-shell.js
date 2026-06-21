@@ -67,6 +67,7 @@ function renderActivityWatchDashboard() {
   activityWatchDashboardState.rangeDays = normalizeActivityWatchDashboardRange(activityWatchDashboardState.rangeDays);
   activityWatchDashboardState.rangeEndDate = normalizeActivityWatchDashboardEndDate(activityWatchDashboardState.rangeEndDate);
   activityWatchDashboardState.categoryMode = normalizeActivityWatchDashboardCategoryMode(activityWatchDashboardState.categoryMode);
+  activityWatchDashboardState.workloadOverlayMode = activityWatchDashboardWorkloadOverlayMode();
   const days = buildActivityWatchDashboardDays();
   const current = activityWatchCurrentWakingDateStr();
   const selectedInRange = days.some(day => day.date === activityWatchDashboardState.selectedDate);

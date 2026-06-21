@@ -24,6 +24,7 @@ const activityWatchDashboardState = {
   selectedCategory: '',
   hoveredCategory: '',
   detailMode: 'day',
+  workloadOverlayMode: '',
   showAllCategories: false,
   chartScrollKey: '',
   chartScrollLeft: null,
@@ -143,6 +144,56 @@ function activityWatchDashboardCategoryTotals(day) {
 
 function activityWatchDashboardCategoryTotal(day, category) {
   return activityWatchDashboardCategoryTotals(day)[category] || 0;
+}
+
+function normalizeActivityWatchDashboardOverlayMode(value) {
+  return ['work', 'tendon'].includes(value) ? value : '';
+}
+
+function activityWatchDashboardWorkloadOverlayMode() {
+  const mode = normalizeActivityWatchDashboardOverlayMode(activityWatchDashboardState.workloadOverlayMode);
+  if (mode === 'work' && activityWatchDashboardCanShowWorkloadOverlay()) return mode;
+  if (mode === 'tendon' && activityWatchDashboardCanShowTendonLoadOverlay()) return mode;
+  return '';
+}
+
+function activityWatchDashboardCanShowWorkloadOverlay() {
+  return activityWatchDashboardUsesTopCategories()
+    && activityWatchDashboardState.selectedCategory === 'Work'
+    && typeof getWorkloadActivityWatchOverlayForDate === 'function';
+}
+
+function activityWatchDashboardCanShowTendonLoadOverlay() {
+  return activityWatchDashboardUsesTopCategories()
+    && !activityWatchDashboardState.selectedCategory
+    && typeof getWorkloadActivityWatchOverlayForDate === 'function';
+}
+
+function activityWatchDashboardOverlayForDay(day) {
+  if (typeof getWorkloadActivityWatchOverlayForDate !== 'function') {
+    return {
+      workloadTotalSeconds: 0,
+      activityWatchWorkSeconds: 0,
+      activityWatchTotalSeconds: Math.max(0, Number(day?.totalActiveSeconds) || 0),
+      manualResidualSeconds: 0,
+      conflict: false,
+    };
+  }
+  return getWorkloadActivityWatchOverlayForDate(day?.date || '');
+}
+
+function activityWatchDashboardOverlayTotals(days) {
+  const dateStrs = (days || []).map(day => day.date).filter(Boolean);
+  if (typeof getWorkloadActivityWatchOverlayTotals === 'function') {
+    return getWorkloadActivityWatchOverlayTotals(dateStrs);
+  }
+  return {
+    workloadTotalSeconds: 0,
+    activityWatchWorkSeconds: 0,
+    activityWatchTotalSeconds: (days || []).reduce((sum, day) => sum + (day.totalActiveSeconds || 0), 0),
+    manualResidualSeconds: 0,
+    conflict: false,
+  };
 }
 
 function topActivityWatchCategories(days, limit) {

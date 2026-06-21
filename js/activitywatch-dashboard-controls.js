@@ -38,15 +38,22 @@ function renderActivityWatchDashboardControls(days) {
     chartTitle.textContent = `${activityWatchDashboardRangeLabel(activityWatchDashboardState.rangeDays)} - ${activityWatchDateRangeLabel(days)}`;
   }
   if (chartSubtitle) {
-    chartSubtitle.textContent = activityWatchDashboardState.selectedCategory
-      ? `Filtered to ${activityWatchDashboardState.selectedCategory}`
-      : activityWatchDashboardUsesTopCategories()
-        ? 'Stacked top-level category totals by waking day'
-        : 'Stacked category totals by waking day';
+    const overlayMode = activityWatchDashboardWorkloadOverlayMode();
+    chartSubtitle.textContent = overlayMode === 'work'
+      ? 'Computer Work plus Manual / untracked estimate by waking day'
+      : overlayMode === 'tendon'
+        ? 'Total computer active time + Manual / untracked estimate'
+        : activityWatchDashboardState.selectedCategory
+          ? `Filtered to ${activityWatchDashboardState.selectedCategory}`
+          : activityWatchDashboardUsesTopCategories()
+            ? 'Stacked top-level category totals by waking day'
+            : 'Stacked category totals by waking day';
   }
   if (chartActions) {
     chartActions.innerHTML = '';
     chartActions.appendChild(buildActivityWatchCategoryModeToggle());
+    const overlayToggle = buildActivityWatchOverlayToggle();
+    if (overlayToggle) chartActions.appendChild(overlayToggle);
   }
 }
 
@@ -156,12 +163,39 @@ function buildActivityWatchCategoryModeToggle() {
       activityWatchDashboardState.categoryMode = mode;
       activityWatchDashboardState.selectedCategory = '';
       activityWatchDashboardState.hoveredCategory = '';
+      activityWatchDashboardState.workloadOverlayMode = '';
       activityWatchDashboardState.showAllCategories = false;
       renderActivityWatchDashboard();
     });
     toggle.appendChild(button);
   });
   return toggle;
+}
+
+function buildActivityWatchOverlayToggle() {
+  if (activityWatchDashboardCanShowWorkloadOverlay()) {
+    return buildActivityWatchOverlayButton('work', 'Show workload overlay', 'Show workload overlay');
+  }
+  if (activityWatchDashboardCanShowTendonLoadOverlay()) {
+    return buildActivityWatchOverlayButton('tendon', 'Total tendon load', 'Total tendon load');
+  }
+  return null;
+}
+
+function buildActivityWatchOverlayButton(mode, label, title) {
+  const button = el('button', 'activitywatch-overlay-toggle');
+  const active = activityWatchDashboardWorkloadOverlayMode() === mode;
+  button.type = 'button';
+  button.textContent = label;
+  button.title = title;
+  button.setAttribute('aria-pressed', active ? 'true' : 'false');
+  button.classList.toggle('is-active', active);
+  button.addEventListener('click', () => {
+    activityWatchDashboardState.workloadOverlayMode = active ? '' : mode;
+    activityWatchDashboardState.hoveredCategory = '';
+    renderActivityWatchDashboard();
+  });
+  return button;
 }
 
 function buildActivityWatchPagerButton(title, iconName, onClick) {

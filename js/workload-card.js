@@ -85,10 +85,8 @@ function buildWorkloadCard(options = {}) {
   const footer = el('div', 'workload-footer');
   if (day.needsReview) {
     footer.appendChild(elText('span', 'workload-review-flag', day.reviewNote || 'Needs review'));
-  } else {
-    footer.appendChild(elText('span', '', `Day starts ${workloadPersonalDayStartTime()}`));
   }
-  card.appendChild(footer);
+  if (footer.childNodes.length) card.appendChild(footer);
 
   return card;
 }
@@ -114,9 +112,10 @@ function buildWorkloadCompactCard(card, dateStr, totalSeconds, runningSeconds, d
   return card;
 }
 
-function buildWorkloadComparison(dateStr, totalSeconds) {
-  const awSeconds = workloadActivityWatchWorkSeconds(dateStr);
-  const manualSeconds = Math.max(0, totalSeconds - awSeconds);
+function buildWorkloadComparison(dateStr) {
+  const overlay = getWorkloadActivityWatchOverlayForDate(dateStr);
+  const awSeconds = overlay.activityWatchWorkSeconds;
+  const manualSeconds = overlay.manualResidualSeconds;
   const comparison = el('div', 'workload-comparison');
 
   const computer = el('div', 'workload-comparison-row');
@@ -125,11 +124,11 @@ function buildWorkloadComparison(dateStr, totalSeconds) {
   comparison.appendChild(computer);
 
   const manual = el('div', 'workload-comparison-row');
-  manual.appendChild(elText('span', '', 'Manual / physical'));
+  manual.appendChild(elText('span', '', 'Manual / untracked estimate'));
   manual.appendChild(elText('strong', '', formatWorkloadDuration(manualSeconds)));
   comparison.appendChild(manual);
 
-  if (awSeconds > totalSeconds) {
+  if (overlay.conflict) {
     comparison.appendChild(elText('div', 'workload-warning', 'Computer work > total. Check.'));
   }
 
@@ -288,6 +287,41 @@ function workloadActivityWatchWorkSeconds(dateStr) {
   return Math.round(total);
 }
 
+function getWorkloadActivityWatchOverlayForDate(dateStr) {
+  const day = typeof getActivityWatchDay === 'function' ? getActivityWatchDay(dateStr) : null;
+  const workloadTotalSeconds = workloadDisplayTotalSeconds(dateStr);
+  const activityWatchWorkSeconds = workloadActivityWatchWorkSeconds(dateStr);
+  const activityWatchTotalSeconds = Math.max(0, Math.round(Number(day?.totalActiveSeconds) || 0));
+  const manualResidualSeconds = Math.max(0, workloadTotalSeconds - activityWatchWorkSeconds);
+  return {
+    date: dateStr,
+    workloadTotalSeconds,
+    activityWatchWorkSeconds,
+    activityWatchTotalSeconds,
+    manualResidualSeconds,
+    conflict: activityWatchWorkSeconds > workloadTotalSeconds,
+  };
+}
+
+function getWorkloadActivityWatchOverlayTotals(dateStrs) {
+  const totals = {
+    workloadTotalSeconds: 0,
+    activityWatchWorkSeconds: 0,
+    activityWatchTotalSeconds: 0,
+    manualResidualSeconds: 0,
+    conflict: false,
+  };
+  (dateStrs || []).forEach(dateStr => {
+    const overlay = getWorkloadActivityWatchOverlayForDate(dateStr);
+    totals.workloadTotalSeconds += overlay.workloadTotalSeconds;
+    totals.activityWatchWorkSeconds += overlay.activityWatchWorkSeconds;
+    totals.activityWatchTotalSeconds += overlay.activityWatchTotalSeconds;
+    totals.manualResidualSeconds += overlay.manualResidualSeconds;
+    totals.conflict = totals.conflict || overlay.conflict;
+  });
+  return totals;
+}
+
 function workloadCurrentDateStr(now = new Date()) {
   return workloadDateStrFor(now);
 }
@@ -355,3 +389,5 @@ window.buildWorkloadCard = buildWorkloadCard;
 window.handleWorkloadHomeCardAction = handleWorkloadHomeCardAction;
 window.syncWorkloadSettingsControls = syncWorkloadSettingsControls;
 window.autosaveWorkloadCardEnabled = autosaveWorkloadCardEnabled;
+window.getWorkloadActivityWatchOverlayForDate = getWorkloadActivityWatchOverlayForDate;
+window.getWorkloadActivityWatchOverlayTotals = getWorkloadActivityWatchOverlayTotals;
