@@ -28,22 +28,16 @@ function ensureActivityWatchDashboardShell() {
       <div class="modal-titlebar activitywatch-dashboard-titlebar">
         <div>
           <h2 id="activitywatch-dashboard-title">ActivityWatch</h2>
-          <div class="activitywatch-dashboard-subtitle" id="activitywatch-dashboard-subtitle"></div>
         </div>
-        <button class="modal-close" id="activitywatch-dashboard-close" type="button" aria-label="Close ActivityWatch dashboard" title="Close" data-ui-icon="x"></button>
+        <div class="activitywatch-header-actions" id="activitywatch-header-actions">
+          <button class="modal-close" id="activitywatch-dashboard-close" type="button" aria-label="Close ActivityWatch dashboard" title="Close" data-ui-icon="x"></button>
+        </div>
       </div>
       <div class="modal-body activitywatch-dashboard-body">
         <div class="activitywatch-dashboard-grid">
           <div class="activitywatch-dashboard-main">
             <section class="activitywatch-dashboard-controls" id="activitywatch-dashboard-controls"></section>
             <section class="activitywatch-chart-section">
-              <div class="activitywatch-section-heading">
-                <div>
-                  <h3 id="activitywatch-chart-title">Last 2 weeks</h3>
-                  <span class="activitywatch-section-subtitle" id="activitywatch-chart-subtitle"></span>
-                </div>
-                <div class="activitywatch-chart-actions" id="activitywatch-chart-actions"></div>
-              </div>
               <div class="activitywatch-stacked-chart" id="activitywatch-stacked-chart"></div>
             </section>
           </div>

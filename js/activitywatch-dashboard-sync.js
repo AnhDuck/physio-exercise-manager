@@ -1,6 +1,6 @@
 // ActivityWatch dashboard advanced sync controls and progress UI.
 
-function buildActivityWatchAdvancedSyncPanel(days, isSyncing) {
+function buildActivityWatchAdvancedSyncPanel(days, isSyncing, status = getActivityWatchStatus(), progress = { active: false }) {
   ensureActivityWatchAdvancedSyncDefaults(days);
   const panel = el('section', 'activitywatch-advanced-sync-panel');
   const header = el('div', 'activitywatch-advanced-sync-header');
@@ -66,7 +66,30 @@ function buildActivityWatchAdvancedSyncPanel(days, isSyncing) {
   if (count > 90) {
     panel.appendChild(elText('div', 'activitywatch-advanced-sync-warning', 'Large resyncs can take a while. Last 30 days or the visible range is usually enough after small category edits.'));
   }
+  panel.appendChild(buildActivityWatchAdvancedMetadata(status, progress));
   return panel;
+}
+
+function buildActivityWatchAdvancedMetadata(status, progress) {
+  const metadata = el('div', 'activitywatch-advanced-metadata');
+  metadata.appendChild(buildActivityWatchMetadataItem('Status', activityWatchDashboardStatusTitle(status, progress)));
+  metadata.appendChild(buildActivityWatchMetadataItem('Detail', activityWatchDashboardStatusDetail(status, progress)));
+  metadata.appendChild(buildActivityWatchMetadataItem('Desktop', activityWatchData.host || 'Not detected'));
+  metadata.appendChild(buildActivityWatchMetadataItem('ActivityWatch version', activityWatchData.activityWatchVersion || 'Unknown'));
+  metadata.appendChild(buildActivityWatchMetadataItem('Server URL', getActivityWatchServerUrl()));
+  metadata.appendChild(buildActivityWatchMetadataItem('Window bucket', activityWatchData.buckets?.window || 'Not detected'));
+  metadata.appendChild(buildActivityWatchMetadataItem('AFK bucket', activityWatchData.buckets?.afk || 'Not detected'));
+  metadata.appendChild(buildActivityWatchMetadataItem('Cached days', formatNumber(activityWatchStoredDateStrings().length)));
+  metadata.appendChild(buildActivityWatchMetadataItem('Day start', activityWatchData.startOfDay || 'Unknown'));
+  metadata.appendChild(buildActivityWatchMetadataItem('Last sync', activityWatchData.lastSyncAt ? formatAutoBackupDateTime(activityWatchData.lastSyncAt) : 'Never'));
+  return metadata;
+}
+
+function buildActivityWatchMetadataItem(label, value) {
+  const item = el('div', 'activitywatch-advanced-metadata-item');
+  item.appendChild(elText('span', '', label));
+  item.appendChild(elText('strong', '', value));
+  return item;
 }
 
 function buildActivityWatchAdvancedSyncDateInput(label, id, stateKey) {

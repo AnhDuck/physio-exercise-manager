@@ -15,11 +15,12 @@ function renderActivityWatchDetailPanel(days) {
 
   const heading = el('div', 'activitywatch-selected-heading');
   const copy = el('div', '');
-  copy.appendChild(elText('span', 'activitywatch-selected-kicker', mode === 'range' ? 'Visible range' : 'Selected day'));
-  copy.appendChild(elText('h3', '', mode === 'range' ? activityWatchDateRangeLabel(days) : formatEventDate(selectedDay?.date || '')));
+  copy.appendChild(elText('h3', '', mode === 'range' ? 'Visible range' : 'Selected day'));
+  copy.appendChild(elText('span', 'activitywatch-selected-date', mode === 'range' ? activityWatchDateRangeLabel(days) : formatEventDate(selectedDay?.date || '')));
   heading.appendChild(copy);
   heading.appendChild(elText('strong', '', formatActivityWatchDuration(total)));
   root.appendChild(heading);
+  root.appendChild(buildActivityWatchDetailStats(days, mode, total));
   if (activityWatchDashboardState.selectedCategory) {
     const filterBar = el('div', 'activitywatch-filter-bar');
     filterBar.appendChild(elText('span', '', `Filtered to ${activityWatchDashboardState.selectedCategory}`));
@@ -50,10 +51,10 @@ function renderActivityWatchDetailPanel(days) {
   const rowsToShow = activityWatchDashboardState.showAllCategories
     ? rows
     : rows.slice(0, ACTIVITYWATCH_SELECTED_CATEGORY_LIMIT);
-  const list = el('div', 'activitywatch-category-list');
+  const list = el('div', 'activitywatch-detail-list activitywatch-category-list');
   const max = Math.max(...rows.map(([, seconds]) => seconds), 1);
   rowsToShow.forEach(([category, seconds]) => {
-    const row = el('button', 'activitywatch-category-row');
+    const row = el('button', 'activitywatch-detail-row activitywatch-category-row');
     row.type = 'button';
     row.dataset.awCategory = category;
     row.classList.toggle('is-active', category === activityWatchDashboardState.selectedCategory);
@@ -72,7 +73,7 @@ function renderActivityWatchDetailPanel(days) {
     meta.appendChild(elText('span', '', formatActivityWatchPercent(seconds, total)));
     row.appendChild(meta);
 
-    const bar = el('div', 'activitywatch-category-meter');
+    const bar = el('div', 'activitywatch-detail-meter activitywatch-category-meter');
     const fill = el('span', '');
     fill.style.width = `${Math.max(2, (seconds / max) * 100)}%`;
     fill.style.background = activityWatchDashboardCategoryColor(category);
@@ -121,6 +122,28 @@ function activityWatchCategoryRowsForDay(day) {
     .sort((a, b) => b[1] - a[1]);
 }
 
+function buildActivityWatchDetailStats(days, mode, total) {
+  const activeDays = days.filter(day => day.totalActiveSeconds > 0);
+  const average = activeDays.length ? days.reduce((sum, day) => sum + day.totalActiveSeconds, 0) / activeDays.length : 0;
+  const stats = el('div', 'activitywatch-detail-stats');
+  if (mode === 'range') {
+    stats.appendChild(buildActivityWatchDetailStat('Total active', formatActivityWatchDuration(total)));
+    stats.appendChild(buildActivityWatchDetailStat('Daily average', formatActivityWatchDuration(average)));
+    stats.appendChild(buildActivityWatchDetailStat('Days with data', formatNumber(activeDays.length)));
+  } else {
+    stats.appendChild(buildActivityWatchDetailStat('Visible range', formatActivityWatchDuration(days.reduce((sum, day) => sum + day.totalActiveSeconds, 0))));
+    stats.appendChild(buildActivityWatchDetailStat('Daily average', formatActivityWatchDuration(average)));
+  }
+  return stats;
+}
+
+function buildActivityWatchDetailStat(label, value) {
+  const stat = el('div', 'activitywatch-detail-stat');
+  stat.appendChild(elText('span', '', label));
+  stat.appendChild(elText('strong', '', value));
+  return stat;
+}
+
 function buildActivityWatchOverlaySummary(days, overlayMode, detailMode) {
   const summary = el('div', 'activitywatch-overlay-summary');
   const safeDays = (days || []).filter(Boolean);
@@ -128,7 +151,7 @@ function buildActivityWatchOverlaySummary(days, overlayMode, detailMode) {
   const header = el('div', 'activitywatch-overlay-summary-header');
   header.appendChild(elText('strong', '', overlayMode === 'tendon' ? 'Total tendon load' : 'Workload overlay'));
   header.appendChild(elText('span', '', overlayMode === 'tendon'
-    ? 'Total computer active time + Manual / untracked estimate'
+    ? 'Computer active time + manual estimate'
     : detailMode === 'range'
       ? 'Work group reconciliation for the visible range'
       : 'Work group reconciliation for the selected day'));
@@ -137,14 +160,14 @@ function buildActivityWatchOverlaySummary(days, overlayMode, detailMode) {
   const grid = el('div', 'activitywatch-overlay-metrics');
   grid.appendChild(buildActivityWatchOverlayMetric('Workload total', totals.workloadTotalSeconds));
   if (overlayMode === 'tendon') {
-    grid.appendChild(buildActivityWatchOverlayMetric('Total computer active time', totals.activityWatchTotalSeconds));
+    grid.appendChild(buildActivityWatchOverlayMetric('Computer active time', totals.activityWatchTotalSeconds));
   }
   grid.appendChild(buildActivityWatchOverlayMetric('Computer Work', totals.activityWatchWorkSeconds));
   grid.appendChild(buildActivityWatchOverlayMetric('Manual / untracked estimate', totals.manualResidualSeconds));
   summary.appendChild(grid);
 
   if (totals.conflict) {
-    summary.appendChild(elText('div', 'activitywatch-overlay-conflict', 'Data conflict: ActivityWatch Work exceeds Workload total for at least one day shown.'));
+    summary.appendChild(elText('div', 'activitywatch-compact-warning activitywatch-overlay-conflict', 'Data conflict: ActivityWatch Work exceeds Workload total for at least one day shown.'));
   }
   return summary;
 }

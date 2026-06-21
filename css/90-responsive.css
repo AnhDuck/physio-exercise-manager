@@ -109,6 +109,18 @@
     grid-template-columns: minmax(108px, auto) minmax(0, 1fr);
   }
 
+  .activitywatch-chart-toolbar {
+    justify-content: flex-start;
+  }
+
+  .activitywatch-view-controls {
+    justify-content: flex-start;
+  }
+
+  .activitywatch-advanced-metadata {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .workload-manual-grid {
     grid-template-columns: repeat(3, minmax(0, auto));
   }
@@ -462,6 +474,34 @@
   .activitywatch-compact-main {
     grid-template-columns: minmax(0, 1fr);
     gap: 7px;
+  }
+
+  .activitywatch-header-actions {
+    gap: 6px;
+  }
+
+  .activitywatch-sync-refresh-btn {
+    min-width: 0;
+  }
+
+  .activitywatch-chart-toolbar,
+  .activitywatch-view-controls,
+  .activitywatch-breakdown-control {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .activitywatch-date-controls {
+    max-width: 100%;
+  }
+
+  .activitywatch-date-controls select {
+    min-width: 132px;
+  }
+
+  .activitywatch-detail-stats,
+  .activitywatch-advanced-metadata {
+    grid-template-columns: 1fr;
   }
 
   .activitywatch-compact-stack {
