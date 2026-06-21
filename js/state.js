@@ -25,6 +25,13 @@ let autoBackupDirectoryHandleFresh = false;
 let autoBackupHandleLoaded = false;
 let autoBackupTimer = null;
 let autoBackupRunning = false;
+let autoBackupMirrorTimer = null;
+let autoBackupMirrorRunning = false;
+let autoBackupMirrorSettingsSave = false;
+let autoBackupRecoveryChecked = false;
+let autoBackupRecoveryCheckActive = false;
+let autoBackupRecoveryHold = false;
+let autoBackupStorageReplaceActive = false;
 let autoBackupHistoryExpanded = false;
 let homeCardsTimer = null;
 let homeCardsClockTimer = null;
@@ -42,6 +49,7 @@ let weatherLocationSearchRequestId = 0;
 let weatherLocationSearchLastAt = 0;
 let weatherLocationSearchTimer = null;
 let browserStorageEstimateRequestId = 0;
+let appStartedWithFreshBrowserData = false;
 let storageHealth = {
   lastAttempt: null,
   lastSuccess: null,

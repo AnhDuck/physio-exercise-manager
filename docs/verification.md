@@ -62,6 +62,8 @@ For Home Cards changes, smoke-check desktop and mobile widths: the cards appear 
 
 For Workload Today changes, smoke-check the expanded and collapsed dashboard card, Dashboard Settings visibility toggle, hidden state restoring the old Weather/ActivityWatch two-card layout, Start work, Stop, Reset confirmation only while the timer is active, `+15m`, `+30m`, `-15m`, reload persistence for an active timer, personal-day rollover when practical to simulate, Needs review display for suspiciously long timer spans, and the ActivityWatch comparison tiles for Computer and Manual / physical. Also confirm Data Health storage details include Workload.
 
+For backup/recovery changes, verify on `http://127.0.0.1:8895`, not `8891`: normal saves refresh `physio-exercise-auto-backup-latest.json` when a folder is connected, scheduled/manual backups still write archive files, importing/restoring a valid JSON uses rollback on save failure, and an empty/fresh browser state only restores latest after explicit confirmation and an emergency download offer. Also verify that declining restore does not immediately overwrite a meaningful latest backup with default/empty browser data, Backup now warns before overwriting latest in that held-empty state, and reconnecting a folder explains that browser data is origin/profile-scoped and folder access is separate.
+
 For ActivityWatch dashboard changes, smoke-check:
 
 - dashboard opens and closes

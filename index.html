@@ -6,7 +6,7 @@
   <title>Physio Exercise Management</title>
   <link rel="icon" type="image/svg+xml" href="assets/physio-icon.svg" />
   <script>
-    window.PEM_APP_VERSION = '1.0.135';
+    window.PEM_APP_VERSION = '1.0.139';
     const PEM_CSS_FILES = [
       'css/00-base.css',
       'css/10-header.css',
@@ -509,6 +509,12 @@
               <h3>Folder backup</h3>
             </div>
             <div class="settings-row-group">
+              <div class="settings-action-row">
+                <div class="settings-action-label">
+                  <strong>How folder backup works</strong>
+                  <span>PEM saves normal changes in this browser first, then mirrors the current app data to <code>physio-exercise-auto-backup-latest.json</code> when the backup folder is connected. The daily time below creates an extra dated archive. Hourly recovery files are extra safety copies while PEM is open.</span>
+                </div>
+              </div>
               <div class="settings-backup-row settings-folder-row">
                 <div class="settings-folder-field" aria-live="polite">
                   <span class="settings-folder-icon" aria-hidden="true"></span>
@@ -519,7 +525,7 @@
               <div class="settings-backup-row">
                 <div class="settings-action-label">
                   <strong id="settings-auto-backup-folder-state">Not selected</strong>
-                  <span>Keeps about 31 days of daily backups, 48 hours of hourly recovery files, plus latest.</span>
+                  <span>Latest is the near-live mirror. Daily and hourly files are dated fallback copies.</span>
                 </div>
                 <button class="settings-backup-btn" id="settings-auto-backup-now" type="button" data-settings-icon="backup-now">Backup now</button>
               </div>
@@ -572,7 +578,7 @@
               <div class="settings-backup-row">
                 <div class="settings-action-label">
                   <strong>Restore from JSON</strong>
-                  <span>Replaces this browser's saved app data after confirmation.</span>
+                  <span>Replaces this browser's app data after confirmation. Browser data is tied to the exact address/profile; folder access is separate.</span>
                 </div>
                 <button class="settings-backup-btn settings-import-btn" id="settings-import-json" type="button" data-settings-icon="backup-import">Import JSON</button>
                 <input id="settings-import-file" type="file" accept="application/json,.json" hidden />
@@ -789,7 +795,7 @@ cors_origins = "http://127.0.0.1:8891"
                 <div class="settings-action-label">
                   <div class="settings-label-heading">
                     <strong id="settings-data-safety-state">Checking saved data</strong>
-                    <button class="settings-tooltip settings-tooltip-below" type="button" aria-label="What saved data check means" data-tooltip="Checks the exercises, session logs, settings, and timeline currently saved in this browser. This does not compare against the backup folder.">?</button>
+                    <button class="settings-tooltip settings-tooltip-below" type="button" aria-label="What saved data check means" data-tooltip="Checks the data saved in this browser origin/profile. Folder backup permission is separate; reconnecting a folder only imports latest after you confirm restore.">?</button>
                   </div>
                   <span id="settings-data-safety-detail">Checking exercises, session logs, settings, and timeline.</span>
                 </div>

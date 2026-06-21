@@ -12,6 +12,7 @@ const AUTO_BACKUP_KEEP_DAYS = 31;
 const AUTO_BACKUP_HOURLY_KEEP_HOURS = 48;
 const AUTO_BACKUP_HISTORY_LIMIT = 20;
 const AUTO_BACKUP_TIMER_MS = 60 * 1000;
+const AUTO_BACKUP_LIVE_MIRROR_DEBOUNCE_MS = 1200;
 const AUTO_BACKUP_DATED_FILE_RE = /^physio-exercise-auto-backup-(\d{4}-\d{2}-\d{2})\.json$/;
 const AUTO_BACKUP_HOURLY_FILE_RE = /^physio-exercise-auto-backup-hourly-(\d{4}-\d{2}-\d{2})-(\d{2})00\.json$/;
 const DATA_HEALTH_ISSUE_CODES = ['storage-failure', 'storage-test', 'storage-test-mode', 'storage-unavailable', 'data-safety'];
@@ -126,6 +127,7 @@ async function initializeAutoBackup() {
     return;
   }
 
+  autoBackupRecoveryCheckActive = true;
   try {
     autoBackupDirectoryHandle = await readAutoBackupDirectoryHandle();
     autoBackupDirectoryHandleFresh = false;
@@ -157,10 +159,14 @@ async function initializeAutoBackup() {
   }
 
   renderAutoBackupSettings();
+  const recoveryOffered = await maybeOfferAutoBackupRecovery('startup');
+  autoBackupRecoveryCheckActive = false;
   document.addEventListener('visibilitychange', handleAutoBackupVisibilityChange);
   window.addEventListener('focus', handleAutoBackupFocus);
   scheduleAutoBackupChecks();
-  maybeRunAutoBackup('startup');
+  if (!recoveryOffered || !autoBackupRecoveryHold) {
+    maybeRunAutoBackup('startup');
+  }
 }
 
 function scheduleAutoBackupChecks() {
@@ -181,6 +187,10 @@ function handleAutoBackupFocus() {
 
 async function maybeRunAutoBackup(trigger = 'auto') {
   if (autoBackupRunning) return;
+  if (autoBackupRecoveryHold) {
+    if (currentAppDataLooksFreshOrEmpty()) return;
+    autoBackupRecoveryHold = false;
+  }
 
   const auto = getAutoBackupSettings();
   const now = new Date();
@@ -215,6 +225,7 @@ async function chooseAutoBackupFolder() {
     autoBackupDirectoryHandle = handle;
     autoBackupDirectoryHandleFresh = true;
     autoBackupHandleLoaded = true;
+    autoBackupRecoveryCheckActive = true;
 
     const auto = getAutoBackupSettings();
     auto.folderName = handle.name || 'Selected folder';
@@ -230,14 +241,160 @@ async function chooseAutoBackupFolder() {
     }
 
     renderAutoBackupSettings();
-    showToast(`Backup folder connected: ${auto.folderName}. Use Backup now to test writing files.`);
+    const offeredRecovery = await maybeOfferAutoBackupRecovery('folder-connect', { force: true });
+    autoBackupRecoveryCheckActive = false;
+    showToast(offeredRecovery
+      ? `Backup folder connected: ${auto.folderName}.`
+      : `Backup folder connected: ${auto.folderName}. Use Backup now to test writing files.`);
   } catch (err) {
+    autoBackupRecoveryCheckActive = false;
     if (err?.name === 'AbortError') return;
     recordAutoBackupFolderConnectFailure(err);
   }
 }
 
+function scheduleAutoBackupLiveMirror(trigger = 'save') {
+  if (autoBackupMirrorSettingsSave || autoBackupRunning || autoBackupMirrorRunning || autoBackupRecoveryCheckActive || autoBackupStorageReplaceActive) return;
+  if (autoBackupRecoveryHold) {
+    if (currentAppDataLooksFreshOrEmpty()) return;
+    autoBackupRecoveryHold = false;
+  }
+  if (!autoBackupHandleLoaded || !autoBackupDirectoryHandle) return;
+  const auto = getAutoBackupSettings();
+  if (!auto.folderName || auto.needsReconnect || !isFolderAutoBackupSupported()) return;
+
+  window.clearTimeout(autoBackupMirrorTimer);
+  autoBackupMirrorTimer = window.setTimeout(() => {
+    autoBackupMirrorTimer = null;
+    runAutoBackupLiveMirror(trigger);
+  }, AUTO_BACKUP_LIVE_MIRROR_DEBOUNCE_MS);
+}
+
+async function runAutoBackupLiveMirror(trigger = 'save') {
+  if (autoBackupRunning || autoBackupMirrorRunning) return;
+  if (autoBackupRecoveryCheckActive || autoBackupStorageReplaceActive) return;
+  if (autoBackupRecoveryHold) {
+    if (currentAppDataLooksFreshOrEmpty()) return;
+    autoBackupRecoveryHold = false;
+  }
+  autoBackupMirrorRunning = true;
+
+  try {
+    const handle = await getReadyAutoBackupDirectoryHandle(false);
+    if (!handle) return;
+
+    const backup = buildFullBackup();
+    const json = JSON.stringify(backup, null, 2);
+    await writeAutoBackupFile(handle, AUTO_BACKUP_LATEST_FILE, json);
+    const verified = await verifyAutoBackupFile(handle, AUTO_BACKUP_LATEST_FILE);
+    recordAutoBackupMirrorSuccess({
+      at: new Date(),
+      folderName: handle.name || getAutoBackupSettings().folderName,
+      verified,
+      trigger,
+    });
+  } catch (err) {
+    recordAutoBackupMirrorFailure(err);
+  } finally {
+    autoBackupMirrorRunning = false;
+    renderAutoBackupSettings();
+  }
+}
+
+function recordAutoBackupMirrorSuccess(result) {
+  const auto = getAutoBackupSettings();
+  const at = result.at || new Date();
+  auto.folderName = result.folderName || auto.folderName;
+  auto.needsReconnect = false;
+  auto.lastSuccessAt = at.toISOString();
+  auto.lastError = '';
+  auto.lastErrorAt = '';
+  if (result.verified) {
+    auto.lastVerifiedAt = result.verified.at || at.toISOString();
+    auto.lastVerifiedFile = result.verified.file || AUTO_BACKUP_LATEST_FILE;
+    auto.lastVerifiedSummary = result.verified.summary || null;
+  }
+  autoBackupMirrorSettingsSave = true;
+  try {
+    saveSettings(settings);
+  } finally {
+    autoBackupMirrorSettingsSave = false;
+  }
+}
+
+function recordAutoBackupMirrorFailure(err) {
+  const auto = getAutoBackupSettings();
+  const message = autoBackupErrorMessage(err);
+  auto.lastError = `Live backup mirror failed: ${message}`;
+  auto.lastErrorAt = new Date().toISOString();
+  if (isAutoBackupPermissionError(err)) {
+    autoBackupDirectoryHandleFresh = false;
+    auto.needsReconnect = Boolean(auto.folderName);
+  }
+  autoBackupMirrorSettingsSave = true;
+  try {
+    saveSettings(settings);
+  } finally {
+    autoBackupMirrorSettingsSave = false;
+  }
+}
+
+async function maybeOfferAutoBackupRecovery(trigger = 'startup', options = {}) {
+  if (!options.force && autoBackupRecoveryChecked) return false;
+  autoBackupRecoveryChecked = true;
+  if (!currentAppDataLooksFreshOrEmpty()) return false;
+  if (!isFolderAutoBackupSupported()) return false;
+
+  const handle = await getReadyAutoBackupDirectoryHandle(trigger === 'folder-connect');
+  if (!handle) return false;
+
+  let prepared;
+  try {
+    prepared = prepareBackupFromJson(await readAutoBackupFile(handle, AUTO_BACKUP_LATEST_FILE));
+  } catch (err) {
+    return false;
+  }
+  if (!prepared.ok || !backupContainsMeaningfulData(prepared.backup)) return false;
+  autoBackupRecoveryHold = true;
+
+  const backup = prepared.backup;
+  const summary = backup.summary || buildBackupSummary(backup.data);
+  const folderName = handle.name || getAutoBackupSettings().folderName || 'selected folder';
+  const promptText = [
+    `This browser looks empty, but the backup folder "${folderName}" has a latest backup.`,
+    '',
+    `Backup exported: ${backup.exportedAt || 'Unknown'}`,
+    `Backup contains ${backupSummaryText(summary)}.`,
+    '',
+    'Restore this folder backup into this browser now?'
+  ].join('\n');
+
+  if (!confirm(promptText)) return true;
+  if (confirm('Download an emergency JSON backup of the current browser data before restoring?')) {
+    exportFullBackup();
+  }
+  if (!confirm(`Restore from ${AUTO_BACKUP_LATEST_FILE} and replace this browser's saved app data?\n\n${backupSummaryPromptText(backup)}`)) {
+    return true;
+  }
+  if (applyBackupToBrowserStorage(backup, 'Folder restore failed')) {
+    autoBackupRecoveryHold = false;
+    window.location.reload();
+  }
+  return true;
+}
+
 async function runManualFolderBackup() {
+  if (autoBackupRecoveryHold && currentAppDataLooksFreshOrEmpty()) {
+    const proceed = confirm([
+      'This browser still looks empty, and PEM has already found a meaningful latest backup in the connected folder.',
+      '',
+      `Running Backup now will replace ${AUTO_BACKUP_LATEST_FILE} with the current empty/default browser data.`,
+      '',
+      'Continue only if you are sure this empty browser state is what you want backed up.'
+    ].join('\n'));
+    if (!proceed) return;
+    autoBackupRecoveryHold = false;
+  }
   await runFolderBackup('manual', { promptPermission: true, trigger: 'manual' });
 }
 
@@ -813,8 +970,8 @@ function updateAutoBackupHealthUi(health) {
   }
   if (backupVerifyDetail) {
     backupVerifyDetail.textContent = auto.lastVerifiedAt
-      ? verifiedBackupReceiptText(auto)
-      : 'Run Backup now, or wait for the next automatic folder backup.';
+      ? `${verifiedBackupReceiptText(auto)} Latest is also refreshed after normal app saves while the folder is connected.`
+      : 'Run Backup now, reconnect the folder, or wait for the next automatic folder backup.';
   }
   setStatusPill(backupVerifyPill, auto.lastVerifiedAt ? 'Verified' : 'Not checked', {
     muted: !auto.lastVerifiedAt,
@@ -824,8 +981,8 @@ function updateAutoBackupHealthUi(health) {
     const folderReady = supported && Boolean(auto.folderName) && !auto.needsReconnect && Boolean(autoBackupDirectoryHandle);
     currentFolderState.textContent = autoBackupFolderStateText(auto, supported, folderReady);
     currentFolderDetail.textContent = auto.folderName
-      ? `${autoBackupFolderNameText(auto, supported)}. ${auto.lastSuccessAt ? `Last backup ${formatAutoBackupDateTime(auto.lastSuccessAt)}.` : 'No folder backup has completed yet.'}`
-      : 'Choose a backup folder to enable automatic daily backups.';
+      ? `${autoBackupFolderNameText(auto, supported)}. ${auto.lastSuccessAt ? `Latest mirror ${formatAutoBackupDateTime(auto.lastSuccessAt)}.` : 'No folder backup has completed yet.'} Browser data is origin/profile-scoped; folder access is separate.`
+      : 'Choose a backup folder to enable automatic latest-file mirroring and daily backups.';
     currentFolderState.classList.toggle('is-backup-issue', folderIssueCodes.includes(health.code));
   }
   setStatusPill(currentFolderPill, auto.folderName && !auto.needsReconnect ? 'Connected' : 'Review', {

@@ -54,6 +54,7 @@ const PEM_STORAGE_TEST_DETAILS = {
 };
 const pemStorageTest = initializePemStorageTestMode();
 const localStorageAvailability = probeLocalStorageAvailability();
+const initialAppStoragePresence = captureInitialAppStoragePresence();
 let storageWriteContext = '';
 
 function initializePemStorageTestMode() {
@@ -130,6 +131,17 @@ function probeLocalStorageAvailability() {
   }
 }
 
+function captureInitialAppStoragePresence() {
+  return APP_STORAGE_KEYS.reduce((presence, key) => {
+    try {
+      presence[key] = localStorage.getItem(key) !== null;
+    } catch (_) {
+      presence[key] = false;
+    }
+    return presence;
+  }, {});
+}
+
 function safeGetLocalStorageItem(key) {
   try {
     return localStorage.getItem(key);
@@ -164,6 +176,9 @@ function safeSetLocalStorageItem(key, jsonString, label = STORAGE_LABELS[key] ||
     localStorage.setItem(key, jsonString);
     recordStorageSuccess({ key, label, size });
     scheduleStorageHealthRender();
+    if (typeof scheduleAutoBackupLiveMirror === 'function') {
+      scheduleAutoBackupLiveMirror(`save:${key}`);
+    }
   } catch (err) {
     recordStorageFailure({ key, label, size, error: err });
     scheduleStorageHealthRender();

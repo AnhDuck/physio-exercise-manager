@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', () => {
   events    = loadEvents();
   loadWorkloadData();
   if (typeof loadActivityWatchData === 'function') loadActivityWatchData();
+  if (typeof currentAppDataLooksFreshOrEmpty === 'function') {
+    appStartedWithFreshBrowserData = currentAppDataLooksFreshOrEmpty();
+  }
   if (typeof ensureVerificationSampleData === 'function') ensureVerificationSampleData();
   runMigrations();
   currentWeekStart = getMonday(new Date());

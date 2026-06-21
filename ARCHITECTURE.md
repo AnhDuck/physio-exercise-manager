@@ -47,8 +47,8 @@ Never load `main.js` before feature files it binds. Do not add imports, exports,
 - `activitywatch-dashboard-*.js`: ActivityWatch category dashboard. See `docs/activitywatch.md`.
 - `activitywatch-settings.js`: ActivityWatch Settings tab controls.
 - `timeline-*.js`: notes, events, Markdown, filters, export, and edit flows.
-- `backup.js`: JSON import/export and validation.
-- `auto-backup.js`: folder backup, health banner, and backup history.
+- `backup.js`: JSON import/export, validation, shared restore rollback, and empty-browser/meaningful-backup detection helpers.
+- `auto-backup.js`: folder backup, live latest-file mirror, empty-browser recovery prompt, health banner, and backup history.
 - `settings.js`: settings modal, review markers, block settings, and backup UI.
 - `images.js`: exercise image upload and URL import.
 - `main.js`: bootstrap and static event binding.
@@ -79,7 +79,7 @@ All app-data writes must go through safe-save helpers in storage internals. Do n
 - Hidden exercises stay in `pem_exercises` to preserve linked session and timeline data.
 - Exercise blocks are group-scoped in `settings.blocks[group]`; exercises store only `blockId`.
 - Stored events are `note`, `dose-change`, and `exercise-added`. Timeline exercise logs are derived from session progress and must not be stored in `pem_events`.
-- Folder auto-backup writes a dated daily file at the scheduled time, rolling hourly recovery files while the app is open, plus `physio-exercise-auto-backup-latest.json`; it reads and validates latest after writing, cleans old daily/hourly files, and records status/history.
+- Folder auto-backup writes `physio-exercise-auto-backup-latest.json` after normal app-data saves while the folder is connected. It also writes a dated daily file at the scheduled time and rolling hourly recovery files while the app is open. Latest is read back and validated after writes. On startup or folder reconnect, if browser data looks fresh/empty and latest contains meaningful data, PEM prompts before restoring and offers an emergency JSON download first. If the user declines restore, automatic writes hold off while the browser data still looks empty so a good latest file is not overwritten by defaults; manual Backup now warns before replacing latest in that state. Import/folder restore suppresses live mirroring until every app storage key is replaced or rolled back.
 
 ## Where To Edit
 

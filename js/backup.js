@@ -93,38 +93,14 @@ function handleBackupImportFile(file) {
 }
 
 function importBackupJson(jsonText) {
-  let backup;
-  try {
-    backup = JSON.parse(jsonText);
-  } catch (err) {
-    alert('Import failed:\n\n- The selected file is not valid JSON.');
+  const prepared = prepareBackupFromJson(jsonText);
+  if (!prepared.ok) {
+    alert(`Import failed:\n\n${prepared.errors.map(error => `- ${error}`).join('\n')}`);
     return;
   }
 
-  const migration = migrateBackupToCurrent(backup);
-  if (migration.errors.length) {
-    alert(`Import failed:\n\n${migration.errors.map(error => `- ${error}`).join('\n')}`);
-    return;
-  }
-
-  backup = migration.backup;
-  const errors = validateBackup(backup);
-  if (errors.length) {
-    alert(`Import failed:\n\n${errors.map(error => `- ${error}`).join('\n')}`);
-    return;
-  }
-
-  const summary = backup.summary && typeof backup.summary === 'object'
-    ? backup.summary
-    : buildBackupSummary(backup.data);
-  const summaryText = [
-    `Exported: ${backup.exportedAt || 'Unknown'}`,
-    `Exercises: ${formatNumber(summary.exerciseCount || 0)}`,
-    `Session days: ${formatNumber(summary.sessionDateCount || 0)}`,
-    `Timeline items: ${formatNumber(summary.timelineEventCount || 0)}`,
-    `ActivityWatch days: ${formatNumber(summary.activityWatchDayCount || 0)}`,
-    `Workload days: ${formatNumber(summary.workloadDayCount || 0)}`,
-  ].join('\n');
+  const backup = prepared.backup;
+  const summaryText = backupSummaryPromptText(backup);
 
   if (confirm('Download current data before replacing it?')) {
     exportFullBackup();
@@ -134,7 +110,59 @@ function importBackupJson(jsonText) {
     return;
   }
 
+  if (applyBackupToBrowserStorage(backup, 'Import failed')) {
+    window.location.reload();
+  }
+}
+
+function prepareBackupFromJson(jsonText) {
+  let backup;
+  try {
+    backup = JSON.parse(jsonText);
+  } catch (err) {
+    return { ok: false, backup: null, errors: ['The selected file is not valid JSON.'] };
+  }
+
+  const migration = migrateBackupToCurrent(backup);
+  if (migration.errors.length) {
+    return { ok: false, backup: null, errors: migration.errors };
+  }
+
+  backup = migration.backup;
+  const errors = validateBackup(backup);
+  if (errors.length) {
+    return { ok: false, backup: null, errors };
+  }
+
+  const safety = getDataSafetyReport(backup.data);
+  if (!safety.ok) {
+    return { ok: false, backup: null, errors: safety.issues };
+  }
+
+  if (!backup.summary || typeof backup.summary !== 'object') {
+    backup.summary = safety.summary || buildBackupSummary(backup.data);
+  }
+
+  return { ok: true, backup, errors: [] };
+}
+
+function backupSummaryPromptText(backup) {
+  const summary = backup.summary && typeof backup.summary === 'object'
+    ? backup.summary
+    : buildBackupSummary(backup.data);
+  return [
+    `Exported: ${backup.exportedAt || 'Unknown'}`,
+    `Exercises: ${formatNumber(summary.exerciseCount || 0)}`,
+    `Session days: ${formatNumber(summary.sessionDateCount || 0)}`,
+    `Timeline items: ${formatNumber(summary.timelineEventCount || 0)}`,
+    `ActivityWatch days: ${formatNumber(summary.activityWatchDayCount || 0)}`,
+    `Workload days: ${formatNumber(summary.workloadDayCount || 0)}`,
+  ].join('\n');
+}
+
+function applyBackupToBrowserStorage(backup, failureTitle = 'Import failed') {
   const originalValues = getOriginalAppStorageValues();
+  autoBackupStorageReplaceActive = true;
   beginImportStorageTest();
   try {
     safeSetLocalStorageItem(KEYS.EXERCISES, JSON.stringify(backup.data.exercises), STORAGE_LABELS[KEYS.EXERCISES]);
@@ -145,12 +173,13 @@ function importBackupJson(jsonText) {
     safeSetLocalStorageItem(KEYS.WORKLOAD, JSON.stringify(normalizeWorkloadDataForStorage(backup.data.workload)), STORAGE_LABELS[KEYS.WORKLOAD]);
   } catch (err) {
     restoreAppStorageValues(originalValues);
-    alert(`Import failed:\n\n- The backup was valid, but browser storage could not save it.\n- Your previous browser data was restored.\n- ${storageErrorMessage(err)}`);
-    return;
+    alert(`${failureTitle}:\n\n- The backup was valid, but browser storage could not save it.\n- Your previous browser data was restored.\n- ${storageErrorMessage(err)}`);
+    return false;
   } finally {
     endImportStorageTest();
+    autoBackupStorageReplaceActive = false;
   }
-  window.location.reload();
+  return true;
 }
 
 function validateBackup(backup) {
@@ -280,4 +309,74 @@ function getDataSafetyReport(data = {}) {
 
 function isPlainObject(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function currentAppDataLooksFreshOrEmpty() {
+  if (appStartedWithFreshBrowserData && !backupContainsMeaningfulData(buildFullBackup())) return true;
+  const summary = buildBackupSummary({
+    exercises,
+    sessions,
+    settings,
+    events,
+    activityWatch: typeof getActivityWatchBackupData === 'function' ? getActivityWatchBackupData() : {},
+    workload: typeof getWorkloadBackupData === 'function' ? getWorkloadBackupData() : {},
+  });
+  const startedWithoutCoreData = !initialAppStoragePresence[KEYS.SETTINGS] ||
+    !initialAppStoragePresence[KEYS.SESSIONS] ||
+    !initialAppStoragePresence[KEYS.EVENTS];
+
+  return startedWithoutCoreData &&
+    summary.sessionDateCount === 0 &&
+    summary.timelineEventCount === 0 &&
+    summary.activityWatchDayCount === 0 &&
+    summary.workloadDayCount === 0 &&
+    !exercisesDifferFromDefaults(exercises) &&
+    !settingsContainUserData(settings);
+}
+
+function backupContainsMeaningfulData(backup) {
+  if (!backup?.data) return false;
+  const summary = backup.summary && typeof backup.summary === 'object'
+    ? backup.summary
+    : buildBackupSummary(backup.data);
+  return Boolean(
+    summary.sessionDateCount ||
+    summary.timelineEventCount ||
+    summary.activityWatchDayCount ||
+    summary.workloadDayCount ||
+    summary.customImageCount ||
+    exercisesDifferFromDefaults(backup.data.exercises) ||
+    settingsContainUserData(backup.data.settings)
+  );
+}
+
+function exercisesDifferFromDefaults(value) {
+  if (!Array.isArray(value)) return false;
+  if (value.length !== DEFAULT_EXERCISES.length) return true;
+  return value.some((exercise, index) => {
+    const original = DEFAULT_EXERCISES[index];
+    if (!exercise || !original) return true;
+    return exercise.id !== original.id ||
+      exercise.name !== original.name ||
+      exercise.group !== original.group ||
+      Number(exercise.order) !== Number(original.order) ||
+      Boolean(exercise.hidden) ||
+      Boolean(exercise.image);
+  });
+}
+
+function settingsContainUserData(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const weather = value.homeCards?.weather;
+  const activityWatchMini = value.homeCards?.activityWatchMini;
+  const workload = value.homeCards?.workload;
+  return Boolean(
+    weather?.location ||
+    weather?.lastResult ||
+    weather?.searchText ||
+    value.timelineRange && value.timelineRange !== 'past-30-days' ||
+    value.personalDayStartTime && value.personalDayStartTime !== '07:00' ||
+    activityWatchMini?.categoryMode === 'top' ||
+    workload?.enabled === false
+  );
 }
