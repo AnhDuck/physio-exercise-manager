@@ -157,7 +157,7 @@ function safeGetLocalStorageItem(key) {
   }
 }
 
-function safeSetLocalStorageItem(key, jsonString, label = STORAGE_LABELS[key] || key) {
+function safeSetLocalStorageItem(key, jsonString, label = STORAGE_LABELS[key] || key, options = {}) {
   if (typeof jsonString !== 'string') {
     throw new TypeError('safeSetLocalStorageItem expects an already-stringified string.');
   }
@@ -176,7 +176,7 @@ function safeSetLocalStorageItem(key, jsonString, label = STORAGE_LABELS[key] ||
     localStorage.setItem(key, jsonString);
     recordStorageSuccess({ key, label, size });
     scheduleStorageHealthRender();
-    if (typeof scheduleAutoBackupLiveMirror === 'function') {
+    if (options.mirror !== false && typeof scheduleAutoBackupLiveMirror === 'function') {
       scheduleAutoBackupLiveMirror(`save:${key}`);
     }
   } catch (err) {
@@ -744,6 +744,7 @@ function defaultWorkloadData() {
       date: '',
       startedAt: '',
       updatedAt: '',
+      elapsedSeconds: 0,
     },
   };
 }
@@ -754,9 +755,9 @@ function loadWorkloadData() {
   return workloadData;
 }
 
-function saveWorkloadData() {
+function saveWorkloadData(options = {}) {
   workloadData = normalizeWorkloadDataForStorage(workloadData);
-  safeSetLocalStorageItem(KEYS.WORKLOAD, JSON.stringify(workloadData), STORAGE_LABELS[KEYS.WORKLOAD]);
+  safeSetLocalStorageItem(KEYS.WORKLOAD, JSON.stringify(workloadData), STORAGE_LABELS[KEYS.WORKLOAD], options);
 }
 
 function getWorkloadBackupData() {
@@ -800,11 +801,13 @@ function normalizeWorkloadTimer(value = {}) {
   const startedAt = typeof source.startedAt === 'string' && !Number.isNaN(new Date(source.startedAt).getTime())
     ? source.startedAt
     : '';
+  const elapsedSeconds = Math.max(0, Math.round(Number(source.elapsedSeconds) || 0));
   return {
-    running: Boolean(source.running && startedAt),
+    running: Boolean(source.running && (startedAt || elapsedSeconds)),
     date: isValidWorkloadDate(source.date) ? source.date : '',
     startedAt,
     updatedAt: typeof source.updatedAt === 'string' ? source.updatedAt : '',
+    elapsedSeconds,
   };
 }
 

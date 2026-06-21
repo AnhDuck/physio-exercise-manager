@@ -2,6 +2,7 @@
 
 const WORKLOAD_REVIEW_THRESHOLD_SECONDS = 6 * 60 * 60;
 const WORKLOAD_TICK_MS = 1000;
+const WORKLOAD_HEARTBEAT_MS = 5 * 1000;
 const WORKLOAD_REMINDER_SOUND_OPTIONS = {
   'soft-chime': 'Soft chime',
   beep: 'Beep',
@@ -12,11 +13,19 @@ let workloadCardTickTimer = null;
 let workloadReminderTimer = null;
 let workloadAudioContext = null;
 let workloadAudioUnlockBound = false;
+let workloadPageOpenResumeChecked = false;
+let workloadLastHeartbeatAt = 0;
 
 function startWorkloadCard() {
+  if (!workloadPageOpenResumeChecked) {
+    workloadPageOpenResumeChecked = true;
+    resumeWorkloadTimerAfterPageOpen();
+  }
   syncWorkloadTimerRollover();
   syncWorkloadCardTicker();
   syncWorkloadTimerCues();
+  window.addEventListener('beforeunload', pauseWorkloadTimerForPageClose);
+  window.addEventListener('pagehide', pauseWorkloadTimerForPageClose);
 }
 
 function stopWorkloadCard() {
@@ -24,6 +33,8 @@ function stopWorkloadCard() {
   window.clearTimeout(workloadReminderTimer);
   workloadCardTickTimer = null;
   workloadReminderTimer = null;
+  window.removeEventListener('beforeunload', pauseWorkloadTimerForPageClose);
+  window.removeEventListener('pagehide', pauseWorkloadTimerForPageClose);
   updateWorkloadRunningVisualCue();
 }
 
@@ -34,6 +45,7 @@ function syncWorkloadCardTicker() {
   workloadCardTickTimer = window.setInterval(() => {
     syncWorkloadTimerRollover();
     syncWorkloadTimerCues();
+    maybeSaveWorkloadTimerHeartbeat();
     if (document.activeElement?.closest?.('.workload-card')) return;
     if (typeof renderHomeCards === 'function') renderHomeCards();
   }, WORKLOAD_TICK_MS);
@@ -214,8 +226,10 @@ function startWorkloadTimer() {
     date: workloadDateStrFor(now),
     startedAt: now.toISOString(),
     updatedAt: now.toISOString(),
+    elapsedSeconds: 0,
   };
   saveWorkloadData();
+  workloadLastHeartbeatAt = now.getTime();
   syncWorkloadCardTicker();
   syncWorkloadTimerCues({ started: true });
   renderHomeCards();
@@ -224,9 +238,9 @@ function startWorkloadTimer() {
 function stopWorkloadTimerAndAdd() {
   syncWorkloadTimerRollover();
   if (!workloadData.timer.running) return;
-  const now = new Date();
-  const startedAt = new Date(workloadData.timer.startedAt);
-  const result = commitWorkloadTimerSegment(workloadData.timer.date || workloadDateStrFor(startedAt), startedAt, now);
+  const dateStr = workloadData.timer.date || workloadCurrentDateStr();
+  const seconds = workloadRunningSecondsForDate(dateStr);
+  const result = commitWorkloadTimerSeconds(dateStr, seconds);
   workloadData.timer = defaultWorkloadData().timer;
   saveWorkloadData();
   syncWorkloadCardTicker();
@@ -260,30 +274,106 @@ function syncWorkloadTimerRollover(now = new Date()) {
   workloadData = normalizeWorkloadDataForStorage(workloadData);
   if (!workloadData.timer.running) return false;
   let changed = false;
-  let startedAt = new Date(workloadData.timer.startedAt);
-  if (Number.isNaN(startedAt.getTime())) {
+  let startedAt = workloadTimerStartedAtDate();
+  if (!startedAt && workloadData.timer.elapsedSeconds <= 0) {
     workloadData.timer = defaultWorkloadData().timer;
     saveWorkloadData();
     syncWorkloadTimerCues();
     return true;
   }
+  if (!startedAt) return false;
 
   let dateStr = workloadData.timer.date || workloadDateStrFor(startedAt);
   for (let guard = 0; guard < 14; guard++) {
     const nextStart = workloadNextDayStart(dateStr);
     if (now < nextStart) break;
-    commitWorkloadTimerSegment(dateStr, startedAt, nextStart);
+    commitWorkloadTimerSeconds(dateStr, workloadData.timer.elapsedSeconds + workloadTimerSegmentSeconds(startedAt, nextStart));
     startedAt = nextStart;
     dateStr = workloadDateStrFor(startedAt);
     workloadData.timer.date = dateStr;
     workloadData.timer.startedAt = startedAt.toISOString();
     workloadData.timer.updatedAt = new Date().toISOString();
+    workloadData.timer.elapsedSeconds = 0;
     changed = true;
   }
 
   if (changed) saveWorkloadData();
   if (changed) syncWorkloadTimerCues();
   return changed;
+}
+
+function pauseWorkloadTimerForPageClose() {
+  if (!workloadData?.timer?.running) return;
+  workloadData = normalizeWorkloadDataForStorage(workloadData);
+  syncWorkloadTimerRollover();
+  const dateStr = workloadData.timer.date || workloadCurrentDateStr();
+  workloadData.timer = {
+    ...workloadData.timer,
+    running: true,
+    date: dateStr,
+    startedAt: '',
+    updatedAt: new Date().toISOString(),
+    elapsedSeconds: workloadRunningSecondsForDate(dateStr),
+  };
+  saveWorkloadData();
+}
+
+function resumeWorkloadTimerAfterPageOpen() {
+  workloadData = normalizeWorkloadDataForStorage(workloadData);
+  if (!workloadData.timer.running) return false;
+  const previousStartedAt = workloadTimerStartedAtDate();
+  if (previousStartedAt) {
+    const updatedAt = workloadTimerUpdatedAtDate() || previousStartedAt;
+    workloadData.timer.elapsedSeconds += workloadTimerSegmentSeconds(previousStartedAt, updatedAt);
+    workloadData.timer.startedAt = '';
+    workloadData.timer.updatedAt = updatedAt.toISOString();
+  }
+
+  const now = new Date();
+  const currentDateStr = workloadCurrentDateStr(now);
+  const timerDateStr = workloadData.timer.date || currentDateStr;
+  const elapsedSeconds = Math.max(0, Math.round(Number(workloadData.timer.elapsedSeconds) || 0));
+
+  if (timerDateStr !== currentDateStr && elapsedSeconds) {
+    commitWorkloadTimerSeconds(timerDateStr, elapsedSeconds);
+    workloadData.timer.elapsedSeconds = 0;
+  }
+
+  workloadData.timer = {
+    ...workloadData.timer,
+    running: true,
+    date: currentDateStr,
+    startedAt: now.toISOString(),
+    updatedAt: now.toISOString(),
+    elapsedSeconds: timerDateStr === currentDateStr ? elapsedSeconds : 0,
+  };
+  saveWorkloadData();
+  workloadLastHeartbeatAt = now.getTime();
+  return true;
+}
+
+function maybeSaveWorkloadTimerHeartbeat() {
+  if (!workloadData?.timer?.running) return;
+  const nowMs = Date.now();
+  if (nowMs - workloadLastHeartbeatAt < WORKLOAD_HEARTBEAT_MS) return;
+  saveWorkloadTimerHeartbeat(new Date(nowMs));
+}
+
+function saveWorkloadTimerHeartbeat(now = new Date()) {
+  workloadData = normalizeWorkloadDataForStorage(workloadData);
+  if (!workloadData.timer.running) return;
+  syncWorkloadTimerRollover(now);
+  const dateStr = workloadData.timer.date || workloadCurrentDateStr(now);
+  workloadData.timer = {
+    ...workloadData.timer,
+    running: true,
+    date: dateStr,
+    startedAt: now.toISOString(),
+    updatedAt: now.toISOString(),
+    elapsedSeconds: workloadRunningSecondsForDate(dateStr),
+  };
+  saveWorkloadData({ mirror: false });
+  workloadLastHeartbeatAt = now.getTime();
 }
 
 function workloadCueSettings() {
@@ -391,7 +481,15 @@ function bindWorkloadAudioUnlock() {
 }
 
 function commitWorkloadTimerSegment(dateStr, startedAt, endedAt) {
-  const seconds = Math.max(0, Math.round((endedAt.getTime() - startedAt.getTime()) / 1000));
+  return commitWorkloadTimerSeconds(dateStr, workloadTimerSegmentSeconds(startedAt, endedAt));
+}
+
+function workloadTimerSegmentSeconds(startedAt, endedAt) {
+  return Math.max(0, Math.round((endedAt.getTime() - startedAt.getTime()) / 1000));
+}
+
+function commitWorkloadTimerSeconds(dateStr, seconds) {
+  seconds = Math.max(0, Math.round(Number(seconds) || 0));
   if (!seconds) return { seconds: 0, needsReview: false };
   const day = workloadDay(dateStr);
   day.totalSeconds = Math.max(0, Math.round(day.totalSeconds + seconds));
@@ -416,9 +514,20 @@ function workloadDisplayTotalSeconds(dateStr) {
 
 function workloadRunningSecondsForDate(dateStr) {
   if (!workloadData?.timer?.running || workloadData.timer.date !== dateStr) return 0;
-  const startedAt = new Date(workloadData.timer.startedAt).getTime();
-  if (!startedAt) return 0;
-  return Math.max(0, Math.round((Date.now() - startedAt) / 1000));
+  const elapsedSeconds = Math.max(0, Math.round(Number(workloadData.timer.elapsedSeconds) || 0));
+  const startedAt = workloadTimerStartedAtDate();
+  if (!startedAt) return elapsedSeconds;
+  return elapsedSeconds + Math.max(0, Math.round((Date.now() - startedAt.getTime()) / 1000));
+}
+
+function workloadTimerStartedAtDate() {
+  const startedAt = new Date(workloadData?.timer?.startedAt || '');
+  return Number.isNaN(startedAt.getTime()) ? null : startedAt;
+}
+
+function workloadTimerUpdatedAtDate() {
+  const updatedAt = new Date(workloadData?.timer?.updatedAt || '');
+  return Number.isNaN(updatedAt.getTime()) ? null : updatedAt;
 }
 
 function workloadActivityWatchWorkSeconds(dateStr) {
