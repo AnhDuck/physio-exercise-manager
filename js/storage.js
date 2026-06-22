@@ -157,6 +157,23 @@ function safeGetLocalStorageItem(key) {
   }
 }
 
+function safeParseStorageJson(key, raw, fallback, label = STORAGE_LABELS[key] || key) {
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    recordStorageReadFailure({
+      key,
+      label,
+      size: byteLength(raw),
+      error: err,
+    });
+    scheduleStorageHealthRender();
+    console.error(`Could not read ${label} from browser storage. The stored value was left untouched.`, err);
+    return fallback;
+  }
+}
+
 function safeSetLocalStorageItem(key, jsonString, label = STORAGE_LABELS[key] || key, options = {}) {
   if (typeof jsonString !== 'string') {
     throw new TypeError('safeSetLocalStorageItem expects an already-stringified string.');
@@ -166,6 +183,9 @@ function safeSetLocalStorageItem(key, jsonString, label = STORAGE_LABELS[key] ||
   recordStorageAttempt({ key, label, size });
 
   try {
+    if (storageKeyHasReadFailure(key) && !options.allowCorruptOverwrite) {
+      throw createCorruptStorageOverwriteError(label);
+    }
     const testError = storageTestErrorForWrite(key);
     if (testError) throw testError;
     if (!localStorageAvailability.available) {
@@ -174,6 +194,7 @@ function safeSetLocalStorageItem(key, jsonString, label = STORAGE_LABELS[key] ||
       throw err;
     }
     localStorage.setItem(key, jsonString);
+    clearStorageReadFailure(key);
     recordStorageSuccess({ key, label, size });
     scheduleStorageHealthRender();
     if (options.mirror !== false && typeof scheduleAutoBackupLiveMirror === 'function') {
@@ -184,6 +205,12 @@ function safeSetLocalStorageItem(key, jsonString, label = STORAGE_LABELS[key] ||
     scheduleStorageHealthRender();
     throw err;
   }
+}
+
+function createCorruptStorageOverwriteError(label) {
+  const err = new Error(`${label || 'App data'} could not be read from browser storage, so PEM blocked this save to avoid overwriting the corrupt value. Open Data Health, download JSON, then import a known-good backup or inspect browser localStorage.`);
+  err.name = 'CorruptStorageOverwriteBlocked';
+  return err;
 }
 
 function storageTestErrorForWrite(key) {
@@ -299,6 +326,53 @@ function recordStorageFailure(failure) {
   };
 }
 
+function recordStorageReadFailure(failure) {
+  if (typeof storageHealth !== 'object' || !storageHealth) return;
+  if (!storageHealth.readFailures || typeof storageHealth.readFailures !== 'object') {
+    storageHealth.readFailures = {};
+  }
+  storageHealth.readFailures[failure.key] = {
+    at: new Date().toISOString(),
+    key: failure.key,
+    label: failure.label,
+    size: failure.size,
+    error: storageErrorMessage(failure.error),
+    errorName: failure.error?.name || '',
+  };
+}
+
+function storageKeyHasReadFailure(key) {
+  return Boolean(storageHealth?.readFailures?.[key]);
+}
+
+function storageReadFailureList() {
+  if (!storageHealth?.readFailures || typeof storageHealth.readFailures !== 'object') return [];
+  return Object.values(storageHealth.readFailures);
+}
+
+function firstStorageReadFailure() {
+  return storageReadFailureList()
+    .sort((a, b) => String(a.at || '').localeCompare(String(b.at || '')))[0] || null;
+}
+
+function clearStorageReadFailure(key) {
+  if (!storageHealth?.readFailures || typeof storageHealth.readFailures !== 'object') return;
+  delete storageHealth.readFailures[key];
+}
+
+function snapshotStorageReadFailures() {
+  return storageHealth?.readFailures && typeof storageHealth.readFailures === 'object'
+    ? JSON.parse(JSON.stringify(storageHealth.readFailures))
+    : {};
+}
+
+function restoreStorageReadFailures(readFailures) {
+  if (typeof storageHealth !== 'object' || !storageHealth) return;
+  storageHealth.readFailures = readFailures && typeof readFailures === 'object' && !Array.isArray(readFailures)
+    ? JSON.parse(JSON.stringify(readFailures))
+    : {};
+}
+
 function scheduleStorageHealthRender() {
   window.setTimeout(() => {
     if (typeof renderAutoBackupSettings === 'function') {
@@ -318,6 +392,18 @@ function getStorageHealthIssue() {
       detail: activeTest?.mode === 'unavailable'
         ? activeTest.detail
         : localStorageAvailability.error || 'This browser is not allowing saved app data right now. Download JSON now to protect the current data.',
+      action: 'Open Data Health',
+    };
+  }
+  const readFailure = firstStorageReadFailure();
+  if (readFailure) {
+    const readFailureCount = storageReadFailureList().length;
+    const more = readFailureCount > 1 ? ` and ${formatNumber(readFailureCount - 1)} other storage key${readFailureCount === 2 ? '' : 's'}` : '';
+    return {
+      ok: false,
+      code: 'storage-read-failure',
+      title: 'Saved data could not be read',
+      detail: `${readFailure.label || 'App data'}${more} contains malformed JSON. PEM is using safe fallback data for this page load and has blocked saves to that key so the corrupt value is not overwritten. Download JSON, then import a known-good backup or inspect browser localStorage.`,
       action: 'Open Data Health',
     };
   }
@@ -546,7 +632,7 @@ function loadExercises() {
     }
     return exercises;
   }
-  return JSON.parse(raw);
+  return safeParseStorageJson(KEYS.EXERCISES, raw, DEFAULT_EXERCISES.map(e => ({ ...e })));
 }
 
 function saveExercises(exercises) {
@@ -555,7 +641,7 @@ function saveExercises(exercises) {
 
 function loadSessions() {
   const raw = safeGetLocalStorageItem(KEYS.SESSIONS);
-  return raw ? JSON.parse(raw) : {};
+  return safeParseStorageJson(KEYS.SESSIONS, raw, {});
 }
 
 function saveSession(dateStr, sessionData) {
@@ -594,7 +680,7 @@ function loadSettings() {
     timelineRange: 'past-30-days',
     homeCards: defaultHomeCardsSettings(),
     autoBackup: defaultAutoBackupSettings(),
-    ...JSON.parse(raw),
+    ...safeParseStorageJson(KEYS.SETTINGS, raw, {}),
   });
   loaded.setCueSpeechVolume = clampSetCueSpeechVolume(loaded.setCueSpeechVolume);
   loaded.homeCards = normalizeHomeCardsSettings(loaded.homeCards);
@@ -751,7 +837,7 @@ function defaultWorkloadData() {
 
 function loadWorkloadData() {
   const raw = safeGetLocalStorageItem(KEYS.WORKLOAD);
-  workloadData = normalizeWorkloadDataForStorage(raw ? JSON.parse(raw) : null);
+  workloadData = normalizeWorkloadDataForStorage(safeParseStorageJson(KEYS.WORKLOAD, raw, null));
   return workloadData;
 }
 
@@ -873,7 +959,7 @@ function clampRefreshMinutes(value, fallback, min, max) {
 
 function loadEvents() {
   const raw = safeGetLocalStorageItem(KEYS.EVENTS);
-  return raw ? JSON.parse(raw) : [];
+  return safeParseStorageJson(KEYS.EVENTS, raw, []);
 }
 
 function saveEvents(events) {

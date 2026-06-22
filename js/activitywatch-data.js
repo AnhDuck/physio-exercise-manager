@@ -108,7 +108,7 @@ function defaultActivityWatchData() {
 
 function loadActivityWatchData() {
   const raw = safeGetLocalStorageItem(KEYS.ACTIVITYWATCH);
-  activityWatchData = normalizeActivityWatchDataForStorage(raw ? JSON.parse(raw) : null);
+  activityWatchData = normalizeActivityWatchDataForStorage(safeParseStorageJson(KEYS.ACTIVITYWATCH, raw, null));
   return activityWatchData;
 }
 

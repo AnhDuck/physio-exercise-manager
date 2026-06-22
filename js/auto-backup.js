@@ -15,7 +15,7 @@ const AUTO_BACKUP_TIMER_MS = 60 * 1000;
 const AUTO_BACKUP_LIVE_MIRROR_DEBOUNCE_MS = 1200;
 const AUTO_BACKUP_DATED_FILE_RE = /^physio-exercise-auto-backup-(\d{4}-\d{2}-\d{2})\.json$/;
 const AUTO_BACKUP_HOURLY_FILE_RE = /^physio-exercise-auto-backup-hourly-(\d{4}-\d{2}-\d{2})-(\d{2})00\.json$/;
-const DATA_HEALTH_ISSUE_CODES = ['storage-failure', 'storage-test', 'storage-test-mode', 'storage-unavailable', 'data-safety'];
+const DATA_HEALTH_ISSUE_CODES = ['storage-failure', 'storage-read-failure', 'storage-test', 'storage-test-mode', 'storage-unavailable', 'data-safety'];
 const AUTO_BACKUP_DEFAULT_SETTINGS = {
   time: '06:00',
   folderName: '',
@@ -999,6 +999,7 @@ function renderStorageSettings(health) {
   const totalDetail = document.getElementById('settings-storage-total-detail');
   const totalPill = document.getElementById('settings-storage-total-pill');
   const usageReport = getAppStorageUsageReport();
+  const readFailures = typeof storageReadFailureList === 'function' ? storageReadFailureList() : [];
   const keyIds = {
     [KEYS.EXERCISES]: 'settings-storage-exercises',
     [KEYS.SESSIONS]: 'settings-storage-sessions',
@@ -1009,7 +1010,12 @@ function renderStorageSettings(health) {
   };
 
   if (saveState && saveDetail) {
-    if (storageHealth.lastFailure) {
+    if (readFailures.length) {
+      const firstReadFailure = readFailures[0];
+      const more = readFailures.length > 1 ? ` ${formatNumber(readFailures.length - 1)} more key${readFailures.length === 2 ? '' : 's'} also failed to load.` : '';
+      saveState.textContent = 'Saved data could not be read';
+      saveDetail.textContent = `${firstReadFailure.label} contains malformed JSON and was left untouched. Saves to affected keys are blocked until a backup import or deliberate restore replaces them.${more}`;
+    } else if (storageHealth.lastFailure) {
       saveState.textContent = 'Last save failed';
       saveDetail.textContent = `${storageHealth.lastFailure.label} did not save ${formatBytes(storageHealth.lastFailure.size)} at ${formatAutoBackupDateTime(storageHealth.lastFailure.at)}.`;
     } else if (storageHealth.lastSuccess) {
@@ -1019,11 +1025,11 @@ function renderStorageSettings(health) {
       saveState.textContent = 'No save yet this page load';
       saveDetail.textContent = 'The next app-data save will update this status.';
     }
-    saveState.classList.toggle('is-backup-issue', Boolean(storageHealth.lastFailure) || health.code === 'storage-unavailable');
+    saveState.classList.toggle('is-backup-issue', Boolean(readFailures.length) || Boolean(storageHealth.lastFailure) || health.code === 'storage-unavailable');
   }
-  setStatusPill(savePill, storageHealth.lastFailure || health.code === 'storage-unavailable' ? 'Failed' : storageHealth.lastSuccess ? 'Saved' : 'Waiting', {
-    muted: !storageHealth.lastFailure && !storageHealth.lastSuccess && health.code !== 'storage-unavailable',
-    issue: Boolean(storageHealth.lastFailure) || health.code === 'storage-unavailable',
+  setStatusPill(savePill, readFailures.length || storageHealth.lastFailure || health.code === 'storage-unavailable' ? 'Failed' : storageHealth.lastSuccess ? 'Saved' : 'Waiting', {
+    muted: !readFailures.length && !storageHealth.lastFailure && !storageHealth.lastSuccess && health.code !== 'storage-unavailable',
+    issue: Boolean(readFailures.length) || Boolean(storageHealth.lastFailure) || health.code === 'storage-unavailable',
   });
 
   if (totalState && totalDetail) {

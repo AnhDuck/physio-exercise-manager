@@ -54,6 +54,7 @@ let storageHealth = {
   lastAttempt: null,
   lastSuccess: null,
   lastFailure: null,
+  readFailures: {},
   simulatedFailure: false,
 };
 function setHeaderQuote() {

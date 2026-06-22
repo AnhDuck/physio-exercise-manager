@@ -6,6 +6,10 @@ Scope: `AnhDuck/physio-exercise-manager` on `master`.
 
 This is a cleanup backlog only. No app behavior changes are included here. The project is intentionally a static browser app with no build step, package manager, module system, or server layer, so the recommendations below preserve the current flat global-script architecture unless explicitly marked as a wait/phase item.
 
+## Completed fixes
+
+- **2026-06-22 05:33:25 -07:00**: Added safe JSON parsing for persisted app data. Storage loaders now catch malformed JSON, report a Data Health warning, keep corrupt localStorage values untouched, and block ordinary saves to affected keys until a deliberate backup import or restore replaces them.
+
 ## How to use this backlog
 
 Pick one task ID at a time. After each completed task, re-display the remaining backlog and select the next task. Prefer safe, local cleanups before architecture reshaping.
@@ -19,49 +23,6 @@ Priority meanings:
 ---
 
 ## 1. Critical issues
-
-### C1 — Add safe JSON parsing for all persisted app data
-
-**Where**
-
-- `js/storage.js`
-  - `loadExercises()`
-  - `loadSessions()`
-  - `loadSettings()`
-  - `loadEvents()`
-  - `loadWorkloadData()`
-- `js/activitywatch-data.js`
-  - `loadActivityWatchData()`
-
-**Why it matters**
-
-The app has strong write-side storage handling, but load-side parsing still uses direct `JSON.parse(raw)` in several places. If one localStorage key becomes malformed, the app can crash during bootstrap before the user can reach Data Health, export JSON, import a backup, or reconnect folder backups.
-
-This is especially important because PEM is a personal health/work tracking app whose data lives in browser storage.
-
-**Recommended change**
-
-Create one storage-internal helper, for example:
-
-```js
-function safeParseStorageJson(key, raw, fallback, label) { ... }
-```
-
-It should:
-
-- catch malformed JSON
-- record a storage/data-health failure
-- return a safe fallback without throwing during startup
-- avoid silently overwriting the corrupt value before the user can export or inspect it
-- show a clear Data Health warning with a rescue path
-
-Then route all app-data loaders through it.
-
-**Safe to fix now?**
-
-Yes. This should be the first cleanup task. It is high-value and can be done without changing the app architecture.
-
----
 
 ### C2 — Add startup-phase fault isolation so one broken feature does not brick the whole app
 
@@ -219,7 +180,7 @@ Because of script load order, the first option is probably safer: storage owns t
 
 **Safe to fix now?**
 
-Yes, but only after C1 if the same storage helpers are being touched.
+Yes, but only after the completed storage parser fix if the same storage helpers are being touched.
 
 ---
 
@@ -259,7 +220,7 @@ Feature files can keep feature-specific wrappers, but the underlying math should
 
 **Safe to fix now?**
 
-Wait until C1 and M1 are done. This touches several features and needs careful verification.
+Wait until the completed storage parser fix and M1 are done. This touches several features and needs careful verification.
 
 ---
 
@@ -568,27 +529,26 @@ Yes. Documentation-only.
 
 ## Suggested execution order
 
-1. **C1 — Add safe JSON parsing for persisted app data**
-2. **C2 — Add startup-phase fault isolation**
-3. **M1 — Replace brittle direct event bindings with a small binding helper**
-4. **M7 — Remove committed temp server log and ignore future temp logs**
-5. **M3 — Single-source auto-backup defaults and normalization**
-6. **M5 — Pre-index dose-change events during grid render**
-7. **M9 — Make image import safer and less storage-hostile**
-8. **C3 — Tighten ActivityWatch server URL validation**
-9. **M6 — Queue or merge ActivityWatch sync requests during active sync**
-10. **N3 — Fix or remove always-compact header logic**
-11. **N1 — Update/remove stale noscript cache-busting versions**
-12. **M4 — Consolidate date/time validation and waking-day helpers**
-13. **M2 — Split shared mutable state into feature state objects**
-14. **M8 — Reduce `index.html` as a long-term bottleneck**
-15. **N2 — Replace static `innerHTML` glyphs with DOM/text helpers**
-16. **N4 — Replace JSON round-trip cloning with a named helper fallback**
-17. **N5 — Make workload timer rollover guard user-visible**
-18. **N6 — Add feature dependency map to architecture docs**
+1. **C2 — Add startup-phase fault isolation**
+2. **M1 — Replace brittle direct event bindings with a small binding helper**
+3. **M7 — Remove committed temp server log and ignore future temp logs**
+4. **M3 — Single-source auto-backup defaults and normalization**
+5. **M5 — Pre-index dose-change events during grid render**
+6. **M9 — Make image import safer and less storage-hostile**
+7. **C3 — Tighten ActivityWatch server URL validation**
+8. **M6 — Queue or merge ActivityWatch sync requests during active sync**
+9. **N3 — Fix or remove always-compact header logic**
+10. **N1 — Update/remove stale noscript cache-busting versions**
+11. **M4 — Consolidate date/time validation and waking-day helpers**
+12. **M2 — Split shared mutable state into feature state objects**
+13. **M8 — Reduce `index.html` as a long-term bottleneck**
+14. **N2 — Replace static `innerHTML` glyphs with DOM/text helpers**
+15. **N4 — Replace JSON round-trip cloning with a named helper fallback**
+16. **N5 — Make workload timer rollover guard user-visible**
+17. **N6 — Add feature dependency map to architecture docs**
 
 ## Next task recommendation
 
-Start with **C1 — Add safe JSON parsing for all persisted app data**.
+Start with **C2 — Add startup-phase fault isolation**.
 
-Reason: it protects the app from becoming unreachable due to one corrupt browser-storage key, and it strengthens backup/recovery before other cleanup work touches storage, settings, ActivityWatch, or workload data.
+Reason: the storage parser fix now protects malformed persisted data, and the next largest resilience gap is preventing one startup feature failure from blocking unrelated core actions like Settings and export.

@@ -72,6 +72,8 @@ Dashboard card preferences, including the Timed Work Today visibility toggle, ti
 
 All app-data writes must go through safe-save helpers in storage internals. Do not call `localStorage.setItem` directly for app keys outside storage internals.
 
+Load-side app-data parsing also belongs in `storage.js`. Persisted JSON loaders should use `safeParseStorageJson(...)` so one malformed localStorage key cannot crash startup. When a key fails to parse, PEM leaves the raw browser value untouched, records a Data Health warning, returns safe fallback data for the page load, and blocks ordinary saves to that key until a deliberate backup import or restore replaces it.
+
 ## Core Data Rules
 
 - Dates are local `YYYY-MM-DD`; use `toDateStr()` and `dateFromStr()`.
