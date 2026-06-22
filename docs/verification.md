@@ -73,5 +73,10 @@ For ActivityWatch dashboard changes, smoke-check:
 - category hover/filter behavior still works
 - Day/Range detail toggle works
 - advanced sync panel opens and shows date options
+- methodology-change chart markers appear on June 18, 2026 and June 21, 2026 when those dates are visible
+- marker hover/focus text uses `Break in series`
+- the right panel reports methodology changes for selected-day and visible-range detail modes
+- timeline day headers and copied timeline Markdown include the methodology-change note for marked days
+- Groups mode, Total tendon load overlay, and Timed Work terminology still render correctly
 
 Always report whether browser verification was in-app automated, visible-browser/CDP based, manual, or skipped.

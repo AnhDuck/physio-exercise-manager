@@ -21,6 +21,10 @@ function renderActivityWatchDetailPanel(days) {
   heading.appendChild(elText('strong', '', formatActivityWatchDuration(total)));
   root.appendChild(heading);
   root.appendChild(buildActivityWatchDetailStats(days, mode, total));
+  const methodologyChanges = activityWatchDetailMethodologyChanges(days, selectedDay, mode);
+  if (methodologyChanges.length) {
+    root.appendChild(buildActivityWatchMethodologyPanel(methodologyChanges));
+  }
   if (activityWatchDashboardState.selectedCategory) {
     const filterBar = el('div', 'activitywatch-filter-bar');
     filterBar.appendChild(elText('span', '', `Filtered to ${activityWatchDashboardState.selectedCategory}`));
@@ -118,6 +122,29 @@ function buildActivityWatchDetailModeToggle() {
   });
   wrap.appendChild(toggle);
   return wrap;
+}
+
+function activityWatchDetailMethodologyChanges(days, selectedDay, mode) {
+  const dateStrs = mode === 'range'
+    ? (days || []).map(day => day.date)
+    : [selectedDay?.date || ''];
+  return getActivityWatchMethodologyChangesForDates(dateStrs);
+}
+
+function buildActivityWatchMethodologyPanel(changes) {
+  const panel = el('div', 'activitywatch-methodology-panel');
+  const header = el('div', 'activitywatch-methodology-header');
+  header.appendChild(elText('strong', '', 'Methodology change'));
+  header.appendChild(elText('span', '', 'Break in series'));
+  panel.appendChild(header);
+
+  changes.forEach(change => {
+    const item = el('div', 'activitywatch-methodology-item');
+    item.appendChild(elText('span', '', formatEventDate(change.date)));
+    item.appendChild(elText('p', '', change.detail));
+    panel.appendChild(item);
+  });
+  return panel;
 }
 
 function activityWatchCategoryRowsForDay(day) {

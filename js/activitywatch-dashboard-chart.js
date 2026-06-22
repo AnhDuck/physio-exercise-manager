@@ -42,11 +42,13 @@ function renderActivityWatchStackedChart(days) {
   const bars = el('div', 'activitywatch-bars-row');
   const axisLabels = activityWatchXAxisLabels(days);
   days.forEach((day, index) => {
+    const methodologyChange = getActivityWatchMethodologyChange(day.date);
     const barButton = el('button', 'activitywatch-day-bar');
     barButton.type = 'button';
     barButton.dataset.awDate = day.date;
+    barButton.classList.toggle('has-methodology-change', Boolean(methodologyChange));
     barButton.classList.toggle('is-selected', day.date === activityWatchDashboardState.selectedDate);
-    barButton.setAttribute('aria-label', `${formatEventDate(day.date)} - ${formatActivityWatchDuration(day.totalActiveSeconds)}`);
+    barButton.setAttribute('aria-label', activityWatchDayBarAriaLabel(day, methodologyChange));
     barButton.addEventListener('click', () => {
       activityWatchDashboardState.selectedDate = day.date;
       activityWatchDashboardState.detailMode = 'day';
@@ -54,6 +56,9 @@ function renderActivityWatchStackedChart(days) {
       activityWatchDashboardState.hoveredCategory = '';
       renderActivityWatchDashboard();
     });
+    if (methodologyChange) {
+      addActivityWatchMethodologyFocusHandlers(barButton, methodologyChange);
+    }
 
     const overlay = overlayMode ? activityWatchDashboardOverlayForDay(day) : null;
     const plottedSeconds = overlayMode
@@ -101,6 +106,9 @@ function renderActivityWatchStackedChart(days) {
       stack.appendChild(empty);
     }
     barButton.appendChild(stack);
+    if (methodologyChange) {
+      barButton.appendChild(buildActivityWatchMethodologyMarker(methodologyChange));
+    }
     const axisLabel = axisLabels.get(day.date) || '';
     const label = elText('span', 'activitywatch-day-bar-label', axisLabel);
     label.classList.toggle('has-label', Boolean(axisLabel));
@@ -171,6 +179,12 @@ function addActivityWatchBarSegmentTooltipHandlers(segment, category, seconds) {
   segment.addEventListener('pointercancel', hideActivityWatchChartTooltip);
 }
 
+function activityWatchDayBarAriaLabel(day, methodologyChange) {
+  const base = `${formatEventDate(day.date)} - ${formatActivityWatchDuration(day.totalActiveSeconds)}`;
+  if (!methodologyChange) return base;
+  return `${base}. ${activityWatchMethodologyTooltip(methodologyChange)}`;
+}
+
 function addActivityWatchOverlaySegmentTooltipHandlers(segment, segmentData) {
   if (segmentData.category) {
     addActivityWatchCategoryPreviewHandlers(segment, segmentData.category);
@@ -185,6 +199,32 @@ function addActivityWatchOverlaySegmentTooltipHandlers(segment, segmentData) {
   segment.addEventListener('pointercancel', hideActivityWatchChartTooltip);
 }
 
+function buildActivityWatchMethodologyMarker(change) {
+  const marker = el('span', 'activitywatch-methodology-marker');
+  marker.setAttribute('aria-hidden', 'true');
+  marker.title = activityWatchMethodologyTooltip(change);
+  marker.addEventListener('pointerenter', (event) => {
+    showActivityWatchChartTooltipText(event, activityWatchMethodologyTooltip(change), true);
+  });
+  marker.addEventListener('pointermove', (event) => {
+    positionActivityWatchChartTooltip(event);
+  });
+  marker.addEventListener('pointerleave', hideActivityWatchChartTooltip);
+  marker.addEventListener('pointercancel', hideActivityWatchChartTooltip);
+  return marker;
+}
+
+function addActivityWatchMethodologyFocusHandlers(barButton, change) {
+  barButton.addEventListener('focus', () => {
+    const rect = barButton.getBoundingClientRect();
+    showActivityWatchChartTooltipText({
+      clientX: rect.left + (rect.width / 2),
+      clientY: rect.top + 8,
+    }, activityWatchMethodologyTooltip(change), true);
+  });
+  barButton.addEventListener('blur', hideActivityWatchChartTooltip);
+}
+
 function ensureActivityWatchChartTooltip() {
   let tooltip = document.getElementById('activitywatch-chart-tooltip');
   if (tooltip) return tooltip;
@@ -197,8 +237,13 @@ function ensureActivityWatchChartTooltip() {
 }
 
 function showActivityWatchChartTooltip(event, category, seconds) {
+  showActivityWatchChartTooltipText(event, `${category}: ${formatActivityWatchDuration(seconds)}`, false);
+}
+
+function showActivityWatchChartTooltipText(event, text, allowWrap = false) {
   const tooltip = ensureActivityWatchChartTooltip();
-  tooltip.textContent = `${category}: ${formatActivityWatchDuration(seconds)}`;
+  tooltip.textContent = text;
+  tooltip.classList.toggle('allows-wrap', allowWrap);
   tooltip.hidden = false;
   tooltip.classList.add('is-visible');
   positionActivityWatchChartTooltip(event);

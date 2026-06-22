@@ -264,6 +264,18 @@ function getActivityWatchTimelineChips(dateStr) {
   const day = getActivityWatchDay(dateStr);
   const totalActiveSeconds = Math.max(0, Math.round(Number(day?.totalActiveSeconds) || 0));
   const chips = [];
+  const methodologyChange = typeof getActivityWatchMethodologyChange === 'function'
+    ? getActivityWatchMethodologyChange(dateStr)
+    : null;
+  if (methodologyChange) {
+    chips.push({
+      className: 'is-methodology-change',
+      label: methodologyChange.title,
+      title: typeof activityWatchMethodologyTooltip === 'function'
+        ? activityWatchMethodologyTooltip(methodologyChange)
+        : methodologyChange.detail,
+    });
+  }
   if (totalActiveSeconds) {
     chips.push({
       className: 'is-computer-active',
@@ -289,9 +301,17 @@ function getActivityWatchTimelineMarkdownSummary(dateStr) {
   const totalActiveSeconds = Math.max(0, Math.round(Number(day?.totalActiveSeconds) || 0));
   const overlay = timelineWorkloadOverlayForDate(dateStr);
   const hasOverlay = overlay && timelineHasTimedWorkData(overlay);
-  if (!totalActiveSeconds && !hasOverlay) return '';
+  const methodologyChange = typeof getActivityWatchMethodologyChange === 'function'
+    ? getActivityWatchMethodologyChange(dateStr)
+    : null;
+  if (!totalActiveSeconds && !hasOverlay && !methodologyChange) return '';
 
   const parts = [];
+  if (methodologyChange) {
+    parts.push(typeof activityWatchMethodologyMarkdown === 'function'
+      ? activityWatchMethodologyMarkdown(methodologyChange)
+      : `Break in series - ${methodologyChange.title}: ${methodologyChange.detail}`);
+  }
   if (totalActiveSeconds) {
     parts.push(`${WORKLOAD_TERMS.computerActiveTime}: ${formatActivityWatchDuration(totalActiveSeconds)}`);
   }

@@ -91,6 +91,8 @@ Right panel:
 - Show top categories by default, with Show all / Show top categories.
 - The right panel detail scope control is labeled `Details:` with `Selected day` / `Visible range`. When an overlay is active, show a compact detail-scope overlay summary for `Timed work total`, `Computer work`, and `Physical work estimate`. `Total tendon load` also shows `Computer active time`. If any included day has Computer work greater than Timed work total, show a compact data conflict warning.
 - Timeline day headers may show compact chips for `Computer active time` and `Total tendon load`. Their hover text should explain what each value means, and copied timeline Markdown should include a short load-terms explanation plus per-day load summaries when copied days have ActivityWatch/timed work data.
+- Hard-coded ActivityWatch methodology changes are metadata annotations only. Use visible label `Methodology change` and tooltip/copy phrase `Break in series` to mean ActivityWatch data before and after that date may not be directly comparable because collection/classification changed. These markers must not mutate, recalculate, backfill, or store derived data in `pem_activitywatch`.
+- Methodology-change markers appear as subtle chart markers in Categories, Groups, and Total tendon load overlay modes. Hover/focus text should show the date, `Methodology change`, `Break in series`, and the detail text. The right panel should show matching changes for the selected day or visible range, timeline day headers should show a compact marker chip, and copied timeline Markdown should include the same note for copied days.
 
 Visual rules:
 
@@ -102,7 +104,7 @@ Visual rules:
 
 ## Dashboard File Ownership
 
-- `activitywatch-dashboard-state.js`: constants, state, day builders, range/date helpers, category lock/hover/highlight helpers.
+- `activitywatch-dashboard-state.js`: constants, hard-coded methodology-change metadata, state, day builders, range/date helpers, category lock/hover/highlight helpers.
 - `activitywatch-dashboard-format.js`: date labels, chart labels, axis labels, percentages, colors, status labels.
 - `activitywatch-dashboard-sync.js`: advanced sync panel, date selection, sync progress UI, and dashboard metadata.
 - `activitywatch-dashboard-controls.js`: compact header sync/advanced actions plus chart heading, date controls, category mode toggle, and overlay toggle.

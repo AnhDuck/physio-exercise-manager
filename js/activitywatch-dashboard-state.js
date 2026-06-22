@@ -16,6 +16,19 @@ const ACTIVITYWATCH_DASHBOARD_OTHER_CATEGORY = 'Other';
 
 const ACTIVITYWATCH_WIDE_AXIS_MIN_LABEL_GAP_DAYS = 6;
 
+const ACTIVITYWATCH_METHODOLOGY_CHANGES = [
+  {
+    date: '2026-06-18',
+    title: 'Methodology change',
+    detail: 'Browser work tracking changed to use Brave as the work-browser source. Work-category comparisons before and after this date may not be directly comparable.',
+  },
+  {
+    date: '2026-06-21',
+    title: 'Methodology change',
+    detail: 'ActivityWatch AFK timeout changed to 90 seconds. Active-computer totals after this date may count less passive or hybrid physical work time than earlier data.',
+  },
+];
+
 const activityWatchDashboardState = {
   selectedDate: '',
   rangeDays: ACTIVITYWATCH_DASHBOARD_DEFAULT_RANGE_DAYS,
@@ -117,6 +130,25 @@ function updateActivityWatchCategoryHighlight() {
     node.classList.toggle('is-highlighted', Boolean(isMatch));
     node.classList.toggle('is-dimmed', Boolean(active && !isMatch));
   });
+}
+
+function getActivityWatchMethodologyChange(dateStr) {
+  return ACTIVITYWATCH_METHODOLOGY_CHANGES.find(item => item.date === dateStr) || null;
+}
+
+function getActivityWatchMethodologyChangesForDates(dateStrs) {
+  const dateSet = new Set((dateStrs || []).filter(Boolean));
+  return ACTIVITYWATCH_METHODOLOGY_CHANGES.filter(item => dateSet.has(item.date));
+}
+
+function activityWatchMethodologyTooltip(change) {
+  if (!change) return '';
+  return `${formatEventDate(change.date)} - ${change.title}. Break in series: ${change.detail}`;
+}
+
+function activityWatchMethodologyMarkdown(change) {
+  if (!change) return '';
+  return `Break in series - ${change.title}: ${change.detail}`;
 }
 
 function normalizeActivityWatchDashboardCategoryMode(value) {
