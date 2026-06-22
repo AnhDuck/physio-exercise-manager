@@ -51,7 +51,7 @@ Never load `main.js` before feature files it binds. Do not add imports, exports,
 - `auto-backup.js`: folder backup, live latest-file mirror, empty-browser recovery prompt, health banner, and backup history.
 - `settings.js`: settings modal, review markers, block settings, and backup UI.
 - `images.js`: exercise image upload and URL import.
-- `main.js`: bootstrap and static event binding.
+- `main.js`: guarded startup bootstrap and static event binding. Startup phases should use `runStartupStep(...)` so a failed optional feature logs a non-blocking warning instead of stopping later phases. Static DOM bindings should use the local `bindClick` / `bindChange` / `bindInput` / `bindKeydown` helpers so missing optional controls fail softly and missing required controls warn clearly.
 
 `app.js` is only a pointer. `assets/physio-icon.svg` is the app icon.
 

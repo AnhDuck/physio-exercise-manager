@@ -9,6 +9,9 @@ This is a cleanup backlog only. No app behavior changes are included here. The p
 ## Completed fixes
 
 - **2026-06-22 05:33:25 -07:00**: Added safe JSON parsing for persisted app data. Storage loaders now catch malformed JSON, report a Data Health warning, keep corrupt localStorage values untouched, and block ordinary saves to affected keys until a deliberate backup import or restore replaces them.
+- **2026-06-22 05:47:14 -07:00**: Completed C2. Startup now runs major phases through guarded `runStartupStep(...)` calls, logs and toasts non-blocking startup failures, catches async startup rejections where applicable, and keeps later phases such as static binding, settings, and export access reachable when an earlier feature fails.
+- **2026-06-22 05:47:14 -07:00**: Completed M1. Static bindings in `js/main.js` now use small event binding helpers for click/change/input/keydown handlers so missing required controls warn clearly and optional feature controls fail softly instead of interrupting the rest of binding.
+- **2026-06-22 05:47:14 -07:00**: Completed M7. Committed `.tmp-*.log` files were removed from the tracked repo state and `.gitignore` now ignores future temp logs; active server logs may remain on disk while the local verification server has them open.
 
 ## How to use this backlog
 
@@ -24,46 +27,6 @@ Priority meanings:
 
 ## 1. Critical issues
 
-### C2 — Add startup-phase fault isolation so one broken feature does not brick the whole app
-
-**Where**
-
-- `js/main.js`
-  - `DOMContentLoaded` bootstrap
-  - `bindStaticEvents()`
-
-**Why it matters**
-
-Startup currently performs many feature initializations in one straight path. A thrown error in loading, migration, rendering, backup init, home cards, ActivityWatch sync, or static event binding can interrupt the rest of startup.
-
-This creates a fragile failure mode: one bad optional feature can prevent unrelated core actions such as opening settings, exporting backup JSON, or using the base exercise grid.
-
-**Recommended change**
-
-Add a small startup guard pattern:
-
-```js
-function runStartupStep(label, fn, options = {}) { ... }
-```
-
-Use it around major phases:
-
-- load persisted data
-- migrations
-- initial render
-- static event binding
-- notes panel render
-- auto-backup init
-- home cards start
-- ActivityWatch startup sync
-
-Failures should be logged and surfaced in a non-blocking warning/toast/banner where practical. Core backup/export access should remain reachable if possible.
-
-**Safe to fix now?**
-
-Yes, but do it carefully. This is a small resilience layer, not an architecture rewrite.
-
----
 
 ### C3 — Tighten ActivityWatch server URL validation
 
@@ -97,33 +60,6 @@ Yes, if existing local settings are preserved. If a non-local URL is already sto
 
 ## 2. Medium cleanup items
 
-### M1 — Replace brittle direct event bindings with a small binding helper
-
-**Where**
-
-- `js/main.js`
-  - `bindStaticEvents()`
-
-**Why it matters**
-
-`bindStaticEvents()` directly calls `document.getElementById(...).addEventListener(...)` for many required elements. Some newer controls use optional chaining, but many older/core controls do not. A missing ID, renamed button, or partially removed feature can break the rest of binding.
-
-**Recommended change**
-
-Add helpers such as:
-
-```js
-function bindClick(id, handler, options = { required: true }) { ... }
-function bindChange(id, handler, options = { required: true }) { ... }
-```
-
-Required elements should warn clearly when missing. Optional feature controls should fail softly.
-
-**Safe to fix now?**
-
-Yes. This is localized and should reduce future breakage.
-
----
 
 ### M2 — Split shared mutable state into feature state objects
 
@@ -280,31 +216,6 @@ Safe after C2. It needs UI verification in the ActivityWatch dashboard.
 
 ---
 
-### M7 — Remove committed temp server log and ignore future temp logs
-
-**Where**
-
-- `.tmp-pem-8895.err.log`
-- likely `.gitignore` if present, or create one if absent
-
-**Why it matters**
-
-A local dev server log is committed to the repository. It adds noise, makes searches worse, and can confuse agents into treating old local server output as source material.
-
-**Recommended change**
-
-Delete the temp log and add an ignore pattern such as:
-
-```gitignore
-.tmp-pem-*.log
-.tmp-pem-*.err.log
-```
-
-**Safe to fix now?**
-
-Yes. Very safe.
-
----
 
 ### M8 — Reduce `index.html` as a long-term bottleneck
 
@@ -377,7 +288,7 @@ Yes. This is a contained improvement.
 
 **Why it matters**
 
-The live app version is `1.0.149`, but the noscript CSS fallback still references older versions like `1.0.57`, `1.0.59`, and `1.0.87`. The app requires JavaScript, so this is low-risk, but it looks sloppy and creates confusing drift.
+The live app version is `1.0.152`, but the noscript CSS fallback still references older versions like `1.0.57`, `1.0.59`, and `1.0.87`. The app requires JavaScript, so this is low-risk, but it looks sloppy and creates confusing drift.
 
 **Recommended change**
 
@@ -529,26 +440,23 @@ Yes. Documentation-only.
 
 ## Suggested execution order
 
-1. **C2 — Add startup-phase fault isolation**
-2. **M1 — Replace brittle direct event bindings with a small binding helper**
-3. **M7 — Remove committed temp server log and ignore future temp logs**
-4. **M3 — Single-source auto-backup defaults and normalization**
-5. **M5 — Pre-index dose-change events during grid render**
-6. **M9 — Make image import safer and less storage-hostile**
-7. **C3 — Tighten ActivityWatch server URL validation**
-8. **M6 — Queue or merge ActivityWatch sync requests during active sync**
-9. **N3 — Fix or remove always-compact header logic**
-10. **N1 — Update/remove stale noscript cache-busting versions**
-11. **M4 — Consolidate date/time validation and waking-day helpers**
-12. **M2 — Split shared mutable state into feature state objects**
-13. **M8 — Reduce `index.html` as a long-term bottleneck**
-14. **N2 — Replace static `innerHTML` glyphs with DOM/text helpers**
-15. **N4 — Replace JSON round-trip cloning with a named helper fallback**
-16. **N5 — Make workload timer rollover guard user-visible**
-17. **N6 — Add feature dependency map to architecture docs**
+1. **M3 — Single-source auto-backup defaults and normalization**
+2. **M5 — Pre-index dose-change events during grid render**
+3. **M9 — Make image import safer and less storage-hostile**
+4. **C3 — Tighten ActivityWatch server URL validation**
+5. **M6 — Queue or merge ActivityWatch sync requests during active sync**
+6. **N3 — Fix or remove always-compact header logic**
+7. **N1 — Update/remove stale noscript cache-busting versions**
+8. **M4 — Consolidate date/time validation and waking-day helpers**
+9. **M2 — Split shared mutable state into feature state objects**
+10. **M8 — Reduce `index.html` as a long-term bottleneck**
+11. **N2 — Replace static `innerHTML` glyphs with DOM/text helpers**
+12. **N4 — Replace JSON round-trip cloning with a named helper fallback**
+13. **N5 — Make workload timer rollover guard user-visible**
+14. **N6 — Add feature dependency map to architecture docs**
 
 ## Next task recommendation
 
-Start with **C2 — Add startup-phase fault isolation**.
+Start with **M3 — Single-source auto-backup defaults and normalization**.
 
-Reason: the storage parser fix now protects malformed persisted data, and the next largest resilience gap is preventing one startup feature failure from blocking unrelated core actions like Settings and export.
+Reason: startup and static binding are now guarded, and the remaining highest-order safe cleanup is preventing auto-backup settings defaults from drifting between storage and runtime code.
