@@ -4,6 +4,6 @@ CSS files are loaded manually from `index.html` with `PEM_APP_VERSION` cache-bus
 
 Add new feature styles to the matching numbered file. Keep the load order stable because it is part of the cascade.
 
-`66-home-cards.css` owns the main-screen dashboard card row, collapsed dashboard row, Workload Today card, Weather card, ActivityWatch mini card, and the related Dashboard Settings controls.
+`66-home-cards.css` owns the main-screen dashboard card row, collapsed dashboard row, Timed Work Today card, Weather card, ActivityWatch mini card, and the related Dashboard Settings controls.
 
 Responsive overrides belong in `90-responsive.css` unless a future refactor intentionally changes that policy.

@@ -13,7 +13,7 @@ const STORAGE_LABELS = {
   [KEYS.SETTINGS]: 'Settings',
   [KEYS.EVENTS]: 'Timeline',
   [KEYS.ACTIVITYWATCH]: 'ActivityWatch',
-  [KEYS.WORKLOAD]: 'Workload',
+  [KEYS.WORKLOAD]: 'Timed work',
 };
 const APP_STORAGE_KEYS = Object.values(KEYS);
 const STORAGE_TIER_GROWING_BYTES = 2 * 1024 * 1024;

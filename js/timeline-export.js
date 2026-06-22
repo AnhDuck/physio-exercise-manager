@@ -27,6 +27,7 @@ function copyTimelineAllMatchingMarkdown() {
 }
 
 function buildTimelineMarkdown(timeline, scopeLabel = 'Shown') {
+  const hasLoadSummaries = timelineHasLoadSummaries(timeline);
   const lines = [
     '# Physio Timeline Notes',
     '',
@@ -37,10 +38,20 @@ function buildTimelineMarkdown(timeline, scopeLabel = 'Shown') {
     '',
   ];
 
+  if (hasLoadSummaries) {
+    lines.push('Load terms: Computer active time is all active computer use. Physical work estimate is timed work total minus computer work. Total tendon load is computer active time plus physical work estimate.');
+    lines.push('');
+  }
+
   groupedTimelineEvents(timeline).forEach((group, groupIndex) => {
     if (groupIndex > 0) lines.push('');
     lines.push(`## ${formatEventDate(group.date)}`);
     lines.push('');
+    const loadSummary = timelineLoadSummaryMarkdown(group.date);
+    if (loadSummary) {
+      lines.push(`_${loadSummary}_`);
+      lines.push('');
+    }
     let lastSegment = null;
     group.events.forEach(ev => {
       const segment = timelineDaySegment(ev.time);
@@ -53,6 +64,16 @@ function buildTimelineMarkdown(timeline, scopeLabel = 'Shown') {
   });
 
   return lines.join('\n');
+}
+
+function timelineHasLoadSummaries(timeline) {
+  return groupedTimelineEvents(timeline).some(group => Boolean(timelineLoadSummaryMarkdown(group.date)));
+}
+
+function timelineLoadSummaryMarkdown(dateStr) {
+  return typeof getActivityWatchTimelineMarkdownSummary === 'function'
+    ? getActivityWatchTimelineMarkdownSummary(dateStr)
+    : '';
 }
 
 function formatTimelineEventMarkdown(ev) {

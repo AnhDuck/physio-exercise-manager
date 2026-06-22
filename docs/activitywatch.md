@@ -70,10 +70,11 @@ Chart interaction:
 
 - Default mode is stacked bars.
 - The chart toolbar `Categories` / `Groups` toggle switches the dashboard between exact category paths and top-level category grouping. `Groups` combines paths such as `Work > Katana` and plain `Work` into `Work` for chart segments, side-panel rows, hover, and filters without changing stored ActivityWatch summaries.
-- Workload overlays are computed at render time from `pem_workload` plus `pem_activitywatch`; do not store derived overlay values and do not mutate `pem_activitywatch`.
-- In `Groups` mode, `Total tendon load` can replace the normal chart with ActivityWatch computer active time plus `Manual / untracked estimate`. The manual estimate is `max(0, Workload total - ActivityWatch Work)` so computer Work is not double-counted. Copy should describe this as `Computer active time + manual estimate`, not as all computer use being Work.
-- In `Groups` mode with the `Work` group locked, `Show workload overlay` can replace the filtered Work chart with `ActivityWatch computer Work` plus `Manual / untracked estimate`. Show a warning state whenever ActivityWatch Work exceeds Workload total.
-- ActivityWatch Work means the top-level `Work` group, using `ACTIVITYWATCH_CATEGORY_JOINER` splitting. The overlay math lives with Workload helpers so the Workload card and dashboard use the same comparison.
+- Timed work overlays are computed at render time from `pem_workload` plus `pem_activitywatch`; do not store derived overlay values and do not mutate `pem_activitywatch`.
+- Use these terms consistently: `Timed work total` is the Timed Work Today timer/manual total; `Computer work` is ActivityWatch active time in the top-level `Work` category only; `Physical work estimate` is `max(0, Timed work total - Computer work)`; `Computer active time` is all ActivityWatch active computer time; `Total tendon load` is `Computer active time + Physical work estimate`.
+- In `Groups` mode, `Total tendon load` can replace the normal chart with `Computer active time + Physical work estimate`. The physical work estimate subtracts only `Computer work` from `Timed work total` so computer Work is not double-counted.
+- In `Groups` mode with the `Work` group locked, `Show timed work split` can replace the filtered Work chart with `Computer work + Physical work estimate`. Show a warning state whenever Computer work exceeds Timed work total.
+- Computer work means the top-level `Work` group, using `ACTIVITYWATCH_CATEGORY_JOINER` splitting. The overlay math lives with Timed Work helpers so the Timed Work card and dashboard use the same comparison.
 - Unfiltered bars include computed `Other` so visible stacks add up to total active time.
 - `Other` is informational only and must not become a filter chip or locked filter.
 - Bar click selects the day.
@@ -88,7 +89,8 @@ Right panel:
 - Day mode shows selected-day categories with swatch, name, duration, percent of that day's active total, and meter.
 - Range mode aggregates visible days and uses percent of visible-range active total.
 - Show top categories by default, with Show all / Show top categories.
-- The right panel detail scope control is labeled `Details:` with `Selected day` / `Visible range`. When an overlay is active, show a compact detail-scope overlay summary for `Workload total`, `Computer Work`, and `Manual / untracked estimate`. `Total tendon load` also shows `Computer active time`. If any included day has ActivityWatch Work greater than Workload total, show a compact data conflict warning.
+- The right panel detail scope control is labeled `Details:` with `Selected day` / `Visible range`. When an overlay is active, show a compact detail-scope overlay summary for `Timed work total`, `Computer work`, and `Physical work estimate`. `Total tendon load` also shows `Computer active time`. If any included day has Computer work greater than Timed work total, show a compact data conflict warning.
+- Timeline day headers may show compact chips for `Computer active time` and `Total tendon load`. Their hover text should explain what each value means, and copied timeline Markdown should include a short load-terms explanation plus per-day load summaries when copied days have ActivityWatch/timed work data.
 
 Visual rules:
 
@@ -107,6 +109,6 @@ Visual rules:
 - `activitywatch-dashboard-chart.js`: stacked chart, computed `Other`, month bands, scroll behavior, tooltip, chart category math.
 - `activitywatch-dashboard-detail.js`: right-side Day/Range panel and category rows.
 - `activitywatch-dashboard-shell.js`: modal shell, open/close, and render orchestration.
-- `workload-card.js`: Workload Today card and shared ActivityWatch/Workload overlay math used by the ActivityWatch dashboard.
+- `workload-card.js`: Timed Work Today card and shared ActivityWatch/timed-work overlay math used by the ActivityWatch dashboard.
 
 Preserve public globals used by other files: `openActivityWatchDashboard` and `renderActivityWatchDashboard`.

@@ -263,6 +263,12 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   white-space: nowrap;
 }
 
+.timeline-day-activitywatch.is-total-tendon-load {
+  border-color: rgba(121,214,189,.34);
+  background: rgba(121,214,189,.09);
+  color: #d6f7ed;
+}
+
 .activitywatch-category-mode-toggle button:last-child {
   border-right: 0;
 }

@@ -261,14 +261,14 @@ function activityWatchDashboardOverlaySegments(day, mode) {
   if (mode === 'tendon') {
     return [
       {
-        label: 'Total computer active time',
+        label: WORKLOAD_TERMS.computerActiveTime,
         seconds: overlay.activityWatchTotalSeconds,
         color: 'rgba(99,179,255,.88)',
         className: 'is-computer-total',
         category: '',
       },
       {
-        label: 'Manual / untracked estimate',
+        label: WORKLOAD_TERMS.physicalWorkEstimate,
         seconds: overlay.manualResidualSeconds,
         color: 'rgba(121,214,189,.88)',
         className: 'is-manual-estimate',
@@ -278,14 +278,14 @@ function activityWatchDashboardOverlaySegments(day, mode) {
   }
   return [
     {
-      label: 'ActivityWatch computer Work',
+      label: WORKLOAD_TERMS.computerWork,
       seconds: overlay.activityWatchWorkSeconds,
       color: activityWatchDashboardCategoryColor('Work'),
       className: 'is-computer-work',
       category: 'Work',
     },
     {
-      label: 'Manual / untracked estimate',
+      label: WORKLOAD_TERMS.physicalWorkEstimate,
       seconds: overlay.manualResidualSeconds,
       color: 'rgba(121,214,189,.88)',
       className: 'is-manual-estimate',

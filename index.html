@@ -6,7 +6,7 @@
   <title>Physio Exercise Management</title>
   <link rel="icon" type="image/svg+xml" href="assets/physio-icon.svg" />
   <script>
-    window.PEM_APP_VERSION = '1.0.148';
+    window.PEM_APP_VERSION = '1.0.149';
     const PEM_CSS_FILES = [
       'css/00-base.css',
       'css/10-header.css',
@@ -464,27 +464,27 @@
 
           <div class="settings-section">
             <div class="settings-section-header">
-              <h3>Workload</h3>
+              <h3>Timed work</h3>
             </div>
             <div class="settings-row-group">
               <label class="settings-action-row" for="setting-workload-card-enabled">
                 <span class="settings-action-label">
-                  <strong>Workload Today card</strong>
-                  <span>Show the work timer card on the home dashboard. Turning this off keeps saved Workload data.</span>
+                  <strong>Timed Work Today card</strong>
+                  <span>Show the timed work card on the home dashboard. Turning this off keeps saved timed work data.</span>
                 </span>
                 <input type="checkbox" id="setting-workload-card-enabled" />
               </label>
               <label class="settings-action-row" for="setting-workload-running-border-enabled">
                 <span class="settings-action-label">
                   <strong>Running border</strong>
-                  <span>Show a red border around the whole app while the work timer is running.</span>
+                  <span>Show a red border around the whole app while the timed work timer is running.</span>
                 </span>
                 <input type="checkbox" id="setting-workload-running-border-enabled" />
               </label>
               <label class="settings-action-row" for="setting-workload-reminder-minutes">
                 <span class="settings-action-label">
                   <strong>Reminder interval</strong>
-                  <span>Play a sound and show a toast while the work timer is still running.</span>
+                  <span>Play a sound and show a toast while the timed work timer is still running.</span>
                 </span>
                 <select id="setting-workload-reminder-minutes">
                   <option value="0">Off</option>
@@ -499,7 +499,7 @@
                   <span>Choose a short cue that is obvious without being needlessly distracting.</span>
                 </span>
                 <div class="dashboard-workload-sound-controls">
-                  <select id="setting-workload-reminder-sound" aria-label="Workload reminder sound">
+                  <select id="setting-workload-reminder-sound" aria-label="Timed work reminder sound">
                     <option value="soft-chime">Soft chime</option>
                     <option value="beep">Beep</option>
                     <option value="double-tap">Double tap</option>
@@ -604,7 +604,7 @@
               <div class="settings-backup-row">
                 <div class="settings-action-label">
                   <strong>Download full backup</strong>
-                  <span>Exercises, sessions, settings, timeline, Workload, and ActivityWatch summaries.</span>
+                  <span>Exercises, sessions, settings, timeline, timed work, and ActivityWatch summaries.</span>
                 </div>
                 <button class="settings-backup-btn" id="settings-export-json" type="button" data-settings-icon="backup-download">Download JSON</button>
               </div>
@@ -902,7 +902,7 @@ cors_origins = "http://127.0.0.1:8891"
                   <strong id="settings-storage-activitywatch">0 B</strong>
                 </div>
                 <div class="settings-status-item">
-                  <span>Workload</span>
+                  <span>Timed work</span>
                   <strong id="settings-storage-workload">0 B</strong>
                 </div>
                 <div class="settings-status-item settings-storage-total-row">

@@ -138,11 +138,25 @@ function buildTimelineDay(group) {
   const section = el('section', 'timeline-day');
   const header = el('div', 'timeline-day-header');
   header.appendChild(elText('span', 'timeline-day-title', formatEventDateShort(group.date)));
-  const activityWatchSummary = typeof getActivityWatchTimelineSummary === 'function'
-    ? getActivityWatchTimelineSummary(group.date)
-    : '';
-  if (activityWatchSummary) {
-    header.appendChild(elText('span', 'timeline-day-activitywatch', activityWatchSummary));
+  const activityWatchChips = typeof getActivityWatchTimelineChips === 'function'
+    ? getActivityWatchTimelineChips(group.date)
+    : [];
+  if (activityWatchChips.length) {
+    activityWatchChips.forEach(chip => {
+      const chipEl = elText('span', `timeline-day-activitywatch ${chip.className || ''}`, chip.label);
+      if (chip.title) {
+        chipEl.title = chip.title;
+        chipEl.setAttribute('aria-label', chip.title);
+      }
+      header.appendChild(chipEl);
+    });
+  } else {
+    const activityWatchSummary = typeof getActivityWatchTimelineSummary === 'function'
+      ? getActivityWatchTimelineSummary(group.date)
+      : '';
+    if (activityWatchSummary) {
+      header.appendChild(elText('span', 'timeline-day-activitywatch', activityWatchSummary));
+    }
   }
   header.title = formatEventDate(group.date);
   section.appendChild(header);

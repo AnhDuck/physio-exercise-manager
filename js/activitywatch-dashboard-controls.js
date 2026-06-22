@@ -253,10 +253,10 @@ function buildActivityWatchCategoryModeToggle() {
 
 function buildActivityWatchOverlayToggle() {
   if (activityWatchDashboardCanShowWorkloadOverlay()) {
-    return buildActivityWatchOverlayButton('work', 'Show workload overlay', 'Show workload overlay');
+    return buildActivityWatchOverlayButton('work', 'Show timed work split', 'Show timed work split');
   }
   if (activityWatchDashboardCanShowTendonLoadOverlay()) {
-    return buildActivityWatchOverlayButton('tendon', 'Total tendon load', 'Total tendon load');
+    return buildActivityWatchOverlayButton('tendon', WORKLOAD_TERMS.totalTendonLoad, WORKLOAD_TERMS.totalTendonLoad);
   }
   return null;
 }
@@ -264,9 +264,9 @@ function buildActivityWatchOverlayToggle() {
 function buildActivityWatchTendonLoadOverlayToggle() {
   const canUse = activityWatchDashboardCanShowTendonLoadOverlay();
   const title = canUse
-    ? 'Show total tendon load overlay'
+    ? `Show ${WORKLOAD_TERMS.totalTendonLoad}`
     : 'Available when Stack by is Groups.';
-  return buildActivityWatchOverlayButton('tendon', 'Total tendon load', title, { disabled: !canUse });
+  return buildActivityWatchOverlayButton('tendon', WORKLOAD_TERMS.totalTendonLoad, title, { disabled: !canUse });
 }
 
 function buildActivityWatchOverlayButton(mode, label, title, options = {}) {

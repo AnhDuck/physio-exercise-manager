@@ -156,7 +156,7 @@ function backupSummaryPromptText(backup) {
     `Session days: ${formatNumber(summary.sessionDateCount || 0)}`,
     `Timeline items: ${formatNumber(summary.timelineEventCount || 0)}`,
     `ActivityWatch days: ${formatNumber(summary.activityWatchDayCount || 0)}`,
-    `Workload days: ${formatNumber(summary.workloadDayCount || 0)}`,
+    `Timed work days: ${formatNumber(summary.workloadDayCount || 0)}`,
   ].join('\n');
 }
 
@@ -246,7 +246,7 @@ function getDataSafetyReport(data = {}) {
   if (!isPlainObject(dataSettings)) issues.push('Settings are not saved as an object.');
   if (!Array.isArray(dataEvents)) issues.push('Timeline items are not saved as a list.');
   if (!isPlainObject(dataActivityWatch)) issues.push('ActivityWatch summaries are not saved as an object.');
-  if (!isPlainObject(dataWorkload)) issues.push('Workload data is not saved as an object.');
+  if (!isPlainObject(dataWorkload)) issues.push('Timed work data is not saved as an object.');
   if (issues.length) return { ok: false, issues, checkedAt, summary: null };
 
   const exerciseIds = new Set();

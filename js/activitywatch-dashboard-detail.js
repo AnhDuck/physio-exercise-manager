@@ -152,31 +152,32 @@ function buildActivityWatchOverlaySummary(days, overlayMode, detailMode) {
   const safeDays = (days || []).filter(Boolean);
   const totals = activityWatchDashboardOverlayTotals(safeDays);
   const header = el('div', 'activitywatch-overlay-summary-header');
-  header.appendChild(elText('strong', '', overlayMode === 'tendon' ? 'Total tendon load' : 'Workload overlay'));
+  header.appendChild(elText('strong', '', overlayMode === 'tendon' ? WORKLOAD_TERMS.totalTendonLoad : 'Timed work split'));
   header.appendChild(elText('span', '', overlayMode === 'tendon'
-    ? 'Computer active time + manual estimate'
+    ? 'Computer active time + physical work estimate'
     : detailMode === 'range'
-      ? 'Work group reconciliation for the visible range'
-      : 'Work group reconciliation for the selected day'));
+      ? 'Computer work + physical work estimate for the visible range'
+      : 'Computer work + physical work estimate for the selected day'));
   summary.appendChild(header);
 
   const grid = el('div', 'activitywatch-overlay-metrics');
-  grid.appendChild(buildActivityWatchOverlayMetric('Workload total', totals.workloadTotalSeconds));
+  grid.appendChild(buildActivityWatchOverlayMetric(WORKLOAD_TERMS.timedWorkTotal, totals.workloadTotalSeconds, WORKLOAD_TERM_HELP.timedWorkTotal));
   if (overlayMode === 'tendon') {
-    grid.appendChild(buildActivityWatchOverlayMetric('Computer active time', totals.activityWatchTotalSeconds));
+    grid.appendChild(buildActivityWatchOverlayMetric(WORKLOAD_TERMS.computerActiveTime, totals.activityWatchTotalSeconds, WORKLOAD_TERM_HELP.computerActiveTime));
   }
-  grid.appendChild(buildActivityWatchOverlayMetric('Computer Work', totals.activityWatchWorkSeconds));
-  grid.appendChild(buildActivityWatchOverlayMetric('Manual / untracked estimate', totals.manualResidualSeconds));
+  grid.appendChild(buildActivityWatchOverlayMetric(WORKLOAD_TERMS.computerWork, totals.activityWatchWorkSeconds, WORKLOAD_TERM_HELP.computerWork));
+  grid.appendChild(buildActivityWatchOverlayMetric(WORKLOAD_TERMS.physicalWorkEstimate, totals.manualResidualSeconds, WORKLOAD_TERM_HELP.physicalWorkEstimate));
   summary.appendChild(grid);
 
   if (totals.conflict) {
-    summary.appendChild(elText('div', 'activitywatch-compact-warning activitywatch-overlay-conflict', 'Data conflict: ActivityWatch Work exceeds Workload total for at least one day shown.'));
+    summary.appendChild(elText('div', 'activitywatch-compact-warning activitywatch-overlay-conflict', 'Data conflict: computer work exceeds timed work total for at least one day shown.'));
   }
   return summary;
 }
 
-function buildActivityWatchOverlayMetric(label, seconds) {
+function buildActivityWatchOverlayMetric(label, seconds, help = '') {
   const metric = el('div', 'activitywatch-overlay-metric');
+  if (help) metric.title = `${label}: ${help}`;
   metric.appendChild(elText('span', '', label));
   metric.appendChild(elText('strong', '', formatActivityWatchDuration(seconds)));
   return metric;

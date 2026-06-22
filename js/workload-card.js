@@ -1,4 +1,4 @@
-// Workload Today dashboard card and timer state.
+// Timed Work Today dashboard card and timer state.
 
 const WORKLOAD_REVIEW_THRESHOLD_SECONDS = 6 * 60 * 60;
 const WORKLOAD_TICK_MS = 1000;
@@ -61,13 +61,13 @@ function buildWorkloadCard(options = {}) {
   const runningSeconds = workloadRunningSecondsForDate(dateStr);
   const day = workloadDay(dateStr);
   const card = el('article', `home-card workload-card${workloadData.timer.running ? ' is-running' : ''}${day.needsReview ? ' needs-review' : ''}`);
-  card.setAttribute('aria-label', 'Workload today');
+  card.setAttribute('aria-label', WORKLOAD_TERMS.timedWorkCard);
 
   if (compact) return buildWorkloadCompactCard(card, dateStr, totalSeconds, runningSeconds, day);
 
   const header = el('div', 'workload-card-header');
   const title = el('div', 'workload-card-title');
-  title.appendChild(elText('span', 'home-card-kicker', 'Workload Today'));
+  title.appendChild(elText('span', 'home-card-kicker', WORKLOAD_TERMS.timedWorkCard));
   title.appendChild(elText('strong', '', workloadDateLabel(dateStr)));
   header.appendChild(title);
   card.appendChild(header);
@@ -75,10 +75,12 @@ function buildWorkloadCard(options = {}) {
   const main = el('div', 'workload-main');
   const timerSeconds = workloadData.timer.running ? runningSeconds : 0;
   main.appendChild(elText('div', 'workload-timer-value', formatWorkloadClockDuration(timerSeconds)));
-  main.appendChild(elText('div', 'workload-total-note', `Today total ${formatWorkloadDuration(totalSeconds)}`));
+  const totalNote = elText('div', 'workload-total-note', `${WORKLOAD_TERMS.timedWorkTotal} ${formatWorkloadDuration(totalSeconds)}`);
+  totalNote.title = WORKLOAD_TERM_HELP.timedWorkTotal;
+  main.appendChild(totalNote);
   card.appendChild(main);
 
-  const primary = elText('button', `workload-primary-btn ${workloadData.timer.running ? 'is-stop' : 'is-start'}`, workloadData.timer.running ? 'Stop' : 'Start work');
+  const primary = elText('button', `workload-primary-btn ${workloadData.timer.running ? 'is-stop' : 'is-start'}`, workloadData.timer.running ? 'Stop' : 'Start timed work');
   primary.type = 'button';
   primary.dataset.homeCardAction = workloadData.timer.running ? 'workload-stop' : 'workload-start';
   card.appendChild(primary);
@@ -120,7 +122,7 @@ function buildWorkloadCompactCard(card, dateStr, totalSeconds, runningSeconds, d
   card.className = `home-card home-card-compact workload-compact-card${workloadData.timer.running ? ' is-running' : ''}${day.needsReview ? ' needs-review' : ''}`;
 
   const copy = el('div', 'workload-compact-copy');
-  copy.appendChild(elText('span', 'home-card-kicker', 'Workload Today'));
+  copy.appendChild(elText('span', 'home-card-kicker', WORKLOAD_TERMS.timedWorkCard));
   copy.appendChild(elText('strong', '', formatWorkloadDuration(totalSeconds)));
   const state = workloadData.timer.running
     ? `Running ${formatWorkloadDuration(runningSeconds)}`
@@ -144,17 +146,19 @@ function buildWorkloadComparison(dateStr) {
   const comparison = el('div', 'workload-comparison');
 
   const computer = el('div', 'workload-comparison-row');
-  computer.appendChild(elText('span', '', 'Computer'));
+  computer.title = WORKLOAD_TERM_HELP.computerWork;
+  computer.appendChild(elText('span', '', WORKLOAD_TERMS.computerWork));
   computer.appendChild(elText('strong', '', formatWorkloadDuration(awSeconds)));
   comparison.appendChild(computer);
 
   const manual = el('div', 'workload-comparison-row');
-  manual.appendChild(elText('span', '', 'Manual / untracked estimate'));
+  manual.title = WORKLOAD_TERM_HELP.physicalWorkEstimate;
+  manual.appendChild(elText('span', '', WORKLOAD_TERMS.physicalWorkEstimate));
   manual.appendChild(elText('strong', '', formatWorkloadDuration(manualSeconds)));
   comparison.appendChild(manual);
 
   if (overlay.conflict) {
-    comparison.appendChild(elText('div', 'workload-warning', 'Computer work > total. Check.'));
+    comparison.appendChild(elText('div', 'workload-warning', 'Computer work exceeds timed work total. Check.'));
   }
 
   return comparison;
@@ -246,12 +250,12 @@ function stopWorkloadTimerAndAdd() {
   syncWorkloadCardTicker();
   syncWorkloadTimerCues();
   renderHomeCards();
-  showToast(result.needsReview ? 'Work timer added and marked Needs review.' : `Added ${formatWorkloadDuration(result.seconds)} to Workload Today.`);
+  showToast(result.needsReview ? 'Timed work timer added and marked Needs review.' : `Added ${formatWorkloadDuration(result.seconds)} to ${WORKLOAD_TERMS.timedWorkCard}.`);
 }
 
 function resetWorkloadTimer() {
   if (!workloadData.timer.running) return;
-  if (!confirm('Reset the active work timer without adding it to today?')) return;
+  if (!confirm('Reset the active timed work timer without adding it to today?')) return;
   workloadData.timer = defaultWorkloadData().timer;
   saveWorkloadData();
   syncWorkloadCardTicker();
@@ -414,7 +418,7 @@ function runWorkloadReminderCue() {
   const runningSeconds = workloadRunningSecondsForDate(dateStr);
   playWorkloadReminderSound(workloadCueSettings().reminderSound);
   if (typeof showToast === 'function') {
-    showToast(`Work timer still running: ${formatWorkloadDuration(runningSeconds)}`);
+    showToast(`Timed work timer still running: ${formatWorkloadDuration(runningSeconds)}`);
   }
   scheduleWorkloadReminderCue();
 }

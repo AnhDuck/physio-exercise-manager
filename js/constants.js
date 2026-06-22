@@ -111,3 +111,18 @@ const MONTH_NAMES = ['January','February','March','April','May','June','July','A
 const GROUP_ORDER = ['arm-day1', 'arm-day2', 'legs'];
 const SET_TIMER_CAP_SECONDS = 60 * 60;
 const DEFAULT_PERSONAL_DAY_START_TIME = '07:00';
+const WORKLOAD_TERMS = {
+  timedWorkCard: 'Timed Work Today',
+  timedWorkTotal: 'Timed work total',
+  computerWork: 'Computer work',
+  physicalWorkEstimate: 'Physical work estimate',
+  computerActiveTime: 'Computer active time',
+  totalTendonLoad: 'Total tendon load',
+};
+const WORKLOAD_TERM_HELP = {
+  timedWorkTotal: 'Timer/manual total from Timed Work Today.',
+  computerWork: 'ActivityWatch active computer time in the Work group.',
+  physicalWorkEstimate: 'Timed work total minus computer work.',
+  computerActiveTime: 'All ActivityWatch active computer time.',
+  totalTendonLoad: 'Computer active time plus physical work estimate.',
+};
