@@ -165,7 +165,6 @@ function activityWatchDashboardCanShowWorkloadOverlay() {
 
 function activityWatchDashboardCanShowTendonLoadOverlay() {
   return activityWatchDashboardUsesTopCategories()
-    && !activityWatchDashboardState.selectedCategory
     && typeof getWorkloadActivityWatchOverlayForDate === 'function';
 }
 

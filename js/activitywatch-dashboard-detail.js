@@ -98,10 +98,12 @@ function renderActivityWatchDetailPanel(days) {
 }
 
 function buildActivityWatchDetailModeToggle() {
+  const wrap = el('div', 'activitywatch-detail-scope-control');
+  wrap.appendChild(elText('span', 'activitywatch-control-label', 'Details:'));
   const toggle = el('div', 'activitywatch-detail-toggle');
   [
-    ['day', 'Day'],
-    ['range', 'Range'],
+    ['day', 'Selected day'],
+    ['range', 'Visible range'],
   ].forEach(([mode, label]) => {
     const button = el('button', '');
     button.type = 'button';
@@ -114,7 +116,8 @@ function buildActivityWatchDetailModeToggle() {
     });
     toggle.appendChild(button);
   });
-  return toggle;
+  wrap.appendChild(toggle);
+  return wrap;
 }
 
 function activityWatchCategoryRowsForDay(day) {

@@ -486,7 +486,8 @@
 
   .activitywatch-chart-toolbar,
   .activitywatch-view-controls,
-  .activitywatch-breakdown-control {
+  .activitywatch-breakdown-control,
+  .activitywatch-overlay-control {
     align-items: flex-start;
     flex-direction: column;
   }

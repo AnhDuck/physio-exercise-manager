@@ -299,44 +299,68 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   outline: none;
 }
 
+.activitywatch-overlay-toggle.is-disabled {
+  color: var(--text-dim);
+  cursor: not-allowed;
+  opacity: .62;
+}
+
+.activitywatch-overlay-toggle.is-disabled:hover,
+.activitywatch-overlay-toggle.is-disabled:focus-visible {
+  color: var(--text-dim);
+}
+
 .activitywatch-overlay-toggle input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
-.activitywatch-overlay-checkmark {
-  display: inline-grid;
-  place-items: center;
-  width: 16px;
+.activitywatch-overlay-switch {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 30px;
   height: 16px;
-  border: 1px solid rgba(121,214,189,.42);
-  border-radius: 4px;
-  background: rgba(121,214,189,.06);
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,.12);
+  border: 1px solid rgba(160,164,173,.34);
+  border-radius: 999px;
+  background: rgba(255,255,255,.08);
+  transition: border-color .14s ease, background .14s ease;
 }
 
-.activitywatch-overlay-checkmark::after {
-  width: 8px;
-  height: 4px;
-  border-bottom: 2px solid #c7f7ea;
-  border-left: 2px solid #c7f7ea;
+.activitywatch-overlay-switch::after {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--text-muted);
   content: "";
-  opacity: 0;
-  transform: translateY(-1px) rotate(-45deg);
+  transition: transform .14s ease, background .14s ease;
 }
 
-.activitywatch-overlay-toggle input:focus-visible + .activitywatch-overlay-checkmark {
+.activitywatch-overlay-toggle input:focus-visible + .activitywatch-overlay-switch {
   box-shadow: var(--ui-focus-ring);
 }
 
-.activitywatch-overlay-toggle input:checked + .activitywatch-overlay-checkmark {
+.activitywatch-overlay-toggle input:checked + .activitywatch-overlay-switch {
   border-color: rgba(121,214,189,.78);
-  background: rgba(121,214,189,.16);
+  background: rgba(121,214,189,.22);
 }
 
-.activitywatch-overlay-toggle input:checked + .activitywatch-overlay-checkmark::after {
-  opacity: 1;
+.activitywatch-overlay-toggle input:checked + .activitywatch-overlay-switch::after {
+  background: #c7f7ea;
+  transform: translateX(14px);
+}
+
+.activitywatch-overlay-toggle input:disabled + .activitywatch-overlay-switch {
+  border-color: rgba(160,164,173,.2);
+  background: rgba(255,255,255,.035);
+}
+
+.activitywatch-overlay-toggle input:disabled + .activitywatch-overlay-switch::after {
+  background: rgba(160,164,173,.42);
 }
 
 .activitywatch-sync-progress {
@@ -436,7 +460,8 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-date-controls,
 .activitywatch-view-controls,
-.activitywatch-breakdown-control {
+.activitywatch-breakdown-control,
+.activitywatch-overlay-control {
   display: inline-flex;
   align-items: center;
   min-width: 0;
@@ -478,7 +503,8 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   gap: 8px;
 }
 
-.activitywatch-breakdown-control {
+.activitywatch-breakdown-control,
+.activitywatch-overlay-control {
   gap: 7px;
   color: var(--text-muted);
   font-size: 12px;
@@ -486,10 +512,16 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   line-height: 1;
 }
 
-.activitywatch-chart-overlay-row {
-  display: flex;
-  align-items: center;
-  min-height: 26px;
+.activitywatch-overlay-control {
+  min-width: 210px;
+}
+
+.activitywatch-control-label {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .activitywatch-summary-card {
@@ -1202,6 +1234,11 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   font-weight: 850;
   line-height: 1.15;
   white-space: nowrap;
+}
+
+.activitywatch-detail-scope-control {
+  display: grid;
+  gap: 6px;
 }
 
 .activitywatch-detail-toggle {

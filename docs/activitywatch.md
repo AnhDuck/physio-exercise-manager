@@ -61,8 +61,8 @@ Daily average divides by days with active time, not every visible day.
 Dashboard control hierarchy is intentionally split:
 
 - Modal header is app-level only: `ActivityWatch`, combined sync/refresh, Advanced, and Close. The combined sync/refresh button is the everyday action and refreshes only the latest 3 waking days.
-- Chart controls own the visible date/view state: chart title, visible date range, adjacent previous/next buttons, range dropdown, Today button, and `Categories` / `Groups` segmented control.
-- Overlay controls are separate from Breakdown. `Total tendon load` should render as a checkbox-style overlay toggle in its own row, not as a third segmented option or a button beside `Categories` / `Groups`.
+- Chart controls own the visible date/view state: chart title, visible date range, adjacent previous/next buttons, range dropdown, Today button, `Stack by: Categories / Groups`, and persistent `Overlay: Total tendon load`.
+- `Stack by` is a one-click segmented/content-switcher control, not tabs and not a dropdown. `Total tendon load` is an immediate on/off switch beside it, not a third segmented option and not a distant standalone action. Keep the overlay switch visible in all states; enable it whenever `Groups` mode is active. Disable and grey it out with explanatory tooltip text when it is unavailable.
 - Right panel owns selected day/range analytics, including total active time and daily average.
 - Advanced panel owns sync/debug/metadata such as desktop, ActivityWatch version, server URL, bucket IDs, cached days, day start, and last sync. Advanced resync uses exact date strings through `maybeSyncActivityWatchDateStrings(...)`.
 
@@ -71,7 +71,7 @@ Chart interaction:
 - Default mode is stacked bars.
 - The chart toolbar `Categories` / `Groups` toggle switches the dashboard between exact category paths and top-level category grouping. `Groups` combines paths such as `Work > Katana` and plain `Work` into `Work` for chart segments, side-panel rows, hover, and filters without changing stored ActivityWatch summaries.
 - Workload overlays are computed at render time from `pem_workload` plus `pem_activitywatch`; do not store derived overlay values and do not mutate `pem_activitywatch`.
-- In `Groups` mode with no category selected, `Total tendon load` can replace the normal chart with ActivityWatch computer active time plus `Manual / untracked estimate`. The manual estimate is `max(0, Workload total - ActivityWatch Work)` so computer Work is not double-counted. Copy should describe this as `Computer active time + manual estimate`, not as all computer use being Work.
+- In `Groups` mode, `Total tendon load` can replace the normal chart with ActivityWatch computer active time plus `Manual / untracked estimate`. The manual estimate is `max(0, Workload total - ActivityWatch Work)` so computer Work is not double-counted. Copy should describe this as `Computer active time + manual estimate`, not as all computer use being Work.
 - In `Groups` mode with the `Work` group locked, `Show workload overlay` can replace the filtered Work chart with `ActivityWatch computer Work` plus `Manual / untracked estimate`. Show a warning state whenever ActivityWatch Work exceeds Workload total.
 - ActivityWatch Work means the top-level `Work` group, using `ACTIVITYWATCH_CATEGORY_JOINER` splitting. The overlay math lives with Workload helpers so the Workload card and dashboard use the same comparison.
 - Unfiltered bars include computed `Other` so visible stacks add up to total active time.
@@ -88,7 +88,7 @@ Right panel:
 - Day mode shows selected-day categories with swatch, name, duration, percent of that day's active total, and meter.
 - Range mode aggregates visible days and uses percent of visible-range active total.
 - Show top categories by default, with Show all / Show top categories.
-- When an overlay is active, show a compact Day/Range overlay summary for `Workload total`, `Computer Work`, and `Manual / untracked estimate`. `Total tendon load` also shows `Computer active time`. If any included day has ActivityWatch Work greater than Workload total, show a compact data conflict warning.
+- The right panel detail scope control is labeled `Details:` with `Selected day` / `Visible range`. When an overlay is active, show a compact detail-scope overlay summary for `Workload total`, `Computer Work`, and `Manual / untracked estimate`. `Total tendon load` also shows `Computer active time`. If any included day has ActivityWatch Work greater than Workload total, show a compact data conflict warning.
 
 Visual rules:
 

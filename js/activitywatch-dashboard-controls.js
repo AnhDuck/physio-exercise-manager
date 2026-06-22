@@ -24,12 +24,6 @@ function renderActivityWatchDashboardControls(days) {
   toolbar.appendChild(buildActivityWatchDateControls(isSyncing));
   toolbar.appendChild(buildActivityWatchViewControls());
   root.appendChild(toolbar);
-  const overlayToggle = buildActivityWatchOverlayToggle();
-  if (overlayToggle) {
-    const overlayRow = el('div', 'activitywatch-chart-overlay-row');
-    overlayRow.appendChild(overlayToggle);
-    root.appendChild(overlayRow);
-  }
 
   if (activityWatchDashboardState.advancedSyncOpen) {
     root.appendChild(buildActivityWatchAdvancedSyncPanel(days, isSyncing, status, progress));
@@ -221,9 +215,13 @@ function buildActivityWatchDateControls(isSyncing) {
 function buildActivityWatchViewControls() {
   const controls = el('div', 'activitywatch-view-controls');
   const breakdown = el('div', 'activitywatch-breakdown-control');
-  breakdown.appendChild(elText('span', '', 'Breakdown:'));
+  breakdown.appendChild(elText('span', 'activitywatch-control-label', 'Stack by:'));
   breakdown.appendChild(buildActivityWatchCategoryModeToggle());
   controls.appendChild(breakdown);
+  const overlay = el('div', 'activitywatch-overlay-control');
+  overlay.appendChild(elText('span', 'activitywatch-control-label', 'Overlay:'));
+  overlay.appendChild(buildActivityWatchTendonLoadOverlayToggle());
+  controls.appendChild(overlay);
   return controls;
 }
 
@@ -263,23 +261,37 @@ function buildActivityWatchOverlayToggle() {
   return null;
 }
 
-function buildActivityWatchOverlayButton(mode, label, title) {
+function buildActivityWatchTendonLoadOverlayToggle() {
+  const canUse = activityWatchDashboardCanShowTendonLoadOverlay();
+  const title = canUse
+    ? 'Show total tendon load overlay'
+    : 'Available when Stack by is Groups.';
+  return buildActivityWatchOverlayButton('tendon', 'Total tendon load', title, { disabled: !canUse });
+}
+
+function buildActivityWatchOverlayButton(mode, label, title, options = {}) {
   const wrap = el('label', 'activitywatch-overlay-toggle activitywatch-tendon-toggle');
   const active = activityWatchDashboardWorkloadOverlayMode() === mode;
+  const disabled = Boolean(options.disabled);
   const input = el('input', '');
   input.type = 'checkbox';
-  input.checked = active;
+  input.setAttribute('role', 'switch');
+  input.setAttribute('aria-label', label);
+  input.checked = active && !disabled;
+  input.disabled = disabled;
   input.title = title;
   input.addEventListener('change', () => {
+    if (input.disabled) return;
     activityWatchDashboardState.workloadOverlayMode = input.checked ? mode : '';
     activityWatchDashboardState.hoveredCategory = '';
     renderActivityWatchDashboard();
   });
   wrap.appendChild(input);
-  wrap.appendChild(el('span', 'activitywatch-overlay-checkmark'));
+  wrap.appendChild(el('span', 'activitywatch-overlay-switch'));
   wrap.appendChild(elText('span', '', label));
   wrap.title = title;
-  wrap.classList.toggle('is-active', active);
+  wrap.classList.toggle('is-active', active && !disabled);
+  wrap.classList.toggle('is-disabled', disabled);
   return wrap;
 }
 
