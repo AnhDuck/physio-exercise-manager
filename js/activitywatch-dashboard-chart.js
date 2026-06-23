@@ -202,7 +202,6 @@ function addActivityWatchOverlaySegmentTooltipHandlers(segment, segmentData) {
 function buildActivityWatchMethodologyMarker(change) {
   const marker = el('span', 'activitywatch-methodology-marker');
   marker.setAttribute('aria-hidden', 'true');
-  marker.title = activityWatchMethodologyTooltip(change);
   marker.addEventListener('pointerenter', (event) => {
     showActivityWatchChartTooltipText(event, activityWatchMethodologyTooltip(change), true);
   });
