@@ -94,9 +94,9 @@ function buildWorkloadCard(options = {}) {
 
   const manual = el('div', 'workload-manual-grid');
   [
+    { label: '+5m', seconds: 5 * 60 },
     { label: '+15m', seconds: 15 * 60 },
-    { label: '+30m', seconds: 30 * 60 },
-    { label: '-15m', seconds: -15 * 60 },
+    { label: '-5m', seconds: -5 * 60 },
   ].forEach(item => {
     const button = elText('button', 'workload-adjust-btn', item.label);
     button.type = 'button';

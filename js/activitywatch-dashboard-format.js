@@ -64,17 +64,7 @@ function activityWatchBarTotalLabel(day, plottedSeconds, index, dayCount) {
 }
 
 function formatActivityWatchChartDuration(seconds, compact = false) {
-  const total = Math.max(0, Math.round(Number(seconds) || 0));
-  const hours = Math.floor(total / 3600);
-  const minutes = Math.floor((total % 3600) / 60);
-  if (compact) {
-    if (hours) return `${hours}h`;
-    return minutes ? `${minutes}m` : '';
-  }
-  if (hours && minutes) return `${hours}h ${minutes}m`;
-  if (hours) return `${hours}h`;
-  if (minutes) return `${minutes}m`;
-  return total ? '<1m' : '';
+  return formatActivityWatchDuration(seconds, { compact, zeroLabel: '' });
 }
 
 function activityWatchXAxisLabels(days) {

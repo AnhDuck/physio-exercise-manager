@@ -211,13 +211,6 @@ function buildActivityWatchOverlayMetric(label, seconds, help = '') {
 }
 
 function activityWatchAggregateCategoryRows(days) {
-  const totals = {};
-  days.forEach(day => {
-    Object.entries(activityWatchDashboardCategoryTotals(day)).forEach(([category, seconds]) => {
-      totals[category] = (totals[category] || 0) + seconds;
-    });
-  });
-  return Object.entries(totals)
-    .sort((a, b) => b[1] - a[1]);
+  return activityWatchDashboardCategoryRows(days);
 }
 

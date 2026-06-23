@@ -240,18 +240,22 @@ function getActivityWatchRecentDays(count = ACTIVITYWATCH_DASHBOARD_DAYS) {
     const date = dateFromStr(current);
     date.setDate(date.getDate() - index);
     const dateStr = toDateStr(date);
-    return activityWatchData.daysByDate[dateStr] || {
-      date: dateStr,
-      periodStart: '',
-      periodEnd: '',
-      totalActiveSeconds: 0,
-      categoryTotals: {},
-      appTotals: {},
-      hourlyCategoryTotals: Array.from({ length: 24 }, () => ({})),
-      syncedAt: '',
-      queryVersion: ACTIVITYWATCH_QUERY_VERSION,
-    };
+    return activityWatchData.daysByDate[dateStr] || buildEmptyActivityWatchDay(dateStr);
   }).reverse();
+}
+
+function buildEmptyActivityWatchDay(dateStr) {
+  return {
+    date: dateStr,
+    periodStart: '',
+    periodEnd: '',
+    totalActiveSeconds: 0,
+    categoryTotals: {},
+    appTotals: {},
+    hourlyCategoryTotals: Array.from({ length: 24 }, () => ({})),
+    syncedAt: '',
+    queryVersion: ACTIVITYWATCH_QUERY_VERSION,
+  };
 }
 
 function getActivityWatchTimelineSummary(dateStr) {
@@ -353,14 +357,20 @@ function activityWatchCategoryColor(categoryName) {
   return ACTIVITYWATCH_FALLBACK_COLORS[Math.abs(hash) % ACTIVITYWATCH_FALLBACK_COLORS.length];
 }
 
-function formatActivityWatchDuration(seconds) {
+function formatActivityWatchDuration(seconds, options = {}) {
+  const compact = Boolean(options.compact);
+  const zeroLabel = Object.prototype.hasOwnProperty.call(options, 'zeroLabel') ? options.zeroLabel : '0m';
   const total = Math.max(0, Math.round(Number(seconds) || 0));
   const hours = Math.floor(total / 3600);
   const minutes = Math.floor((total % 3600) / 60);
+  if (compact) {
+    if (hours) return `${hours}h`;
+    return minutes ? `${minutes}m` : zeroLabel;
+  }
   if (hours && minutes) return `${hours}h ${minutes}m`;
   if (hours) return `${hours}h`;
   if (minutes) return `${minutes}m`;
-  return total ? '<1m' : '0m';
+  return total ? '<1m' : zeroLabel;
 }
 
 function getActivityWatchSyncProgress() {

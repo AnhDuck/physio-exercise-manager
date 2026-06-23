@@ -54,22 +54,8 @@ function buildActivityWatchDashboardDays() {
     const date = new Date(end);
     date.setDate(date.getDate() - (activityWatchDashboardState.rangeDays - 1 - index));
     const dateStr = toDateStr(date);
-    return getActivityWatchDay(dateStr) || buildEmptyActivityWatchDashboardDay(dateStr);
+    return getActivityWatchDay(dateStr) || buildEmptyActivityWatchDay(dateStr);
   });
-}
-
-function buildEmptyActivityWatchDashboardDay(dateStr) {
-  return {
-    date: dateStr,
-    periodStart: '',
-    periodEnd: '',
-    totalActiveSeconds: 0,
-    categoryTotals: {},
-    appTotals: {},
-    hourlyCategoryTotals: Array.from({ length: 24 }, () => ({})),
-    syncedAt: '',
-    queryVersion: ACTIVITYWATCH_QUERY_VERSION,
-  };
 }
 
 function shiftActivityWatchDashboardRange(direction) {
@@ -228,6 +214,12 @@ function activityWatchDashboardOverlayTotals(days) {
 }
 
 function topActivityWatchCategories(days, limit) {
+  return activityWatchDashboardCategoryRows(days)
+    .slice(0, limit)
+    .map(([category]) => category);
+}
+
+function activityWatchDashboardCategoryRows(days) {
   const totals = {};
   days.forEach(day => {
     Object.entries(activityWatchDashboardCategoryTotals(day)).forEach(([category, seconds]) => {
@@ -235,9 +227,7 @@ function topActivityWatchCategories(days, limit) {
     });
   });
   return Object.entries(totals)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit)
-    .map(([category]) => category);
+    .sort((a, b) => b[1] - a[1]);
 }
 
 function normalizeActivityWatchDashboardRange(value) {
