@@ -85,6 +85,13 @@ function runMigrations() {
     }
   }
 
+  if (!settings.activityWatchGroupsDefaultApplied) {
+    if (!settings.homeCards) settings.homeCards = {};
+    if (!settings.homeCards.activityWatchMini) settings.homeCards.activityWatchMini = {};
+    settings.homeCards.activityWatchMini.categoryMode = 'top';
+    settings.activityWatchGroupsDefaultApplied = true;
+  }
+
   ensureBlockSettings();
   migrateSetProgressSnapshots();
 

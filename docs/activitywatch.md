@@ -48,11 +48,11 @@ PEM waking-day periods are based on `settings.personalDayStartTime`. If Activity
 
 Startup, dashboard, and timeline sync should cover the current waking day plus previous 7 waking days and use a roughly 60-second throttle unless the user manually refreshes.
 
-The main-screen ActivityWatch mini card is a glanceable current waking-day surface. It should refresh only the current waking day, default to about every 5 minutes, show stale/offline state clearly, and keep using the aggregate-only `pem_activitywatch` data model. Its category list should show all available categories with duration and percentage, using an internal scroll area instead of making the card taller. The mini card has a persisted `Categories` / `Groups` switch saved in `settings.homeCards.activityWatchMini.categoryMode`; `Groups` combines exact paths such as `Work > 3D` into top-level groups for the card rows and stacked bar without changing stored ActivityWatch summaries.
+The main-screen ActivityWatch mini card is a glanceable current waking-day surface. It should refresh only the current waking day, default to about every 5 minutes, show stale/offline state clearly, and keep using the aggregate-only `pem_activitywatch` data model. Its category list should show all available categories with duration and percentage, using an internal scroll area instead of making the card taller. The mini card has a persisted `Categories` / `Groups` switch saved in `settings.homeCards.activityWatchMini.categoryMode`; `Groups` is the default and combines exact paths such as `Work > 3D` into top-level groups for the card rows and stacked bar without changing stored ActivityWatch summaries.
 
 ## Dashboard Rules
 
-The dashboard is category-first, not top-application-first. Dashboard UI state is not persisted. The single dashboard state object includes selected date, range length/end date, category mode, selected category, hovered category, detail mode, show-all state, chart scroll state, and advanced sync state.
+The dashboard is group-first, not top-application-first. Dashboard UI state is not persisted. The single dashboard state object includes selected date, range length/end date, category mode, selected category, hovered category, detail mode, show-all state, chart scroll state, and advanced sync state.
 
 Default range is Last 2 weeks ending on the current waking day. Opening the dashboard selects the current waking day when visible. Range paging jumps by the selected range length. Latest returns to the current waking-day range.
 
@@ -69,7 +69,7 @@ Dashboard control hierarchy is intentionally split:
 Chart interaction:
 
 - Default mode is stacked bars.
-- The chart toolbar `Categories` / `Groups` toggle switches the dashboard between exact category paths and top-level category grouping. `Groups` combines paths such as `Work > Katana` and plain `Work` into `Work` for chart segments, side-panel rows, hover, and filters without changing stored ActivityWatch summaries.
+- The chart toolbar `Categories` / `Groups` toggle switches the dashboard between exact category paths and top-level category grouping. `Groups` is the default and combines paths such as `Work > Katana` and plain `Work` into `Work` for chart segments, side-panel rows, hover, and filters without changing stored ActivityWatch summaries.
 - Timed work overlays are computed at render time from `pem_workload` plus `pem_activitywatch`; do not store derived overlay values and do not mutate `pem_activitywatch`.
 - Use these terms consistently: `Timed work total` is the Timed Work Today timer/manual total; `Computer work` is ActivityWatch active time in the top-level `Work` category only; `Physical work estimate` is `max(0, Timed work total - Computer work)`; `Computer active time` is all ActivityWatch active computer time; `Total tendon load` is `Computer active time + Physical work estimate`.
 - In `Groups` mode, `Total tendon load` can replace the normal chart with `Computer active time + Physical work estimate`. The physical work estimate subtracts only `Computer work` from `Timed work total` so computer Work is not double-counted.

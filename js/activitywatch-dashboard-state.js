@@ -33,7 +33,7 @@ const activityWatchDashboardState = {
   selectedDate: '',
   rangeDays: ACTIVITYWATCH_DASHBOARD_DEFAULT_RANGE_DAYS,
   rangeEndDate: '',
-  categoryMode: 'exact',
+  categoryMode: 'top',
   selectedCategory: '',
   hoveredCategory: '',
   detailMode: 'day',

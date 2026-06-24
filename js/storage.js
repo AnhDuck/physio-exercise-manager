@@ -744,7 +744,7 @@ function defaultHomeCardsSettings() {
     activityWatchMini: {
       enabled: true,
       refreshMinutes: 5,
-      categoryMode: 'exact',
+      categoryMode: 'top',
     },
     workload: {
       enabled: true,
