@@ -21,7 +21,11 @@ function renderActivityWatchDashboardControls(days) {
   root.appendChild(heading);
 
   const toolbar = el('div', 'activitywatch-chart-toolbar');
-  toolbar.appendChild(buildActivityWatchDateControls(isSyncing));
+  const rangeTools = el('div', 'activitywatch-range-tools');
+  rangeTools.appendChild(buildActivityWatchDateControls(isSyncing));
+  const methodologyNotice = buildActivityWatchMethodologyNotice(days);
+  if (methodologyNotice) rangeTools.appendChild(methodologyNotice);
+  toolbar.appendChild(rangeTools);
   toolbar.appendChild(buildActivityWatchViewControls());
   root.appendChild(toolbar);
 
@@ -210,6 +214,37 @@ function buildActivityWatchDateControls(isSyncing) {
   today.disabled = activityWatchDashboardState.rangeEndDate === activityWatchCurrentWakingDateStr();
   controls.appendChild(today);
   return controls;
+}
+
+function buildActivityWatchMethodologyNotice(days) {
+  const changes = getActivityWatchMethodologyChangesForDates((days || []).map(day => day.date));
+  if (!changes.length) return null;
+  const notice = el('div', 'activitywatch-methodology-notice');
+  notice.tabIndex = 0;
+  notice.setAttribute('role', 'note');
+  const label = changes.length === 1
+    ? 'Methodology change - Break in series'
+    : `Methodology change - ${formatNumber(changes.length)} breaks in series`;
+  const tooltip = changes.map(activityWatchMethodologyTooltip).join(' ');
+  notice.setAttribute('aria-label', tooltip);
+  notice.textContent = label;
+  notice.addEventListener('pointerenter', (event) => {
+    showActivityWatchChartTooltipText(event, tooltip, true);
+  });
+  notice.addEventListener('pointermove', (event) => {
+    positionActivityWatchChartTooltip(event);
+  });
+  notice.addEventListener('pointerleave', hideActivityWatchChartTooltip);
+  notice.addEventListener('pointercancel', hideActivityWatchChartTooltip);
+  notice.addEventListener('focus', () => {
+    const rect = notice.getBoundingClientRect();
+    showActivityWatchChartTooltipText({
+      clientX: rect.left + (rect.width / 2),
+      clientY: rect.bottom + 8,
+    }, tooltip, true);
+  });
+  notice.addEventListener('blur', hideActivityWatchChartTooltip);
+  return notice;
 }
 
 function buildActivityWatchViewControls() {

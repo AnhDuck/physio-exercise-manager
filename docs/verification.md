@@ -75,7 +75,7 @@ For ActivityWatch dashboard changes, smoke-check:
 - advanced sync panel opens and shows date options
 - methodology-change chart markers appear on June 18, 2026 and June 21, 2026 when those dates are visible
 - marker hover/focus text uses `Break in series`
-- the right panel reports methodology changes for selected-day and visible-range detail modes
+- the compact methodology-change notice appears near the range controls when marked dates are visible, shows `Break in series` on hover/focus, and the right panel does not show the old large methodology card
 - timeline day headers and copied timeline Markdown include the methodology-change note for marked days
 - Groups mode, Total tendon load overlay, and Timed Work terminology still render correctly
 
