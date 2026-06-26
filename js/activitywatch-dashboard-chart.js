@@ -37,7 +37,6 @@ function renderActivityWatchStackedChart(days) {
   const plot = el('div', 'activitywatch-chart-plot');
   plot.style.setProperty('--activitywatch-day-count', days.length);
   plot.style.setProperty('--activitywatch-grid-step', `${100 / Math.max(1, axis.ticks.length - 1)}%`);
-  plot.appendChild(buildActivityWatchMonthBands(days));
 
   const bars = el('div', 'activitywatch-bars-row');
   const axisLabels = activityWatchXAxisLabels(days);
@@ -72,10 +71,13 @@ function renderActivityWatchStackedChart(days) {
     totalLabel.classList.toggle('has-label', Boolean(totalLabelText));
     barButton.appendChild(totalLabel);
 
-    const stack = el('span', 'activitywatch-day-bar-stack');
-    stack.style.height = plottedSeconds
+    const stackWrap = el('span', 'activitywatch-day-bar-stack-wrap');
+    const stackHeight = plottedSeconds
       ? `${Math.max(3, Math.min(100, (plottedSeconds / axis.maxSeconds) * 100))}%`
       : '4px';
+    stackWrap.style.setProperty('--activitywatch-stack-height', stackHeight);
+    const stack = el('span', 'activitywatch-day-bar-stack');
+    stack.style.height = stackHeight;
     const stackTotal = Math.max(1, plottedSeconds || 0);
     if (overlayMode) {
       activityWatchDashboardOverlaySegments(day, overlayMode).forEach(segmentData => {
@@ -105,13 +107,13 @@ function renderActivityWatchStackedChart(days) {
       const empty = el('span', 'activitywatch-day-bar-empty');
       stack.appendChild(empty);
     }
-    barButton.appendChild(stack);
+    stackWrap.appendChild(stack);
+    barButton.appendChild(stackWrap);
     if (methodologyChange) {
       barButton.appendChild(buildActivityWatchMethodologyMarker(methodologyChange));
     }
-    const axisLabel = axisLabels.get(day.date) || '';
-    const label = elText('span', 'activitywatch-day-bar-label', axisLabel);
-    label.classList.toggle('has-label', Boolean(axisLabel));
+    const axisLabel = axisLabels.get(day.date) || null;
+    const label = buildActivityWatchAxisLabel(axisLabel);
     label.classList.toggle('is-edge-start', Boolean(axisLabel) && index === 0);
     label.classList.toggle('is-edge-end', Boolean(axisLabel) && index === days.length - 1);
     barButton.appendChild(label);
@@ -211,6 +213,18 @@ function buildActivityWatchMethodologyMarker(change) {
   marker.addEventListener('pointerleave', hideActivityWatchChartTooltip);
   marker.addEventListener('pointercancel', hideActivityWatchChartTooltip);
   return marker;
+}
+
+function buildActivityWatchAxisLabel(labelData) {
+  const label = el('span', 'activitywatch-day-bar-label');
+  label.classList.toggle('has-label', Boolean(labelData));
+  if (!labelData) return label;
+  label.appendChild(elText('span', 'activitywatch-day-label-number', labelData.day || ''));
+  if (labelData.month) {
+    label.classList.add('has-month');
+    label.appendChild(elText('span', 'activitywatch-day-label-month', labelData.month));
+  }
+  return label;
 }
 
 function addActivityWatchMethodologyFocusHandlers(barButton, change) {

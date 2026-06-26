@@ -58,6 +58,8 @@ Default range is Last 2 weeks ending on the current waking day. Opening the dash
 
 Daily average divides by days with active time, not every visible day.
 
+If the page is refreshed while the ActivityWatch dashboard is open, reopen the dashboard on startup using tab-scoped session state. Closing the dashboard clears that restore flag; this is UI state only and must not be saved into backup/app data.
+
 Dashboard control hierarchy is intentionally split:
 
 - Modal header is app-level only: `ActivityWatch`, combined sync/refresh, Advanced, and Close. The combined sync/refresh button is the everyday action and refreshes only the latest 3 waking days.
@@ -97,7 +99,7 @@ Right panel:
 Visual rules:
 
 - Keep category chips and row labels compact without clipping.
-- Sparse x-axis labels are expected for 30/90-day ranges.
+- X-axis month context belongs under the relevant day label, not in a separate month band above the bars. Month labels use a compact two-line `day` over `month` treatment and must not clip at desktop or mobile widths. Long ranges intentionally use a wider horizontal scroll area so every daily x-axis label can remain visible.
 - Hide or reduce labels on narrow screens rather than letting them overlap.
 - Use dashboard-only color mapping/fallback adjustments for visible colors; never rewrite stored ActivityWatch colors.
 - Timeline day headers show compact active-time metadata only; do not add separate ActivityWatch rows to the timeline.

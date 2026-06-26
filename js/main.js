@@ -88,6 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
   runStartupStep('Home cards start', () => {
     if (typeof startHomeCards === 'function') startHomeCards();
   });
+  runStartupStep('Restore ActivityWatch dashboard', () => {
+    if (typeof restoreActivityWatchDashboardIfNeeded === 'function') restoreActivityWatchDashboardIfNeeded();
+  });
   runStartupStep('ActivityWatch startup sync', () => {
     if (typeof maybeSyncActivityWatchRecent === 'function') return maybeSyncActivityWatchRecent('startup');
     return null;

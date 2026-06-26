@@ -70,43 +70,10 @@ function formatActivityWatchChartDuration(seconds, compact = false) {
 function activityWatchXAxisLabels(days) {
   const labels = new Map();
   if (!Array.isArray(days) || !days.length) return labels;
-  const dayCount = days.length;
-  if (dayCount <= 30) {
-    days.forEach((day, index) => {
-      const label = activityWatchXAxisLabel(day, index, days);
-      if (label) labels.set(day.date, label);
-    });
-    return labels;
-  }
-
-  const candidates = [];
   days.forEach((day, index) => {
-    const date = dateFromStr(day.date);
-    const selected = day.date === activityWatchDashboardState.selectedDate;
-    if (selected) candidates.push({ day, index, priority: 100, forceMonth: true });
-    if (index === 0 || index === dayCount - 1) candidates.push({ day, index, priority: 90, forceMonth: true });
-    if (date.getDate() === 1) candidates.push({ day, index, priority: 80, forceMonth: false, dayOnly: true });
-    if (index % 14 === 0) candidates.push({ day, index, priority: 50, forceMonth: false });
+    const label = activityWatchXAxisLabel(day, index, days);
+    if (label) labels.set(day.date, label);
   });
-
-  const chosen = [];
-  const minGap = dayCount > 45 ? ACTIVITYWATCH_WIDE_AXIS_MIN_LABEL_GAP_DAYS : 4;
-  candidates
-    .sort((a, b) => b.priority - a.priority || a.index - b.index)
-    .forEach(candidate => {
-      if (chosen.some(item => Math.abs(item.index - candidate.index) < minGap)) return;
-      chosen.push(candidate);
-    });
-
-  chosen
-    .sort((a, b) => a.index - b.index)
-    .forEach(candidate => {
-      const date = dateFromStr(candidate.day.date);
-      const previousDate = candidate.index > 0 ? dateFromStr(days[candidate.index - 1].date) : null;
-      labels.set(candidate.day.date, candidate.dayOnly
-        ? String(date.getDate())
-        : activityWatchCompactAxisDate(date, previousDate, candidate.forceMonth));
-    });
   return labels;
 }
 
@@ -114,28 +81,20 @@ function activityWatchXAxisLabel(day, index, days) {
   const dayCount = days.length;
   const date = dateFromStr(day.date);
   const selected = day.date === activityWatchDashboardState.selectedDate;
-  if (dayCount <= 14) return String(date.getDate());
-  if (dayCount <= 30) {
-    return activityWatchCompactAxisDate(date, index > 0 ? dateFromStr(days[index - 1].date) : null, selected || index === 0 || index === dayCount - 1 || date.getDate() === 1);
-  }
-  if (selected || index === 0 || index === dayCount - 1 || activityWatchIsWideRangeTick(date, index, days)) {
-    return activityWatchCompactAxisDate(date, index > 0 ? dateFromStr(days[index - 1].date) : null, selected || index === 0 || index === dayCount - 1 || date.getDate() === 1);
-  }
-  return '';
+  const previousDate = index > 0 ? dateFromStr(days[index - 1].date) : null;
+  return activityWatchAxisDateParts(date, previousDate, index === 0 || selected || index === dayCount - 1 || date.getDate() === 1);
 }
 
-function activityWatchIsWideRangeTick(date, index, days) {
-  if (date.getDate() === 1) return true;
-  return index % 14 === 0;
-}
-
-function activityWatchCompactAxisDate(date, previousDate = null, forceMonth = false) {
+function activityWatchAxisDateParts(date, previousDate = null, forceMonth = false) {
   const month = date.toLocaleDateString(undefined, { month: 'short' });
   const day = date.getDate();
-  if (forceMonth || !previousDate || previousDate.getMonth() !== date.getMonth()) {
-    return `${month} ${day}`;
-  }
-  return String(day);
+  const monthChanged = !previousDate
+    || previousDate.getMonth() !== date.getMonth()
+    || previousDate.getFullYear() !== date.getFullYear();
+  return {
+    day: String(day),
+    month: forceMonth || monthChanged ? month : '',
+  };
 }
 
 function activityWatchDashboardCategoryColor(category) {

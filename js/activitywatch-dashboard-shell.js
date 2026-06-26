@@ -1,9 +1,12 @@
 // ActivityWatch dashboard modal shell and render orchestration.
 
+const ACTIVITYWATCH_DASHBOARD_OPEN_SESSION_KEY = 'pem_activitywatch_dashboard_open';
+
 function openActivityWatchDashboard() {
   ensureActivityWatchDashboardShell();
   const modal = document.getElementById('activitywatch-dashboard-modal');
   if (!modal) return;
+  rememberActivityWatchDashboardOpen(true);
   const current = activityWatchCurrentWakingDateStr();
   if (!activityWatchDashboardState.rangeEndDate) {
     activityWatchDashboardState.rangeEndDate = current;
@@ -17,6 +20,32 @@ function openActivityWatchDashboard() {
 function closeActivityWatchDashboard() {
   hideActivityWatchChartTooltip();
   document.getElementById('activitywatch-dashboard-modal')?.classList.add('hidden');
+  rememberActivityWatchDashboardOpen(false);
+}
+
+function restoreActivityWatchDashboardIfNeeded() {
+  if (!activityWatchDashboardWasOpen()) return;
+  openActivityWatchDashboard();
+}
+
+function rememberActivityWatchDashboardOpen(open) {
+  try {
+    if (open) {
+      window.sessionStorage?.setItem(ACTIVITYWATCH_DASHBOARD_OPEN_SESSION_KEY, '1');
+    } else {
+      window.sessionStorage?.removeItem(ACTIVITYWATCH_DASHBOARD_OPEN_SESSION_KEY);
+    }
+  } catch (err) {
+    // Session restore is a convenience only; storage-blocked browsers can ignore it.
+  }
+}
+
+function activityWatchDashboardWasOpen() {
+  try {
+    return window.sessionStorage?.getItem(ACTIVITYWATCH_DASHBOARD_OPEN_SESSION_KEY) === '1';
+  } catch (err) {
+    return false;
+  }
 }
 
 function ensureActivityWatchDashboardShell() {
