@@ -99,14 +99,23 @@ function renderActivityWatchDetailPanel(days) {
 
 function buildActivityWatchDetailModeToggle() {
   const wrap = el('div', 'activitywatch-detail-scope-control');
-  wrap.appendChild(elText('span', 'activitywatch-control-label', 'Details:'));
+  const labelId = 'activitywatch-detail-tabs-label';
+  const label = elText('span', 'activitywatch-control-label activitywatch-detail-tabs-label', 'Details');
+  label.id = labelId;
+  wrap.appendChild(label);
   const toggle = el('div', 'activitywatch-detail-toggle');
+  toggle.setAttribute('role', 'tablist');
+  toggle.setAttribute('aria-labelledby', labelId);
   [
     ['day', 'Selected day'],
     ['range', 'Visible range'],
   ].forEach(([mode, label]) => {
     const button = el('button', '');
     button.type = 'button';
+    button.id = `activitywatch-detail-tab-${mode}`;
+    button.setAttribute('role', 'tab');
+    button.setAttribute('aria-selected', activityWatchDashboardState.detailMode === mode ? 'true' : 'false');
+    button.setAttribute('aria-controls', 'activitywatch-selected-day');
     button.textContent = label;
     button.classList.toggle('is-active', activityWatchDashboardState.detailMode === mode);
     button.addEventListener('click', () => {
