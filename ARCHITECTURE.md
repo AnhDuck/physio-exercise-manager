@@ -16,7 +16,7 @@ Keep `90-responsive.css` last. See `css/README.md` before changing styles.
 
 JavaScript order is also manual:
 
-`data.js`, `storage.js`, `constants.js`, `state.js`, `dates.js`, `dom.js`, `sessions.js`, `exercises.js`, `grid.js`, `tracker.js`, `activitywatch-data.js`, `dev-sample-data.js`, `workload-card.js`, `home-cards.js`, `weather-format.js`, `weather-preview.js`, `weather-normalize.js`, `weather-api.js`, `weather-sync.js`, `weather-settings.js`, `weather-card.js`, `activitywatch-mini-card.js`, `timeline-data.js`, `timeline-filters.js`, `timeline-render.js`, `timeline-notes.js`, `timeline-export.js`, `timeline-edit.js`, `timeline.js`, `backup.js`, `auto-backup.js`, `settings.js`, `activitywatch-dashboard-state.js`, `activitywatch-dashboard-format.js`, `activitywatch-dashboard-sync.js`, `activitywatch-dashboard-controls.js`, `activitywatch-dashboard-chart.js`, `activitywatch-dashboard-detail.js`, `activitywatch-dashboard-shell.js`, `activitywatch-settings.js`, `images.js`, `main.js`.
+`data.js`, `storage.js`, `constants.js`, `state.js`, `dates.js`, `dom.js`, `sessions.js`, `exercises.js`, `grid.js`, `tracker.js`, `activitywatch-model.js`, `activitywatch-time.js`, `activitywatch-query.js`, `activitywatch-sync-service.js`, `activitywatch-display.js`, `activitywatch-timeline-adapter.js`, `dev-sample-data.js`, `workload-card.js`, `workload-activitywatch-overlay.js`, `home-cards.js`, `weather-format.js`, `weather-preview.js`, `weather-normalize.js`, `weather-api.js`, `weather-sync.js`, `weather-settings.js`, `weather-card.js`, `activitywatch-mini-card.js`, `timeline-data.js`, `timeline-filters.js`, `timeline-render.js`, `timeline-notes.js`, `timeline-export.js`, `timeline-edit.js`, `timeline.js`, `backup.js`, `auto-backup.js`, `settings.js`, `activitywatch-dashboard-state.js`, `activitywatch-dashboard-format.js`, `activitywatch-dashboard-sync.js`, `activitywatch-dashboard-controls.js`, `activitywatch-dashboard-chart.js`, `activitywatch-dashboard-detail.js`, `activitywatch-dashboard-shell.js`, `activitywatch-settings.js`, `images.js`, `main.js`.
 
 Never load `main.js` before feature files it binds. Do not add imports, exports, modules, dependencies, bundlers, browser automation packages, or build tooling.
 
@@ -32,10 +32,16 @@ Never load `main.js` before feature files it binds. Do not add imports, exports,
 - `exercises.js`: exercise ordering, blocks, drag/drop, add/edit/hide/delete.
 - `grid.js`: compact calendar grid and week navigation.
 - `tracker.js`: set tracker, timer, log edit, cues, and shortcuts.
-- `activitywatch-data.js`: ActivityWatch REST client, aggregate storage, sync orchestration.
-- `dev-sample-data.js`: Codex verification-only sample seed for `http://127.0.0.1:8895`; it refreshes Abbotsford Weather, representative ActivityWatch data, and Timed Work source totals on every page load before render so UI checks exercise populated dashboard states. It must not run on the user's real `8891` origin.
+- `activitywatch-model.js`: ActivityWatch aggregate storage shape, normalization, server URL normalization, localStorage load/save, public getters, and bucket/status normalization.
+- `activitywatch-time.js`: ActivityWatch waking-day date/time helpers that wrap PEM's local date helpers and personal-day start setting.
+- `activitywatch-query.js`: ActivityWatch REST fetch helpers, bucket discovery, query construction, query result normalization, and daily sync period construction.
+- `activitywatch-sync-service.js`: ActivityWatch sync orchestration, progress state, status recording, stale-date selection, and render fan-out after sync/save.
+- `activitywatch-display.js`: shared ActivityWatch category color and duration display helpers.
+- `activitywatch-timeline-adapter.js`: ActivityWatch timeline chips and Markdown summary adapters.
+- `dev-sample-data.js`: Codex verification-only sample seed for `http://127.0.0.1:8895`; it refreshes Abbotsford Weather, representative ActivityWatch data, Timed Work source totals, and a sample timeline note on every page load before render so UI checks exercise populated dashboard and timeline states. It must not run on the user's real `8891` origin.
 - `home-cards.js`: main-screen dashboard card row, in-memory collapsed/expanded state, downward-scroll auto-collapse, manual dashboard toggle, and refresh timers for the always-on monitor view.
-- `workload-card.js`: optional Timed Work Today dashboard card, Dashboard Settings visibility/timer-cue controls, one-button timed work timer, page-close pause/auto-resume, whole-app running border, start/reminder sound cues, quick total adjustments, personal-day rollover splitting, long-timer review flagging, and shared ActivityWatch/timed-work overlay comparison helpers.
+- `workload-card.js`: optional Timed Work Today dashboard card, Dashboard Settings visibility/timer-cue controls, one-button timed work timer, page-close pause/auto-resume, whole-app running border, start/reminder sound cues, quick total adjustments, personal-day rollover splitting, and long-timer review flagging.
+- `workload-activitywatch-overlay.js`: shared render-time Timed Work plus ActivityWatch overlay math used by the Timed Work card, ActivityWatch dashboard, and timeline summaries.
 - `weather-format.js`: weather display labels, units, WMO and official condition mapping, icon file mapping for `assets/weather-icons/google-weather-set-4/light/`, source labels, AQHI/UV/wind/sun formatting, and daily-brain advisory/highlight/mood rules.
 - `weather-preview.js`: Open-Meteo WMO weather-state preview modes, random preview scenarios, alert preview data, and preview setting normalization.
 - `weather-normalize.js`: Open-Meteo and Environment Canada MSC GeoMet current conditions/hourly forecasts/sun times/alerts/AQHI response normalization into the cached weather result shape.
@@ -65,10 +71,10 @@ localStorage keys:
 - `pem_sessions`: object keyed by local `YYYY-MM-DD`.
 - `pem_settings`: settings object.
 - `pem_events`: timeline events.
-- `pem_activitywatch`: aggregate ActivityWatch summaries only.
+- `pem_activitywatch`: aggregate ActivityWatch summaries only: daily total active seconds, category totals, category colors, optional diagnostic app totals, bucket/status metadata, and sync timestamps.
 - `pem_workload`: Timed Work Today daily totals, active timer state including paused-on-close elapsed time, and review flags.
 
-Dashboard card preferences, including the Timed Work Today visibility toggle, timed-work running-border and reminder-sound settings, weather request cooldown metadata, and the cached last weather result live inside `pem_settings.homeCards` so backups and imports continue to use the existing settings safe-save path. When Timed Work Today is disabled, the home row should return to the old two-card Weather/ActivityWatch layout while preserving `pem_workload` data and active-timer safety cues. Weather, air quality, and official-alert refreshes share the same weather cadence to avoid extra background polling. The dashboard row's collapsed/expanded UI state is intentionally in-memory only; a fresh app load starts expanded. ActivityWatch dashboard overlay toggles are also in-memory only. On the Codex verification origin `http://127.0.0.1:8895`, `dev-sample-data.js` overwrites Weather, ActivityWatch, and Timed Work sample data on every load so verification does not fall back to empty states.
+Dashboard card preferences, including the Timed Work Today visibility toggle, timed-work running-border and reminder-sound settings, weather request cooldown metadata, and the cached last weather result live inside `pem_settings.homeCards` so backups and imports continue to use the existing settings safe-save path. When Timed Work Today is disabled, the home row should return to the old two-card Weather/ActivityWatch layout while preserving `pem_workload` data and active-timer safety cues. Weather, air quality, and official-alert refreshes share the same weather cadence to avoid extra background polling. The dashboard row's collapsed/expanded UI state is intentionally in-memory only; a fresh app load starts expanded. ActivityWatch dashboard overlay toggles are also in-memory only. On the Codex verification origin `http://127.0.0.1:8895`, `dev-sample-data.js` overwrites Weather, ActivityWatch, Timed Work, and sample timeline data on every load so verification does not fall back to empty states.
 
 All app-data writes must go through safe-save helpers in storage internals. Do not call `localStorage.setItem` directly for app keys outside storage internals.
 
@@ -90,7 +96,12 @@ Load-side app-data parsing also belongs in `storage.js`. Persisted JSON loaders 
 - Set tracker/timer/log behavior: `tracker.js`, `sessions.js`, and timeline renderers if log display changes.
 - Timeline note/event behavior: `timeline-*.js`.
 - Backup/import/export: `backup.js`, `auto-backup.js`, and storage helpers.
-- ActivityWatch sync/storage/query: `activitywatch-data.js` only when the query or stored aggregate changes.
+- ActivityWatch storage/model: `activitywatch-model.js` when the stored aggregate shape, server URL normalization, or public getters change.
+- ActivityWatch date helpers: `activitywatch-time.js`.
+- ActivityWatch query/API mechanics: `activitywatch-query.js`.
+- ActivityWatch sync orchestration/progress: `activitywatch-sync-service.js`.
+- ActivityWatch shared display helpers: `activitywatch-display.js`.
+- ActivityWatch timeline summaries: `activitywatch-timeline-adapter.js`.
 - ActivityWatch dashboard UI: `activitywatch-dashboard-*.js`.
 - ActivityWatch setup/settings UI: `activitywatch-settings.js` and the ActivityWatch settings markup in `index.html`.
 - Main-screen dashboard cards: `home-cards.js`, the specific card file, `66-home-cards.css`, and responsive overrides in `90-responsive.css`. Timed work storage helpers live in `storage.js`; Weather and ActivityWatch mini-card controls live in the Dashboard Settings markup in `index.html`.

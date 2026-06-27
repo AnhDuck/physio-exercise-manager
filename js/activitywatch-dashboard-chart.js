@@ -357,30 +357,3 @@ function activityWatchDashboardOtherSeconds(day, topCategories) {
   return Math.max(0, (day.totalActiveSeconds || 0) - shown);
 }
 
-function buildActivityWatchMonthBands(days) {
-  const row = el('div', 'activitywatch-month-bands');
-  if (!days.length) return row;
-  let startIndex = 0;
-  while (startIndex < days.length) {
-    const startDate = dateFromStr(days[startIndex].date);
-    let endIndex = startIndex;
-    while (endIndex + 1 < days.length) {
-      const next = dateFromStr(days[endIndex + 1].date);
-      if (next.getMonth() !== startDate.getMonth() || next.getFullYear() !== startDate.getFullYear()) break;
-      endIndex += 1;
-    }
-    const label = startDate.toLocaleDateString(undefined, {
-      month: 'short',
-      year: startDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
-    });
-    const band = elText('span', '', label);
-    band.classList.add('activitywatch-month-band');
-    band.classList.toggle('is-short-month', (endIndex - startIndex + 1) < 4);
-    band.style.gridColumn = `${startIndex + 1} / ${endIndex + 2}`;
-    band.title = label;
-    row.appendChild(band);
-    startIndex = endIndex + 1;
-  }
-  return row;
-}
-

@@ -182,22 +182,6 @@ function activityWatchDateStringsBetween(startDate, endDate) {
   return dates;
 }
 
-function buildActivityWatchSyncProgressLegacy(progress) {
-  const total = Math.max(1, Number(progress.totalDays) || 1);
-  const completed = Math.min(total, Math.max(0, Number(progress.completedDays) || 0));
-  const wrap = el('div', 'activitywatch-sync-progress');
-  const label = progress.currentDate
-    ? `Collecting ${formatEventDate(progress.currentDate)}`
-    : 'Collecting ActivityWatch summaries';
-  wrap.appendChild(elText('span', '', `${label} - ${formatNumber(completed)} of ${formatNumber(total)} days`));
-  const track = el('div', 'activitywatch-sync-progress-track');
-  const fill = el('span', '');
-  fill.style.width = `${Math.max(3, (completed / total) * 100)}%`;
-  track.appendChild(fill);
-  wrap.appendChild(track);
-  return wrap;
-}
-
 function buildActivityWatchSyncProgress(progress) {
   const total = Math.max(1, Number(progress.totalDays) || 1);
   const completed = Math.min(total, Math.max(0, Number(progress.completedDays) || 0));

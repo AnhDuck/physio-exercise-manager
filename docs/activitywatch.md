@@ -10,7 +10,6 @@ Do not add dependencies, build tooling, a query helper package, or a server-side
 
 - daily total active seconds
 - category totals
-- hourly category totals
 - category colors
 - optional diagnostic app totals
 - bucket/status metadata
@@ -76,7 +75,7 @@ Chart interaction:
 - Use these terms consistently: `Timed work total` is the Timed Work Today timer/manual total; `Computer work` is ActivityWatch active time in the top-level `Work` category only; `Physical work estimate` is `max(0, Timed work total - Computer work)`; `Computer active time` is all ActivityWatch active computer time; `Total tendon load` is `Computer active time + Physical work estimate`.
 - In `Groups` mode, `Total tendon load` can replace the normal chart with `Computer active time + Physical work estimate`. The physical work estimate subtracts only `Computer work` from `Timed work total` so computer Work is not double-counted.
 - In `Groups` mode with the `Work` group locked, `Show timed work split` can replace the filtered Work chart with `Computer work + Physical work estimate`. Show a warning state whenever Computer work exceeds Timed work total.
-- Computer work means the top-level `Work` group, using `ACTIVITYWATCH_CATEGORY_JOINER` splitting. The overlay math lives with Timed Work helpers so the Timed Work card and dashboard use the same comparison.
+- Computer work means the top-level `Work` group, using `ACTIVITYWATCH_CATEGORY_JOINER` splitting. The shared overlay math lives in `workload-activitywatch-overlay.js` so the Timed Work card, dashboard, and timeline use the same comparison.
 - Unfiltered bars include computed `Other` so visible stacks add up to total active time.
 - `Other` is informational only and must not become a filter chip or locked filter.
 - Bar click selects the day.
@@ -108,11 +107,18 @@ Visual rules:
 
 - `activitywatch-dashboard-state.js`: constants, hard-coded methodology-change metadata, state, day builders, range/date helpers, category lock/hover/highlight helpers.
 - `activitywatch-dashboard-format.js`: date labels, chart labels, axis labels, percentages, colors, status labels.
-- `activitywatch-dashboard-sync.js`: advanced sync panel, date selection, sync progress UI, and dashboard metadata.
+- `activitywatch-dashboard-sync.js`: dashboard UI for advanced sync controls, date selection, sync progress display, and dashboard metadata.
 - `activitywatch-dashboard-controls.js`: compact header sync/advanced actions plus chart heading, date controls, category mode toggle, and overlay toggle.
-- `activitywatch-dashboard-chart.js`: stacked chart, computed `Other`, month bands, scroll behavior, tooltip, chart category math.
+- `activitywatch-dashboard-chart.js`: stacked chart, computed `Other`, x-axis day/month labels, scroll behavior, tooltip, and chart category math.
 - `activitywatch-dashboard-detail.js`: right-side Day/Range panel and category rows.
 - `activitywatch-dashboard-shell.js`: modal shell, open/close, and render orchestration.
-- `workload-card.js`: Timed Work Today card and shared ActivityWatch/timed-work overlay math used by the ActivityWatch dashboard.
+- `activitywatch-model.js`: aggregate storage model, normalization, server URL normalization, localStorage load/save, and public getters.
+- `activitywatch-time.js`: ActivityWatch waking-day date/time helpers.
+- `activitywatch-query.js`: ActivityWatch REST fetches, bucket discovery, query construction, daily sync period construction, and result normalization.
+- `activitywatch-sync-service.js`: data-layer sync orchestration, progress state, status recording, stale-date selection, and render fan-out.
+- `activitywatch-display.js`: shared ActivityWatch duration and category-color helpers.
+- `activitywatch-timeline-adapter.js`: Timeline chips and Markdown summaries for ActivityWatch and total tendon load.
+- `workload-card.js`: Timed Work Today card.
+- `workload-activitywatch-overlay.js`: shared render-time ActivityWatch/timed-work overlay math used by Timed Work, dashboard, and timeline surfaces.
 
 Preserve public globals used by other files: `openActivityWatchDashboard` and `renderActivityWatchDashboard`.

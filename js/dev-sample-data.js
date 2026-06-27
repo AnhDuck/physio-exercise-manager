@@ -45,6 +45,15 @@ function ensureVerificationSampleData() {
       console.error('Could not seed verification Workload sample data.', err);
     }
   }
+
+  if (typeof saveEvents === 'function') {
+    events = buildVerificationSampleEvents();
+    try {
+      saveEvents(events);
+    } catch (err) {
+      console.error('Could not seed verification timeline sample data.', err);
+    }
+  }
 }
 
 function isPemVerificationSampleOrigin() {
@@ -213,6 +222,28 @@ function buildVerificationSampleWorkloadData() {
   });
 }
 
+function buildVerificationSampleEvents() {
+  const current = typeof activityWatchCurrentWakingDateStr === 'function'
+    ? activityWatchCurrentWakingDateStr()
+    : todayStr();
+  const sampleId = 'codex-sample-activitywatch-timeline-note';
+  const temporaryVerificationText = 'Codex verification note for ActivityWatch timeline chips.';
+  const preservedEvents = Array.isArray(events)
+    ? events.filter(item => item?.id !== sampleId && item?.text !== temporaryVerificationText)
+    : [];
+  return [
+    {
+      id: sampleId,
+      type: 'note',
+      date: current,
+      time: '12:00',
+      text: 'Sample day note for ActivityWatch and total tendon load timeline verification.',
+      createdAt: new Date().toISOString(),
+    },
+    ...preservedEvents,
+  ];
+}
+
 function daysByDateFromActivityWatchSample(dateStr) {
   const day = activityWatchData?.daysByDate?.[dateStr];
   const joiner = typeof ACTIVITYWATCH_CATEGORY_JOINER === 'string' ? ACTIVITYWATCH_CATEGORY_JOINER : ' > ';
@@ -246,19 +277,7 @@ function buildVerificationSampleActivityWatchDay(dateStr, index, syncedAt) {
       'Physio Exercise Manager': categoryTotals['PEM App'],
       'explorer.exe': categoryTotals.Admin,
     },
-    hourlyCategoryTotals: buildVerificationSampleHourlyTotals(categoryTotals),
     syncedAt,
     queryVersion: ACTIVITYWATCH_QUERY_VERSION,
   };
-}
-
-function buildVerificationSampleHourlyTotals(categoryTotals) {
-  const hourly = Array.from({ length: 24 }, () => ({}));
-  const hours = [8, 9, 10, 11, 13, 14, 15, 16];
-  Object.entries(categoryTotals).forEach(([category, seconds], index) => {
-    const firstHour = hours[index % hours.length];
-    hourly[firstHour][category] = Math.round(seconds * 0.6);
-    hourly[Math.min(23, firstHour + 1)][category] = seconds - hourly[firstHour][category];
-  });
-  return hourly;
 }

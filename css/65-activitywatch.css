@@ -89,64 +89,11 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   min-width: 0;
 }
 
-.activitywatch-control-row {
-  display: grid;
-  grid-template-areas: "stats status actions";
-  grid-template-columns: minmax(224px, 306px) minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  min-height: 90px;
-  box-sizing: border-box;
-  padding: 6px 8px;
-  border: 1px solid rgba(160,164,173,.2);
-  border-radius: 7px;
-  background: rgba(255,255,255,.016);
-}
-
-.activitywatch-control-stats {
-  grid-area: stats;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-  min-width: 0;
-}
-
-.activitywatch-control-status {
-  grid-area: status;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.activitywatch-control-copy {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.activitywatch-control-copy strong {
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 850;
-}
-
-.activitywatch-control-copy span,
 .activitywatch-warning {
   color: var(--text-muted);
   font-size: 12px;
   font-weight: 650;
   line-height: 1.35;
-}
-
-.activitywatch-control-actions {
-  grid-area: actions;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 8px;
 }
 
 .activitywatch-range-pager {
@@ -209,34 +156,6 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-pager-btn:disabled:hover {
   background: transparent;
-}
-
-.activitywatch-range-control {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.activitywatch-range-control select {
-  min-height: 32px;
-  padding: 6px 28px 6px 9px;
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  background: var(--ui-control-bg);
-  color: var(--text);
-  font: inherit;
-  font-size: 12px;
-  font-weight: 750;
-}
-
-.activitywatch-range-control select:focus {
-  border-color: rgba(99,179,255,.82);
-  outline: none;
-  box-shadow: var(--ui-focus-ring);
 }
 
 .activitywatch-category-mode-toggle {
@@ -635,19 +554,6 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   font-size: 11px;
   font-weight: 700;
   line-height: 1.3;
-}
-
-.activitywatch-refresh-btn {
-  min-height: 32px;
-  border-color: rgba(99,179,255,.52);
-  background: rgba(99,179,255,.12);
-  color: var(--text);
-}
-
-.activitywatch-refresh-btn:hover,
-.activitywatch-refresh-btn:focus-visible {
-  border-color: rgba(99,179,255,.82);
-  background: rgba(99,179,255,.18);
 }
 
 .activitywatch-sync-refresh-btn {
@@ -1787,26 +1693,6 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
   .activitywatch-dashboard-titlebar {
     flex-basis: auto;
-  }
-
-  .activitywatch-control-row {
-    grid-template-areas:
-      "status"
-      "stats"
-      "actions";
-    grid-template-columns: 1fr;
-  }
-
-  .activitywatch-control-status {
-    grid-template-columns: 1fr;
-  }
-
-  .activitywatch-control-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .activitywatch-control-actions {
-    justify-content: flex-start;
   }
 
   .activitywatch-section-heading,
