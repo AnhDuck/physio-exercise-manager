@@ -32,7 +32,7 @@ Priority meanings:
 
 **Where**
 
-- `js/activitywatch-data.js`
+- `js/activitywatch-model.js`
   - `normalizeActivityWatchServerUrl()`
   - `setActivityWatchServerUrl()`
 - `js/activitywatch-settings.js`
@@ -132,7 +132,7 @@ Yes, but only after the completed storage parser fix if the same storage helpers
   - `isValidTime()`
   - `isValidDateStr()`
   - waking-day boundary helpers
-- `js/activitywatch-data.js`
+- `js/activitywatch-time.js`
   - ActivityWatch date/time helpers
 - `js/workload-card.js`
   - workload date/day-start helpers
@@ -192,7 +192,7 @@ Yes. Low-risk performance cleanup.
 
 **Where**
 
-- `js/activitywatch-data.js`
+- `js/activitywatch-sync-service.js`
   - `maybeSyncActivityWatchDateStrings()`
 
 **Why it matters**

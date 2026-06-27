@@ -12,7 +12,6 @@ function renderActivityWatchStackedChart(days) {
   root.innerHTML = '';
   root.classList.toggle('is-wide-range', days.length > 45);
   root.classList.toggle('is-dense-range', days.length > 30);
-  root.classList.toggle('is-month-range', days.length >= 30);
   root.classList.toggle('is-filtered', Boolean(activityWatchDashboardState.selectedCategory));
   root.classList.toggle('is-workload-overlay', Boolean(activityWatchDashboardWorkloadOverlayMode()));
   root.dataset.awScrollKey = scrollKey;
@@ -114,8 +113,6 @@ function renderActivityWatchStackedChart(days) {
     }
     const axisLabel = axisLabels.get(day.date) || null;
     const label = buildActivityWatchAxisLabel(axisLabel);
-    label.classList.toggle('is-edge-start', Boolean(axisLabel) && index === 0);
-    label.classList.toggle('is-edge-end', Boolean(axisLabel) && index === days.length - 1);
     barButton.appendChild(label);
     bars.appendChild(barButton);
   });
@@ -221,7 +218,6 @@ function buildActivityWatchAxisLabel(labelData) {
   if (!labelData) return label;
   label.appendChild(elText('span', 'activitywatch-day-label-number', labelData.day || ''));
   if (labelData.month) {
-    label.classList.add('has-month');
     label.appendChild(elText('span', 'activitywatch-day-label-month', labelData.month));
   }
   return label;

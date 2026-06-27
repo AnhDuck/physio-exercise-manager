@@ -206,7 +206,7 @@ function buildActivityWatchTendonLoadOverlayToggle() {
 }
 
 function buildActivityWatchOverlayButton(mode, label, title, options = {}) {
-  const wrap = el('label', 'activitywatch-overlay-toggle activitywatch-tendon-toggle');
+  const wrap = el('label', 'activitywatch-overlay-toggle');
   const active = activityWatchDashboardWorkloadOverlayMode() === mode;
   const disabled = Boolean(options.disabled);
   const input = el('input', '');
@@ -248,13 +248,5 @@ function buildActivityWatchTodayButton(onClick) {
   button.textContent = 'Today';
   button.addEventListener('click', onClick);
   return button;
-}
-
-function buildActivityWatchSummaryCard(label, value, detail) {
-  const card = el('div', 'activitywatch-summary-card');
-  card.appendChild(elText('span', '', label));
-  card.appendChild(elText('strong', '', value));
-  card.appendChild(elText('small', '', detail));
-  return card;
 }
 

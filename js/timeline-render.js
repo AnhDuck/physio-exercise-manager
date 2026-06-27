@@ -26,7 +26,6 @@ function renderTimelineSearchControls(view) {
   if (!input || !range || !types || !status) return;
 
   const expanded = timelineControlsExpanded();
-  tools?.classList.toggle('timeline-tools-expanded', expanded);
   tools?.classList.toggle('timeline-tools-collapsed', !expanded);
   searchPanel?.setAttribute('aria-expanded', String(expanded));
   input.value = timelineViewState.searchText;
@@ -331,17 +330,6 @@ function formatEventTime(timeStr) {
   const suffix = hourRaw >= 12 ? 'PM' : 'AM';
   const hour = hourRaw % 12 || 12;
   return `${hour}:${String(minuteRaw).padStart(2, '0')} ${suffix}`;
-}
-
-function buildEventItem(ev) {
-  const item = el('div', 'event-item');
-  item.appendChild(elText('div', 'event-time', ev.time || '--:--'));
-  const body = el('div', 'event-body');
-  body.appendChild(elText('div', 'event-title', eventTitle(ev)));
-  const text = eventText(ev);
-  if (text) body.appendChild(elText('div', 'event-text', text));
-  item.appendChild(body);
-  return item;
 }
 
 function eventTitle(ev) {

@@ -3,7 +3,6 @@
 const ACTIVITYWATCH_STORE_VERSION = 1;
 const ACTIVITYWATCH_DEFAULT_SERVER_URL = 'http://127.0.0.1:5600';
 const ACTIVITYWATCH_RECENT_SYNC_DAYS = 3;
-const ACTIVITYWATCH_DASHBOARD_DAYS = 30;
 const ACTIVITYWATCH_QUERY_VERSION = 2;
 const ACTIVITYWATCH_CATEGORY_JOINER = ' > ';
 
@@ -160,16 +159,6 @@ function getActivityWatchStatus() {
 
 function getActivityWatchDay(dateStr) {
   return activityWatchData.daysByDate?.[dateStr] || null;
-}
-
-function getActivityWatchRecentDays(count = ACTIVITYWATCH_DASHBOARD_DAYS) {
-  const current = activityWatchCurrentWakingDateStr();
-  return Array.from({ length: count }, (_, index) => {
-    const date = dateFromStr(current);
-    date.setDate(date.getDate() - index);
-    const dateStr = toDateStr(date);
-    return activityWatchData.daysByDate[dateStr] || buildEmptyActivityWatchDay(dateStr);
-  }).reverse();
 }
 
 function buildEmptyActivityWatchDay(dateStr) {

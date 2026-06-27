@@ -197,7 +197,6 @@ function bindStaticEvents() {
   if (typeof closeCompletedActionMenu === 'function') {
     document.addEventListener('click', () => closeCompletedActionMenu());
   }
-  window.addEventListener('scroll', updateCompactHeader, { passive: true });
 
   bindClick('modal-cancel', closeModal);
   bindClick('exercise-modal-close', closeModal);

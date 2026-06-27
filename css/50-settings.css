@@ -91,13 +91,6 @@
   text-transform: none;
 }
 
-.cue-volume-heading {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  min-width: 0;
-}
-
 .settings-tooltip {
   position: relative;
   display: inline-grid;
@@ -335,8 +328,7 @@
   border-top: 0;
 }
 
-.settings-section-header,
-.settings-inline-row {
+.settings-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -344,8 +336,7 @@
   margin-bottom: 12px;
 }
 
-.settings-section h3,
-.settings-inline-row h3 {
+.settings-section h3 {
   margin: 0;
   color: var(--text);
   font-size: 14px;
