@@ -71,6 +71,12 @@ For ActivityWatch dashboard changes, smoke-check:
 - dashboard opens and closes
 - visible header version matches the expected version
 - range select and pager render
+- default dashboard view is Exposure
+- Exposure, Workload, and Breakdown tabs switch cleanly
+- Daily/Weekly grain controls render in all three views
+- 7-day average appears only in Daily Exposure and Daily Workload
+- Workload shows Total load / Work only and does not show Stack by
+- Breakdown shows Stack by Categories / Groups and does not show 7-day average
 - chart day selection works
 - category hover/filter behavior still works
 - Day/Range detail toggle works
@@ -79,6 +85,6 @@ For ActivityWatch dashboard changes, smoke-check:
 - marker hover/focus text uses `Break in series`
 - the compact methodology-change notice appears near the range controls when marked dates are visible, shows `Break in series` on hover/focus, and the right panel does not show the old large methodology card
 - timeline day headers and copied timeline Markdown include the methodology-change note for marked days
-- Groups mode, Total tendon load overlay, and Timed Work terminology still render correctly
+- Workload total load avoids double-counting Computer Work and conflict warnings still render when Computer Work exceeds Timed Work total
 
 Always report whether browser verification was in-app automated, visible-browser/CDP based, manual, or skipped.

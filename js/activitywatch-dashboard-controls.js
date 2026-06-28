@@ -12,10 +12,11 @@ function renderActivityWatchDashboardControls(days) {
   root.innerHTML = '';
 
   renderActivityWatchHeaderActions(days, status, progress, isSyncing);
+  renderActivityWatchDashboardTabs();
 
   const heading = el('div', 'activitywatch-chart-heading');
   const copy = el('div', '');
-  copy.appendChild(elText('h3', '', 'Computer activity by day'));
+  copy.appendChild(elText('h3', '', activityWatchDashboardChartTitle()));
   copy.appendChild(elText('span', '', activityWatchDateRangeLabel(days)));
   heading.appendChild(copy);
   root.appendChild(heading);
@@ -25,6 +26,8 @@ function renderActivityWatchDashboardControls(days) {
   rangeTools.appendChild(buildActivityWatchDateControls(isSyncing));
   const methodologyNotice = buildActivityWatchMethodologyNotice(days);
   if (methodologyNotice) rangeTools.appendChild(methodologyNotice);
+  const coverageNotice = buildActivityWatchCoverageNotice(days);
+  if (coverageNotice) rangeTools.appendChild(coverageNotice);
   toolbar.appendChild(rangeTools);
   toolbar.appendChild(buildActivityWatchViewControls());
   root.appendChild(toolbar);
@@ -36,6 +39,42 @@ function renderActivityWatchDashboardControls(days) {
     root.appendChild(buildActivityWatchSyncProgress(progress));
   }
   warnings.forEach(warning => root.appendChild(elText('div', 'activitywatch-warning', warning)));
+}
+
+function renderActivityWatchDashboardTabs() {
+  const root = document.getElementById('activitywatch-dashboard-view-tabs');
+  if (!root) return;
+  root.innerHTML = '';
+  root.setAttribute('role', 'tablist');
+  root.setAttribute('aria-label', 'ActivityWatch dashboard views');
+  [
+    ['exposure', 'Exposure'],
+    ['workload', 'Workload'],
+    ['breakdown', 'Breakdown'],
+  ].forEach(([mode, label]) => {
+    const button = el('button', '');
+    button.type = 'button';
+    button.id = `activitywatch-dashboard-view-${mode}`;
+    button.setAttribute('role', 'tab');
+    button.setAttribute('aria-selected', activityWatchDashboardState.viewMode === mode ? 'true' : 'false');
+    button.textContent = label;
+    button.classList.toggle('is-active', activityWatchDashboardState.viewMode === mode);
+    button.addEventListener('click', () => setActivityWatchDashboardViewMode(mode));
+    root.appendChild(button);
+  });
+}
+
+function activityWatchDashboardChartTitle() {
+  const grain = activityWatchDashboardState.chartGrain === 'weekly' ? 'weekly' : 'daily';
+  if (activityWatchDashboardState.viewMode === 'workload') {
+    return activityWatchDashboardState.workloadBasis === 'work'
+      ? `Work-only load by ${grain === 'weekly' ? 'week' : 'day'}`
+      : `Total load by ${grain === 'weekly' ? 'week' : 'day'}`;
+  }
+  if (activityWatchDashboardState.viewMode === 'breakdown') {
+    return `Computer activity breakdown by ${grain === 'weekly' ? 'week' : 'day'}`;
+  }
+  return `Computer exposure by ${grain === 'weekly' ? 'week' : 'day'}`;
 }
 
 function renderActivityWatchHeaderActions(days, status, progress, isSyncing) {
@@ -158,67 +197,146 @@ function buildActivityWatchMethodologyNotice(days) {
   return notice;
 }
 
+function buildActivityWatchCoverageNotice(days) {
+  if (!activityWatchDashboardHasCoverageGap(days)) return null;
+  const notice = el('div', 'activitywatch-methodology-notice activitywatch-coverage-notice');
+  notice.tabIndex = 0;
+  notice.setAttribute('role', 'note');
+  const text = `ActivityWatch coverage starts ${formatEventDate(ACTIVITYWATCH_DASHBOARD_DATA_START_DATE)}. Earlier dates are treated as no data and are excluded from averages.`;
+  notice.setAttribute('aria-label', text);
+  notice.textContent = 'Coverage starts Apr 17';
+  notice.addEventListener('pointerenter', (event) => {
+    showActivityWatchChartTooltipText(event, text, true);
+  });
+  notice.addEventListener('pointermove', (event) => {
+    positionActivityWatchChartTooltip(event);
+  });
+  notice.addEventListener('pointerleave', hideActivityWatchChartTooltip);
+  notice.addEventListener('pointercancel', hideActivityWatchChartTooltip);
+  notice.addEventListener('focus', () => {
+    const rect = notice.getBoundingClientRect();
+    showActivityWatchChartTooltipText({
+      clientX: rect.left + (rect.width / 2),
+      clientY: rect.bottom + 8,
+    }, text, true);
+  });
+  notice.addEventListener('blur', hideActivityWatchChartTooltip);
+  return notice;
+}
+
 function buildActivityWatchViewControls() {
   const controls = el('div', 'activitywatch-view-controls');
-  const breakdown = el('div', 'activitywatch-breakdown-control');
-  breakdown.appendChild(elText('span', 'activitywatch-control-label', 'Stack by:'));
-  breakdown.appendChild(buildActivityWatchCategoryModeToggle());
-  controls.appendChild(breakdown);
-  const overlay = el('div', 'activitywatch-overlay-control');
-  overlay.appendChild(elText('span', 'activitywatch-control-label', 'Overlay:'));
-  overlay.appendChild(buildActivityWatchTendonLoadOverlayToggle());
-  controls.appendChild(overlay);
+  const grain = el('div', 'activitywatch-breakdown-control');
+  grain.appendChild(elText('span', 'activitywatch-control-label', 'Grain:'));
+  grain.appendChild(buildActivityWatchChartGrainToggle());
+  controls.appendChild(grain);
+
+  if (activityWatchDashboardState.viewMode === 'workload') {
+    const basis = el('div', 'activitywatch-breakdown-control');
+    basis.appendChild(elText('span', 'activitywatch-control-label', 'Load:'));
+    basis.appendChild(buildActivityWatchWorkloadBasisToggle());
+    controls.appendChild(basis);
+  }
+
+  if (activityWatchDashboardState.viewMode === 'breakdown') {
+    const breakdown = el('div', 'activitywatch-breakdown-control');
+    breakdown.appendChild(elText('span', 'activitywatch-control-label', 'Stack by:'));
+    breakdown.appendChild(buildActivityWatchCategoryModeToggle());
+    controls.appendChild(breakdown);
+  }
+
+  if (['exposure', 'workload'].includes(activityWatchDashboardState.viewMode) && activityWatchDashboardState.chartGrain === 'daily') {
+    const average = el('div', 'activitywatch-overlay-control');
+    average.appendChild(elText('span', 'activitywatch-control-label', 'Trend:'));
+    average.appendChild(buildActivityWatchRollingAverageToggle());
+    controls.appendChild(average);
+  }
   return controls;
 }
 
-function buildActivityWatchCategoryModeToggle() {
+function buildActivityWatchChartGrainToggle() {
+  return buildActivityWatchSegmentedToggle(
+    'ActivityWatch chart grain',
+    [
+      ['daily', 'Daily'],
+      ['weekly', 'Weekly'],
+    ],
+    activityWatchDashboardState.chartGrain,
+    (mode) => {
+      activityWatchDashboardState.chartGrain = normalizeActivityWatchDashboardChartGrain(mode);
+      activityWatchDashboardState.hoveredCategory = '';
+      activityWatchDashboardState.showAllCategories = false;
+      activityWatchDashboardState.chartScrollToEnd = true;
+      renderActivityWatchDashboard();
+    }
+  );
+}
+
+function buildActivityWatchWorkloadBasisToggle() {
+  return buildActivityWatchSegmentedToggle(
+    'ActivityWatch workload basis',
+    [
+      ['total', 'Total load'],
+      ['work', 'Work only'],
+    ],
+    activityWatchDashboardState.workloadBasis,
+    (mode) => {
+      activityWatchDashboardState.workloadBasis = normalizeActivityWatchDashboardWorkloadBasis(mode);
+      activityWatchDashboardState.chartScrollToEnd = true;
+      renderActivityWatchDashboard();
+    }
+  );
+}
+
+function buildActivityWatchSegmentedToggle(label, options, value, onChange) {
   const toggle = el('div', 'activitywatch-category-mode-toggle segmented-control');
   toggle.setAttribute('role', 'group');
-  toggle.setAttribute('aria-label', 'ActivityWatch category grouping');
-  [
-    ['exact', 'Categories'],
-    ['top', 'Groups'],
-  ].forEach(([mode, label]) => {
+  toggle.setAttribute('aria-label', label);
+  options.forEach(([mode, text]) => {
     const button = el('button', '');
     button.type = 'button';
-    button.textContent = label;
-    button.classList.toggle('is-active', normalizeActivityWatchDashboardCategoryMode(activityWatchDashboardState.categoryMode) === mode);
+    button.textContent = text;
+    button.classList.toggle('is-active', value === mode);
     button.addEventListener('click', () => {
-      if (normalizeActivityWatchDashboardCategoryMode(activityWatchDashboardState.categoryMode) === mode) return;
-      activityWatchDashboardState.categoryMode = mode;
-      activityWatchDashboardState.selectedCategory = '';
-      activityWatchDashboardState.hoveredCategory = '';
-      activityWatchDashboardState.workloadOverlayMode = '';
-      activityWatchDashboardState.showAllCategories = false;
-      renderActivityWatchDashboard();
+      if (value === mode) return;
+      onChange(mode);
     });
     toggle.appendChild(button);
   });
   return toggle;
 }
 
-function buildActivityWatchTendonLoadOverlayToggle() {
-  const canUse = activityWatchDashboardCanShowTendonLoadOverlay();
-  const title = canUse
-    ? `Show ${WORKLOAD_TERMS.totalTendonLoad}`
-    : 'Available when Stack by is Groups.';
-  return buildActivityWatchOverlayButton('tendon', WORKLOAD_TERMS.totalTendonLoad, title, { disabled: !canUse });
+function buildActivityWatchCategoryModeToggle() {
+  return buildActivityWatchSegmentedToggle(
+    'ActivityWatch category grouping',
+    [
+      ['exact', 'Categories'],
+      ['top', 'Groups'],
+    ],
+    normalizeActivityWatchDashboardCategoryMode(activityWatchDashboardState.categoryMode),
+    (mode) => {
+      activityWatchDashboardState.categoryMode = mode;
+      activityWatchDashboardState.selectedCategory = '';
+      activityWatchDashboardState.hoveredCategory = '';
+      activityWatchDashboardState.workloadOverlayMode = '';
+      activityWatchDashboardState.showAllCategories = false;
+      renderActivityWatchDashboard();
+    }
+  );
 }
 
-function buildActivityWatchOverlayButton(mode, label, title, options = {}) {
+function buildActivityWatchRollingAverageToggle() {
+  const label = '7-day average';
+  const title = 'Show trailing 7-day average. Each point uses that day plus the previous 6 waking days.';
   const wrap = el('label', 'activitywatch-overlay-toggle');
-  const active = activityWatchDashboardWorkloadOverlayMode() === mode;
-  const disabled = Boolean(options.disabled);
   const input = el('input', '');
   input.type = 'checkbox';
   input.setAttribute('role', 'switch');
   input.setAttribute('aria-label', label);
-  input.checked = active && !disabled;
-  input.disabled = disabled;
+  input.checked = Boolean(activityWatchDashboardState.showRollingAverage);
   input.title = title;
   input.addEventListener('change', () => {
-    if (input.disabled) return;
-    activityWatchDashboardState.workloadOverlayMode = input.checked ? mode : '';
+    activityWatchDashboardState.showRollingAverage = input.checked;
     activityWatchDashboardState.hoveredCategory = '';
     renderActivityWatchDashboard();
   });
@@ -226,8 +344,7 @@ function buildActivityWatchOverlayButton(mode, label, title, options = {}) {
   wrap.appendChild(el('span', 'activitywatch-overlay-switch'));
   wrap.appendChild(elText('span', '', label));
   wrap.title = title;
-  wrap.classList.toggle('is-active', active && !disabled);
-  wrap.classList.toggle('is-disabled', disabled);
+  wrap.classList.toggle('is-active', Boolean(activityWatchDashboardState.showRollingAverage));
   return wrap;
 }
 

@@ -5,24 +5,27 @@ function renderActivityWatchStackedChart(days) {
   if (!root) return;
   hideActivityWatchChartTooltip();
   rememberActivityWatchChartScroll(root);
-  const scrollKey = activityWatchChartScrollKey(days);
+  const items = activityWatchDashboardChartItems(days);
+  const scrollKey = activityWatchChartScrollKey(items);
   const shouldRestoreScroll = activityWatchDashboardState.chartScrollKey === scrollKey
     && Number.isFinite(activityWatchDashboardState.chartScrollLeft)
     && !activityWatchDashboardState.chartScrollToEnd;
   root.innerHTML = '';
-  root.classList.toggle('is-wide-range', days.length > 45);
-  root.classList.toggle('is-dense-range', days.length > 30);
-  root.classList.toggle('is-filtered', Boolean(activityWatchDashboardState.selectedCategory));
-  root.classList.toggle('is-workload-overlay', Boolean(activityWatchDashboardWorkloadOverlayMode()));
+  root.classList.toggle('is-wide-range', items.length > 45);
+  root.classList.toggle('is-dense-range', items.length > 30);
+  root.classList.toggle('is-weekly-grain', activityWatchDashboardState.chartGrain === 'weekly');
+  root.classList.toggle('is-filtered', activityWatchDashboardState.viewMode === 'breakdown' && Boolean(activityWatchDashboardState.selectedCategory));
+  root.classList.toggle('is-workload-overlay', activityWatchDashboardState.viewMode === 'workload');
+  root.dataset.awViewMode = activityWatchDashboardState.viewMode;
+  root.dataset.awChartGrain = activityWatchDashboardState.chartGrain;
   root.dataset.awScrollKey = scrollKey;
 
-  const overlayMode = activityWatchDashboardWorkloadOverlayMode();
-  const chartCategories = activityWatchDashboardChartCategories(days);
-  const maxSeconds = overlayMode
-    ? Math.max(0, ...days.map(day => activityWatchDashboardOverlayPlottedSeconds(day, overlayMode)))
-    : activityWatchDashboardState.selectedCategory
-    ? Math.max(0, ...days.map(day => activityWatchDashboardCategoryTotal(day, activityWatchDashboardState.selectedCategory)))
-    : Math.max(0, ...days.map(day => day.totalActiveSeconds || 0));
+  const rollingAveragePoints = activityWatchDashboardRollingAveragePoints(days);
+  const maxSeconds = Math.max(
+    0,
+    ...items.map(item => activityWatchDashboardPlottedSeconds(item)),
+    ...rollingAveragePoints.map(point => point.averageSeconds || 0)
+  );
   const axis = activityWatchHourAxis(maxSeconds);
 
   const scale = el('div', 'activitywatch-chart-scale');
@@ -34,38 +37,34 @@ function renderActivityWatchStackedChart(days) {
   root.appendChild(scale);
 
   const plot = el('div', 'activitywatch-chart-plot');
-  plot.style.setProperty('--activitywatch-day-count', days.length);
+  plot.style.setProperty('--activitywatch-day-count', items.length);
   plot.style.setProperty('--activitywatch-grid-step', `${100 / Math.max(1, axis.ticks.length - 1)}%`);
 
   const bars = el('div', 'activitywatch-bars-row');
-  const axisLabels = activityWatchXAxisLabels(days);
-  days.forEach((day, index) => {
-    const methodologyChange = getActivityWatchMethodologyChange(day.date);
+  const axisLabels = activityWatchDashboardXAxisLabels(items);
+  items.forEach((item, index) => {
+    const methodologyChanges = activityWatchDashboardMethodologyChangesForItem(item);
     const barButton = el('button', 'activitywatch-day-bar');
     barButton.type = 'button';
-    barButton.dataset.awDate = day.date;
-    barButton.classList.toggle('has-methodology-change', Boolean(methodologyChange));
-    barButton.classList.toggle('is-selected', day.date === activityWatchDashboardState.selectedDate);
-    barButton.setAttribute('aria-label', activityWatchDayBarAriaLabel(day, methodologyChange));
+    barButton.dataset.awDate = item.date;
+    barButton.classList.toggle('has-methodology-change', Boolean(methodologyChanges.length));
+    barButton.classList.toggle('is-selected', activityWatchDashboardItemContainsDate(item, activityWatchDashboardState.selectedDate));
+    barButton.classList.toggle('has-no-data', !item.syncedDayCount);
+    barButton.setAttribute('aria-label', activityWatchDashboardBarAriaLabel(item, methodologyChanges));
     barButton.addEventListener('click', () => {
-      activityWatchDashboardState.selectedDate = day.date;
+      activityWatchDashboardState.selectedDate = item.date;
       activityWatchDashboardState.detailMode = 'day';
       activityWatchDashboardState.showAllCategories = false;
       activityWatchDashboardState.hoveredCategory = '';
       renderActivityWatchDashboard();
     });
-    if (methodologyChange) {
-      addActivityWatchMethodologyFocusHandlers(barButton, methodologyChange);
+    if (methodologyChanges.length) {
+      addActivityWatchMethodologyFocusHandlers(barButton, methodologyChanges);
     }
 
-    const overlay = overlayMode ? activityWatchDashboardOverlayForDay(day) : null;
-    const plottedSeconds = overlayMode
-      ? activityWatchDashboardOverlayPlottedSeconds(day, overlayMode)
-      : activityWatchDashboardState.selectedCategory
-      ? activityWatchDashboardCategoryTotal(day, activityWatchDashboardState.selectedCategory)
-      : day.totalActiveSeconds || 0;
-    barButton.classList.toggle('has-workload-conflict', Boolean(overlay?.conflict));
-    const totalLabelText = activityWatchBarTotalLabel(day, plottedSeconds, index, days.length);
+    const plottedSeconds = activityWatchDashboardPlottedSeconds(item);
+    barButton.classList.toggle('has-workload-conflict', Boolean(item.overlay?.conflict || item.overlayTotals?.conflict));
+    const totalLabelText = activityWatchBarTotalLabel(item, plottedSeconds, index, items.length);
     const totalLabel = elText('span', 'activitywatch-day-bar-total', totalLabelText);
     totalLabel.classList.toggle('has-label', Boolean(totalLabelText));
     barButton.appendChild(totalLabel);
@@ -78,51 +77,38 @@ function renderActivityWatchStackedChart(days) {
     const stack = el('span', 'activitywatch-day-bar-stack');
     stack.style.height = stackHeight;
     const stackTotal = Math.max(1, plottedSeconds || 0);
-    if (overlayMode) {
-      activityWatchDashboardOverlaySegments(day, overlayMode).forEach(segmentData => {
-        if (!segmentData.seconds) return;
-        const segment = el('span', `activitywatch-day-bar-segment activitywatch-overlay-segment ${segmentData.className}`);
-        if (segmentData.category) segment.dataset.awCategory = segmentData.category;
-        segment.style.height = `${Math.max(2, (segmentData.seconds / stackTotal) * 100)}%`;
-        segment.style.background = segmentData.color;
-        segment.setAttribute('aria-label', `${segmentData.label}: ${formatActivityWatchDuration(segmentData.seconds)}`);
-        addActivityWatchOverlaySegmentTooltipHandlers(segment, segmentData);
-        stack.appendChild(segment);
-      });
-    } else {
-      chartCategories.forEach(category => {
-        const seconds = activityWatchDashboardCategorySeconds(day, category, chartCategories);
-        if (!seconds) return;
-        const segment = el('span', 'activitywatch-day-bar-segment');
-        segment.dataset.awCategory = category;
-        segment.style.height = `${Math.max(2, (seconds / stackTotal) * 100)}%`;
-        segment.style.background = activityWatchDashboardCategoryColor(category);
-        segment.setAttribute('aria-label', `${category}: ${formatActivityWatchDuration(seconds)}`);
-        addActivityWatchBarSegmentTooltipHandlers(segment, category, seconds);
-        stack.appendChild(segment);
-      });
-    }
+    activityWatchDashboardChartSegments(item, items).forEach(segmentData => {
+      if (!segmentData.seconds) return;
+      const segment = el('span', `activitywatch-day-bar-segment ${segmentData.className || ''}`);
+      if (segmentData.category) segment.dataset.awCategory = segmentData.category;
+      segment.style.height = `${Math.max(2, (segmentData.seconds / stackTotal) * 100)}%`;
+      segment.style.background = segmentData.color;
+      segment.setAttribute('aria-label', `${segmentData.label}: ${formatActivityWatchDuration(segmentData.seconds)}`);
+      addActivityWatchDashboardSegmentTooltipHandlers(segment, segmentData);
+      stack.appendChild(segment);
+    });
     if (!plottedSeconds) {
       const empty = el('span', 'activitywatch-day-bar-empty');
       stack.appendChild(empty);
     }
     stackWrap.appendChild(stack);
     barButton.appendChild(stackWrap);
-    if (methodologyChange) {
-      barButton.appendChild(buildActivityWatchMethodologyMarker(methodologyChange));
+    if (methodologyChanges.length) {
+      barButton.appendChild(buildActivityWatchMethodologyMarker(methodologyChanges));
     }
-    const axisLabel = axisLabels.get(day.date) || null;
+    const axisLabel = axisLabels.get(item.date) || null;
     const label = buildActivityWatchAxisLabel(axisLabel);
     barButton.appendChild(label);
     bars.appendChild(barButton);
   });
   plot.appendChild(bars);
+  appendActivityWatchRollingAverage(plot, rollingAveragePoints, axis);
   root.appendChild(plot);
   bindActivityWatchChartWheelScroll(plot);
   requestAnimationFrame(() => {
     if (shouldRestoreScroll) {
       plot.scrollLeft = activityWatchDashboardState.chartScrollLeft;
-    } else if (days.length > 45) {
+    } else if (items.length > 45) {
       plot.scrollLeft = plot.scrollWidth;
     }
     activityWatchDashboardState.chartScrollKey = scrollKey;
@@ -178,10 +164,33 @@ function addActivityWatchBarSegmentTooltipHandlers(segment, category, seconds) {
   segment.addEventListener('pointercancel', hideActivityWatchChartTooltip);
 }
 
-function activityWatchDayBarAriaLabel(day, methodologyChange) {
-  const base = `${formatEventDate(day.date)} - ${formatActivityWatchDuration(day.totalActiveSeconds)}`;
-  if (!methodologyChange) return base;
-  return `${base}. ${activityWatchMethodologyTooltip(methodologyChange)}`;
+function addActivityWatchDashboardSegmentTooltipHandlers(segment, segmentData) {
+  if (segmentData.category && activityWatchDashboardState.viewMode === 'breakdown') {
+    addActivityWatchCategoryPreviewHandlers(segment, segmentData.category);
+  }
+  segment.addEventListener('pointerenter', (event) => {
+    showActivityWatchChartTooltipText(event, activityWatchDashboardSegmentTooltip(segmentData), true);
+  });
+  segment.addEventListener('pointermove', (event) => {
+    positionActivityWatchChartTooltip(event);
+  });
+  segment.addEventListener('pointerleave', hideActivityWatchChartTooltip);
+  segment.addEventListener('pointercancel', hideActivityWatchChartTooltip);
+}
+
+function activityWatchDashboardSegmentTooltip(segmentData) {
+  const value = `${segmentData.label}: ${formatActivityWatchDuration(segmentData.seconds)}`;
+  if (!segmentData.detail) return value;
+  return `${value}. ${segmentData.detail}`;
+}
+
+function activityWatchDashboardBarAriaLabel(item, methodologyChanges) {
+  const base = `${activityWatchDashboardItemLabel(item)} - ${formatActivityWatchDuration(activityWatchDashboardPlottedSeconds(item))}`;
+  const dataNote = item.syncedDayCount ? '' : '. No ActivityWatch data';
+  const methodology = methodologyChanges.length
+    ? `. ${methodologyChanges.map(activityWatchMethodologyTooltip).join(' ')}`
+    : '';
+  return `${base}${dataNote}${methodology}`;
 }
 
 function addActivityWatchOverlaySegmentTooltipHandlers(segment, segmentData) {
@@ -198,11 +207,12 @@ function addActivityWatchOverlaySegmentTooltipHandlers(segment, segmentData) {
   segment.addEventListener('pointercancel', hideActivityWatchChartTooltip);
 }
 
-function buildActivityWatchMethodologyMarker(change) {
+function buildActivityWatchMethodologyMarker(changes) {
   const marker = el('span', 'activitywatch-methodology-marker');
   marker.setAttribute('aria-hidden', 'true');
+  const tooltip = (Array.isArray(changes) ? changes : [changes]).filter(Boolean).map(activityWatchMethodologyTooltip).join(' ');
   marker.addEventListener('pointerenter', (event) => {
-    showActivityWatchChartTooltipText(event, activityWatchMethodologyTooltip(change), true);
+    showActivityWatchChartTooltipText(event, tooltip, true);
   });
   marker.addEventListener('pointermove', (event) => {
     positionActivityWatchChartTooltip(event);
@@ -223,13 +233,14 @@ function buildActivityWatchAxisLabel(labelData) {
   return label;
 }
 
-function addActivityWatchMethodologyFocusHandlers(barButton, change) {
+function addActivityWatchMethodologyFocusHandlers(barButton, changes) {
+  const tooltip = (Array.isArray(changes) ? changes : [changes]).filter(Boolean).map(activityWatchMethodologyTooltip).join(' ');
   barButton.addEventListener('focus', () => {
     const rect = barButton.getBoundingClientRect();
     showActivityWatchChartTooltipText({
       clientX: rect.left + (rect.width / 2),
       clientY: rect.top + 8,
-    }, activityWatchMethodologyTooltip(change), true);
+    }, tooltip, true);
   });
   barButton.addEventListener('blur', hideActivityWatchChartTooltip);
 }
@@ -351,5 +362,182 @@ function activityWatchDashboardOverlaySegments(day, mode) {
 function activityWatchDashboardOtherSeconds(day, topCategories) {
   const shown = topCategories.reduce((sum, category) => sum + activityWatchDashboardCategoryTotal(day, category), 0);
   return Math.max(0, (day.totalActiveSeconds || 0) - shown);
+}
+
+function activityWatchDashboardPlottedSeconds(item) {
+  if (!item?.syncedDayCount) return 0;
+  if (activityWatchDashboardState.viewMode === 'workload') {
+    return activityWatchDashboardWorkloadItemSeconds(item, activityWatchDashboardState.workloadBasis);
+  }
+  if (activityWatchDashboardState.viewMode === 'breakdown' && activityWatchDashboardState.selectedCategory) {
+    return activityWatchDashboardCategoryTotal(item, activityWatchDashboardState.selectedCategory);
+  }
+  return Math.max(0, Number(item?.totalActiveSeconds) || 0);
+}
+
+function activityWatchDashboardWorkloadItemSeconds(item, basis) {
+  const overlay = activityWatchDashboardOverlayForItem(item);
+  if (normalizeActivityWatchDashboardWorkloadBasis(basis) === 'work') {
+    return activityWatchDashboardWorkOnlyLoadSecondsForOverlay(overlay);
+  }
+  return activityWatchDashboardTotalLoadSecondsForOverlay(overlay);
+}
+
+function activityWatchDashboardOverlayForItem(item) {
+  if (item?.isWeekly) {
+    const divisor = Math.max(1, item.syncedDayCount || 0);
+    const totals = item.overlayTotals || activityWatchDashboardOverlayTotals(item.dataDays || []);
+    return {
+      workloadTotalSeconds: Math.round(totals.workloadTotalSeconds / divisor),
+      activityWatchWorkSeconds: Math.round(totals.activityWatchWorkSeconds / divisor),
+      activityWatchTotalSeconds: Math.round(totals.activityWatchTotalSeconds / divisor),
+      manualResidualSeconds: Math.round(totals.manualResidualSeconds / divisor),
+      conflict: Boolean(totals.conflict),
+    };
+  }
+  return activityWatchDashboardOverlayForDay(item);
+}
+
+function activityWatchDashboardChartSegments(item, items) {
+  if (!item?.syncedDayCount) return [];
+  if (activityWatchDashboardState.viewMode === 'workload') {
+    return activityWatchDashboardWorkloadSegments(item);
+  }
+  if (activityWatchDashboardState.viewMode === 'exposure') {
+    return activityWatchDashboardExposureSegments(item);
+  }
+  const chartCategories = activityWatchDashboardChartCategories(items);
+  return chartCategories.map(category => {
+    const seconds = activityWatchDashboardCategorySeconds(item, category, chartCategories);
+    return {
+      label: category,
+      seconds,
+      color: activityWatchDashboardCategoryColor(category),
+      className: '',
+      category,
+    };
+  });
+}
+
+function activityWatchDashboardExposureSegments(item) {
+  const workSeconds = Math.min(activityWatchDashboardOverlayForItem(item).activityWatchWorkSeconds, item.totalActiveSeconds || 0);
+  const remainderSeconds = Math.max(0, (item.totalActiveSeconds || 0) - workSeconds);
+  return [
+    {
+      label: WORKLOAD_TERMS.computerActiveTime,
+      seconds: remainderSeconds,
+      color: 'rgba(99,179,255,.62)',
+      className: 'activitywatch-exposure-remainder-segment',
+      detail: 'Total computer active time excluding the highlighted Computer Work portion.',
+    },
+    {
+      label: WORKLOAD_TERMS.computerWork,
+      seconds: workSeconds,
+      color: activityWatchDashboardCategoryColor('Work'),
+      className: 'activitywatch-exposure-work-segment',
+    },
+  ];
+}
+
+function activityWatchDashboardWorkloadSegments(item) {
+  const overlay = activityWatchDashboardOverlayForItem(item);
+  const computerWork = Math.min(overlay.activityWatchWorkSeconds, overlay.activityWatchTotalSeconds);
+  const computerRemainder = Math.max(0, overlay.activityWatchTotalSeconds - computerWork);
+  const showTotal = activityWatchDashboardState.workloadBasis === 'total';
+  const segments = [];
+  if (showTotal && computerRemainder) {
+    segments.push({
+      label: WORKLOAD_TERMS.computerActiveTime,
+      seconds: computerRemainder,
+      color: 'rgba(99,179,255,.52)',
+      className: 'activitywatch-workload-computer-remainder-segment',
+      detail: 'Computer active time outside the highlighted Computer Work portion.',
+    });
+  }
+  segments.push({
+    label: WORKLOAD_TERMS.computerWork,
+    seconds: computerWork,
+    color: activityWatchDashboardCategoryColor('Work'),
+    className: 'activitywatch-overlay-segment is-computer-work',
+    category: activityWatchDashboardState.viewMode === 'breakdown' ? 'Work' : '',
+  });
+  segments.push({
+    label: WORKLOAD_TERMS.physicalWorkEstimate,
+    seconds: overlay.manualResidualSeconds,
+    color: 'rgba(121,214,189,.88)',
+    className: 'activitywatch-overlay-segment is-manual-estimate',
+    detail: 'Timed work total minus Computer Work, never below zero.',
+  });
+  return segments;
+}
+
+function activityWatchDashboardMethodologyChangesForItem(item) {
+  const dates = item?.isWeekly
+    ? (item.sourceDays || []).map(day => day.date)
+    : [item?.date || ''];
+  return getActivityWatchMethodologyChangesForDates(dates);
+}
+
+function activityWatchDashboardItemLabel(item) {
+  if (!item) return '';
+  if (!item.isWeekly) return formatEventDate(item.date);
+  return `${formatEventDate(item.startDate)} to ${formatEventDate(item.endDate)}`;
+}
+
+function activityWatchDashboardXAxisLabels(items) {
+  if (activityWatchDashboardState.chartGrain !== 'weekly') return activityWatchXAxisLabels(items);
+  const labels = new Map();
+  items.forEach((item, index) => {
+    const start = dateFromStr(item.startDate);
+    labels.set(item.date, activityWatchAxisDateParts(start, index > 0 ? dateFromStr(items[index - 1].startDate) : null, true));
+  });
+  return labels;
+}
+
+function appendActivityWatchRollingAverage(plot, points, axis) {
+  if (!points.length) return;
+  const usable = points
+    .map((point, index) => ({ ...point, index }))
+    .filter(point => point.syncedDayCount > 0);
+  if (!usable.length) return;
+  const overlay = el('div', 'activitywatch-average-overlay');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 100 100');
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.setAttribute('aria-hidden', 'true');
+  const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  const max = Math.max(1, axis.maxSeconds);
+  const pointText = usable.map(point => {
+    const x = ((point.index + 0.5) / points.length) * 100;
+    const y = 100 - Math.max(0, Math.min(100, (point.averageSeconds / max) * 100));
+    return `${x.toFixed(2)},${y.toFixed(2)}`;
+  }).join(' ');
+  polyline.setAttribute('points', pointText);
+  svg.appendChild(polyline);
+  overlay.appendChild(svg);
+  usable.forEach(point => {
+    const x = ((point.index + 0.5) / points.length) * 100;
+    const y = 100 - Math.max(0, Math.min(100, (point.averageSeconds / max) * 100));
+    const dot = el('span', 'activitywatch-average-dot');
+    dot.style.left = `${x}%`;
+    dot.style.top = `${y}%`;
+    dot.tabIndex = 0;
+    const tooltip = `${formatEventDate(point.date)} 7-day average: ${formatActivityWatchDuration(point.averageSeconds)} using ${formatNumber(point.syncedDayCount)} synced ${point.syncedDayCount === 1 ? 'day' : 'days'}.`;
+    dot.setAttribute('aria-label', tooltip);
+    dot.addEventListener('pointerenter', (event) => showActivityWatchChartTooltipText(event, tooltip, true));
+    dot.addEventListener('pointermove', positionActivityWatchChartTooltip);
+    dot.addEventListener('pointerleave', hideActivityWatchChartTooltip);
+    dot.addEventListener('pointercancel', hideActivityWatchChartTooltip);
+    dot.addEventListener('focus', () => {
+      const rect = dot.getBoundingClientRect();
+      showActivityWatchChartTooltipText({
+        clientX: rect.left + (rect.width / 2),
+        clientY: rect.top,
+      }, tooltip, true);
+    });
+    dot.addEventListener('blur', hideActivityWatchChartTooltip);
+    overlay.appendChild(dot);
+  });
+  plot.appendChild(overlay);
 }
 

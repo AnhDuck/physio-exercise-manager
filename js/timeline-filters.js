@@ -253,3 +253,14 @@ function timelineScopeSummary(scopeLabel) {
   if (search) parts.push(`Search: ${search}`);
   return parts.join(TIMELINE_SUMMARY_SEPARATOR);
 }
+
+window.initializeTimelineViewState = initializeTimelineViewState;
+window.setTimelineRange = setTimelineRange;
+window.setTimelineSearchText = setTimelineSearchText;
+window.timelineFiltersAreActive = timelineFiltersAreActive;
+window.setTimelineControlsExpanded = setTimelineControlsExpanded;
+window.timelineControlsExpanded = timelineControlsExpanded;
+window.toggleTimelineTypeFilter = toggleTimelineTypeFilter;
+window.resetTimelineFilters = resetTimelineFilters;
+window.loadOlderTimelineItems = loadOlderTimelineItems;
+window.getTimelineVisibleItems = getTimelineVisibleItems;

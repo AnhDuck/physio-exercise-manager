@@ -14,6 +14,14 @@ const ACTIVITYWATCH_SELECTED_CATEGORY_LIMIT = 12;
 
 const ACTIVITYWATCH_DASHBOARD_OTHER_CATEGORY = 'Other';
 
+const ACTIVITYWATCH_DASHBOARD_DATA_START_DATE = '2026-04-17';
+
+const ACTIVITYWATCH_DASHBOARD_VIEW_MODES = ['exposure', 'workload', 'breakdown'];
+
+const ACTIVITYWATCH_DASHBOARD_CHART_GRAINS = ['daily', 'weekly'];
+
+const ACTIVITYWATCH_DASHBOARD_WORKLOAD_BASES = ['total', 'work'];
+
 const ACTIVITYWATCH_METHODOLOGY_CHANGES = [
   {
     date: '2026-06-18',
@@ -28,6 +36,10 @@ const ACTIVITYWATCH_METHODOLOGY_CHANGES = [
 ];
 
 const activityWatchDashboardState = {
+  viewMode: 'exposure',
+  chartGrain: 'daily',
+  showRollingAverage: false,
+  workloadBasis: 'total',
   selectedDate: '',
   rangeDays: ACTIVITYWATCH_DASHBOARD_DEFAULT_RANGE_DAYS,
   rangeEndDate: '',
@@ -52,7 +64,12 @@ function buildActivityWatchDashboardDays() {
     const date = new Date(end);
     date.setDate(date.getDate() - (activityWatchDashboardState.rangeDays - 1 - index));
     const dateStr = toDateStr(date);
-    return getActivityWatchDay(dateStr) || buildEmptyActivityWatchDay(dateStr);
+    const storedDay = getActivityWatchDay(dateStr);
+    return {
+      ...(storedDay || buildEmptyActivityWatchDay(dateStr)),
+      hasActivityWatchData: Boolean(storedDay) && dateStr >= ACTIVITYWATCH_DASHBOARD_DATA_START_DATE,
+      isBeforeActivityWatchCoverage: dateStr < ACTIVITYWATCH_DASHBOARD_DATA_START_DATE,
+    };
   });
 }
 
@@ -64,6 +81,7 @@ function shiftActivityWatchDashboardRange(direction) {
   activityWatchDashboardState.rangeEndDate = nextEnd > current ? current : nextEnd;
   activityWatchDashboardState.showAllCategories = false;
   activityWatchDashboardState.hoveredCategory = '';
+  activityWatchDashboardState.chartScrollToEnd = true;
   renderActivityWatchDashboard();
 }
 
@@ -73,6 +91,21 @@ function showLatestActivityWatchDashboardRange() {
   activityWatchDashboardState.selectedDate = current;
   activityWatchDashboardState.showAllCategories = false;
   activityWatchDashboardState.hoveredCategory = '';
+  activityWatchDashboardState.chartScrollToEnd = true;
+  renderActivityWatchDashboard();
+}
+
+function setActivityWatchDashboardViewMode(mode) {
+  const nextMode = normalizeActivityWatchDashboardViewMode(mode);
+  if (activityWatchDashboardState.viewMode === nextMode) return;
+  activityWatchDashboardState.viewMode = nextMode;
+  activityWatchDashboardState.hoveredCategory = '';
+  activityWatchDashboardState.workloadOverlayMode = '';
+  activityWatchDashboardState.showAllCategories = false;
+  if (nextMode !== 'breakdown') {
+    activityWatchDashboardState.selectedCategory = '';
+  }
+  activityWatchDashboardState.chartScrollToEnd = true;
   renderActivityWatchDashboard();
 }
 
@@ -108,6 +141,7 @@ function addActivityWatchCategoryPreviewHandlers(node, category) {
 }
 
 function updateActivityWatchCategoryHighlight() {
+  if (normalizeActivityWatchDashboardViewMode(activityWatchDashboardState.viewMode) !== 'breakdown') return;
   const active = activityWatchDashboardState.selectedCategory || activityWatchDashboardState.hoveredCategory;
   document.querySelectorAll('#activitywatch-dashboard-modal [data-aw-category]').forEach(node => {
     const isMatch = active && node.dataset.awCategory === active;
@@ -139,6 +173,24 @@ function normalizeActivityWatchDashboardCategoryMode(value) {
   return value === 'top' ? 'top' : 'exact';
 }
 
+function normalizeActivityWatchDashboardViewMode(value) {
+  return ACTIVITYWATCH_DASHBOARD_VIEW_MODES.includes(value) ? value : 'exposure';
+}
+
+function normalizeActivityWatchDashboardChartGrain(value) {
+  return ACTIVITYWATCH_DASHBOARD_CHART_GRAINS.includes(value) ? value : 'daily';
+}
+
+function normalizeActivityWatchDashboardWorkloadBasis(value) {
+  return ACTIVITYWATCH_DASHBOARD_WORKLOAD_BASES.includes(value) ? value : 'total';
+}
+
+function activityWatchDashboardUsesRollingAverage() {
+  return Boolean(activityWatchDashboardState.showRollingAverage)
+    && activityWatchDashboardState.chartGrain === 'daily'
+    && ['exposure', 'workload'].includes(activityWatchDashboardState.viewMode);
+}
+
 function activityWatchDashboardUsesTopCategories() {
   return normalizeActivityWatchDashboardCategoryMode(activityWatchDashboardState.categoryMode) === 'top';
 }
@@ -167,9 +219,6 @@ function normalizeActivityWatchDashboardOverlayMode(value) {
 }
 
 function activityWatchDashboardWorkloadOverlayMode() {
-  const mode = normalizeActivityWatchDashboardOverlayMode(activityWatchDashboardState.workloadOverlayMode);
-  if (mode === 'work' && activityWatchDashboardCanShowWorkloadOverlay()) return mode;
-  if (mode === 'tendon' && activityWatchDashboardCanShowTendonLoadOverlay()) return mode;
   return '';
 }
 
@@ -198,7 +247,7 @@ function activityWatchDashboardOverlayForDay(day) {
 }
 
 function activityWatchDashboardOverlayTotals(days) {
-  const dateStrs = (days || []).map(day => day.date).filter(Boolean);
+  const dateStrs = (days || []).filter(activityWatchDashboardDayHasData).map(day => day.date).filter(Boolean);
   if (typeof getWorkloadActivityWatchOverlayTotals === 'function') {
     return getWorkloadActivityWatchOverlayTotals(dateStrs);
   }
@@ -219,7 +268,7 @@ function topActivityWatchCategories(days, limit) {
 
 function activityWatchDashboardCategoryRows(days) {
   const totals = {};
-  days.forEach(day => {
+  days.filter(activityWatchDashboardDayHasData).forEach(day => {
     Object.entries(activityWatchDashboardCategoryTotals(day)).forEach(([category, seconds]) => {
       totals[category] = (totals[category] || 0) + seconds;
     });
@@ -239,5 +288,168 @@ function normalizeActivityWatchDashboardEndDate(value) {
   const current = activityWatchCurrentWakingDateStr();
   if (!activityWatchIsValidDate(value)) return current;
   return value > current ? current : value;
+}
+
+function activityWatchDashboardDayHasData(day) {
+  return Boolean(day?.hasActivityWatchData) && !day?.isBeforeActivityWatchCoverage;
+}
+
+function activityWatchDashboardDataDays(days) {
+  return (days || []).filter(activityWatchDashboardDayHasData);
+}
+
+function activityWatchDashboardHasCoverageGap(days) {
+  return (days || []).some(day => day?.isBeforeActivityWatchCoverage);
+}
+
+function activityWatchDashboardMetricSecondsForDay(day, metric = activityWatchDashboardState.viewMode) {
+  if (!activityWatchDashboardDayHasData(day)) return 0;
+  if (metric === 'workload') {
+    return activityWatchDashboardWorkloadPlottedSecondsForDay(day);
+  }
+  if (metric === 'work') {
+    return activityWatchDashboardOverlayForDay(day).activityWatchWorkSeconds;
+  }
+  return Math.max(0, Number(day?.totalActiveSeconds) || 0);
+}
+
+function activityWatchDashboardWorkloadPlottedSecondsForDay(day, basis = activityWatchDashboardState.workloadBasis) {
+  const overlay = activityWatchDashboardOverlayForDay(day);
+  if (normalizeActivityWatchDashboardWorkloadBasis(basis) === 'work') {
+    return overlay.activityWatchWorkSeconds + overlay.manualResidualSeconds;
+  }
+  return overlay.activityWatchTotalSeconds + overlay.manualResidualSeconds;
+}
+
+function activityWatchDashboardTotalLoadSecondsForOverlay(overlay) {
+  return (overlay?.activityWatchTotalSeconds || 0) + (overlay?.manualResidualSeconds || 0);
+}
+
+function activityWatchDashboardWorkOnlyLoadSecondsForOverlay(overlay) {
+  return (overlay?.activityWatchWorkSeconds || 0) + (overlay?.manualResidualSeconds || 0);
+}
+
+function activityWatchDashboardChartItems(days) {
+  return activityWatchDashboardState.chartGrain === 'weekly'
+    ? activityWatchDashboardWeeklyItems(days)
+    : (days || []).map(day => activityWatchDashboardDailyItem(day));
+}
+
+function activityWatchDashboardDailyItem(day) {
+  const dataDays = activityWatchDashboardDayHasData(day) ? [day] : [];
+  return {
+    ...day,
+    isWeekly: false,
+    startDate: day?.date || '',
+    endDate: day?.date || '',
+    sourceDays: day ? [day] : [],
+    dataDays,
+    syncedDayCount: dataDays.length,
+    weeklyTotalActiveSeconds: day?.totalActiveSeconds || 0,
+  };
+}
+
+function activityWatchDashboardWeeklyItems(days) {
+  const groups = new Map();
+  (days || []).forEach(day => {
+    const key = activityWatchDashboardWeekStartDate(day.date);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(day);
+  });
+  return Array.from(groups.entries()).map(([startDate, sourceDays]) => {
+    const end = dateFromStr(startDate);
+    end.setDate(end.getDate() + 6);
+    const endDate = toDateStr(end);
+    const dataDays = activityWatchDashboardDataDays(sourceDays);
+    const divisor = Math.max(1, dataDays.length);
+    const categoryTotals = {};
+    dataDays.forEach(day => {
+      Object.entries(day.categoryTotals || {}).forEach(([category, seconds]) => {
+        categoryTotals[category] = (categoryTotals[category] || 0) + seconds;
+      });
+    });
+    Object.keys(categoryTotals).forEach(category => {
+      categoryTotals[category] = Math.round(categoryTotals[category] / divisor);
+    });
+    const totalActiveSeconds = Math.round(dataDays.reduce((sum, day) => sum + (day.totalActiveSeconds || 0), 0) / divisor);
+    const overlayTotals = activityWatchDashboardOverlayTotals(dataDays);
+    return {
+      date: startDate,
+      startDate,
+      endDate,
+      isWeekly: true,
+      sourceDays,
+      dataDays,
+      syncedDayCount: dataDays.length,
+      totalActiveSeconds,
+      weeklyTotalActiveSeconds: dataDays.reduce((sum, day) => sum + (day.totalActiveSeconds || 0), 0),
+      categoryTotals,
+      overlayTotals,
+      hasActivityWatchData: dataDays.length > 0,
+      isBeforeActivityWatchCoverage: sourceDays.every(day => day?.isBeforeActivityWatchCoverage),
+    };
+  });
+}
+
+function activityWatchDashboardWeekStartDate(dateStr) {
+  const date = dateFromStr(dateStr);
+  const day = date.getDay();
+  const offset = day === 0 ? -6 : 1 - day;
+  date.setDate(date.getDate() + offset);
+  return toDateStr(date);
+}
+
+function activityWatchDashboardItemContainsDate(item, dateStr) {
+  if (!item || !dateStr) return false;
+  return item.isWeekly
+    ? dateStr >= item.startDate && dateStr <= item.endDate
+    : item.date === dateStr;
+}
+
+function activityWatchDashboardSelectedItem(days) {
+  const items = activityWatchDashboardChartItems(days);
+  return items.find(item => activityWatchDashboardItemContainsDate(item, activityWatchDashboardState.selectedDate))
+    || items[items.length - 1]
+    || null;
+}
+
+function activityWatchDashboardSelectedPeriodDays(days) {
+  if (activityWatchDashboardState.detailMode === 'range') return days || [];
+  const selectedItem = activityWatchDashboardSelectedItem(days);
+  return selectedItem?.sourceDays || [];
+}
+
+function activityWatchDashboardRollingAveragePoints(days) {
+  if (!activityWatchDashboardUsesRollingAverage()) return [];
+  return (days || []).map(day => {
+    const windowDays = activityWatchDashboardRollingWindowDays(day.date)
+      .map(dateStr => getActivityWatchDay(dateStr))
+      .filter(Boolean)
+      .map(sourceDay => ({
+        ...sourceDay,
+        hasActivityWatchData: sourceDay.date >= ACTIVITYWATCH_DASHBOARD_DATA_START_DATE,
+        isBeforeActivityWatchCoverage: sourceDay.date < ACTIVITYWATCH_DASHBOARD_DATA_START_DATE,
+      }))
+      .filter(activityWatchDashboardDayHasData);
+    const total = windowDays.reduce((sum, sourceDay) => (
+      sum + (activityWatchDashboardState.viewMode === 'workload'
+        ? activityWatchDashboardWorkloadPlottedSecondsForDay(sourceDay)
+        : sourceDay.totalActiveSeconds || 0)
+    ), 0);
+    return {
+      date: day.date,
+      averageSeconds: windowDays.length ? total / windowDays.length : 0,
+      syncedDayCount: windowDays.length,
+    };
+  });
+}
+
+function activityWatchDashboardRollingWindowDays(endDateStr) {
+  const end = dateFromStr(endDateStr);
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(end);
+    date.setDate(date.getDate() - (6 - index));
+    return toDateStr(date);
+  });
 }
 

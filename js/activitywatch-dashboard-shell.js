@@ -63,6 +63,7 @@ function ensureActivityWatchDashboardShell() {
         </div>
       </div>
       <div class="modal-body activitywatch-dashboard-body">
+        <div class="activitywatch-dashboard-view-tabs" id="activitywatch-dashboard-view-tabs"></div>
         <div class="activitywatch-dashboard-grid">
           <div class="activitywatch-dashboard-main">
             <section class="activitywatch-dashboard-controls" id="activitywatch-dashboard-controls"></section>
@@ -89,8 +90,16 @@ function renderActivityWatchDashboard() {
   if (!modal || modal.classList.contains('hidden')) return;
   activityWatchDashboardState.rangeDays = normalizeActivityWatchDashboardRange(activityWatchDashboardState.rangeDays);
   activityWatchDashboardState.rangeEndDate = normalizeActivityWatchDashboardEndDate(activityWatchDashboardState.rangeEndDate);
+  activityWatchDashboardState.viewMode = normalizeActivityWatchDashboardViewMode(activityWatchDashboardState.viewMode);
+  activityWatchDashboardState.chartGrain = normalizeActivityWatchDashboardChartGrain(activityWatchDashboardState.chartGrain);
+  activityWatchDashboardState.workloadBasis = normalizeActivityWatchDashboardWorkloadBasis(activityWatchDashboardState.workloadBasis);
   activityWatchDashboardState.categoryMode = normalizeActivityWatchDashboardCategoryMode(activityWatchDashboardState.categoryMode);
   activityWatchDashboardState.workloadOverlayMode = activityWatchDashboardWorkloadOverlayMode();
+  if (activityWatchDashboardState.viewMode !== 'breakdown') {
+    activityWatchDashboardState.selectedCategory = '';
+    activityWatchDashboardState.hoveredCategory = '';
+    activityWatchDashboardState.showAllCategories = false;
+  }
   const days = buildActivityWatchDashboardDays();
   const current = activityWatchCurrentWakingDateStr();
   const selectedInRange = days.some(day => day.date === activityWatchDashboardState.selectedDate);
