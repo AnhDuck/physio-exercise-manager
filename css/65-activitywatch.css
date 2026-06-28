@@ -791,7 +791,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   position: absolute;
   inset: var(--activitywatch-chart-plot-top) 0 var(--activitywatch-chart-plot-bottom);
   z-index: 0;
-  background: linear-gradient(to top, rgba(255,255,255,.065) 1px, transparent 1px) 0 0 / 100% var(--activitywatch-grid-step);
+  background: linear-gradient(to top, rgba(255,255,255,.12) 1px, transparent 1px) 0 0 / 100% var(--activitywatch-grid-step);
   content: "";
   pointer-events: none;
 }
