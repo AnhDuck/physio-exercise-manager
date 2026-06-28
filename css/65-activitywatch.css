@@ -734,6 +734,8 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-stacked-chart {
+  --activitywatch-chart-plot-top: 25px;
+  --activitywatch-chart-plot-bottom: 38px;
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr);
   gap: 4px;
@@ -752,7 +754,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   flex-direction: column;
   justify-content: space-between;
   height: 100%;
-  padding: 25px 0 26px;
+  padding: var(--activitywatch-chart-plot-top) 0 var(--activitywatch-chart-plot-bottom);
   color: var(--text-dim);
   font-size: 11px;
   font-weight: 800;
@@ -773,9 +775,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   overflow: hidden;
   padding: 0 8px 0;
   border-left: 1px solid rgba(255,255,255,.12);
-  background:
-    linear-gradient(to top, rgba(255,255,255,.065) 1px, transparent 1px) 0 0 / 100% var(--activitywatch-grid-step),
-    rgba(255,255,255,.012);
+  background: rgba(255,255,255,.012);
 }
 
 .activitywatch-chart-content {
@@ -787,7 +787,18 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   height: 100%;
 }
 
+.activitywatch-chart-content::before {
+  position: absolute;
+  inset: var(--activitywatch-chart-plot-top) 0 var(--activitywatch-chart-plot-bottom);
+  z-index: 0;
+  background: linear-gradient(to top, rgba(255,255,255,.065) 1px, transparent 1px) 0 0 / 100% var(--activitywatch-grid-step);
+  content: "";
+  pointer-events: none;
+}
+
 .activitywatch-bars-row {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: repeat(var(--activitywatch-day-count), minmax(12px, 1fr));
   align-items: end;
@@ -954,7 +965,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-average-overlay {
   position: absolute;
-  inset: 25px 8px 38px;
+  inset: var(--activitywatch-chart-plot-top) 8px var(--activitywatch-chart-plot-bottom);
   z-index: 5;
   pointer-events: none;
 }
@@ -1852,6 +1863,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   }
 
   .activitywatch-stacked-chart {
+    --activitywatch-chart-plot-top: 0px;
     grid-template-columns: 18px minmax(0, 1fr);
     height: 310px;
     min-height: 310px;
