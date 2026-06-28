@@ -61,3 +61,9 @@ function addQuickNote() {
   renderNotesPanel();
   textField.focus();
 }
+
+function handleQuickNoteTextKeydown(e) {
+  if (e.key !== 'Enter' || e.shiftKey) return;
+  e.preventDefault();
+  addQuickNote();
+}

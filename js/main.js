@@ -185,12 +185,7 @@ function bindStaticEvents() {
   bindClick('quick-note-manual-toggle', toggleQuickNoteManualDateTime);
   bindInput('quick-note-date', renderQuickNoteManualDateTime);
   bindInput('quick-note-time', renderQuickNoteManualDateTime);
-  bindKeydown('quick-note-text', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      addQuickNote();
-    }
-  });
+  bindKeydown('quick-note-text', handleQuickNoteTextKeydown);
   document.addEventListener('keydown', handleSetTrackerKeydown);
   window.addEventListener('focus', updateSetTrackerFocusIndicator);
   window.addEventListener('blur', updateSetTrackerFocusIndicator);

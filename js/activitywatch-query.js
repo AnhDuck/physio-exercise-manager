@@ -1,7 +1,7 @@
 // ActivityWatch REST fetches, bucket discovery, query construction, and result normalization.
 
 const ACTIVITYWATCH_QUERY_CHUNK_DAYS = 14;
-const ACTIVITYWATCH_FETCH_TIMEOUT_MS = 16000;
+const ACTIVITYWATCH_FETCH_TIMEOUT_MS = 30 * 1000;
 const ACTIVITYWATCH_BROWSER_APPNAMES = {
   chrome: [
     'Google Chrome',
