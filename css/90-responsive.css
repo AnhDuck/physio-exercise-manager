@@ -110,10 +110,11 @@
   }
 
   .activitywatch-chart-toolbar {
-    justify-content: flex-start;
+    grid-template-columns: 1fr;
   }
 
   .activitywatch-view-controls {
+    flex-wrap: wrap;
     justify-content: flex-start;
   }
 
@@ -489,6 +490,15 @@
   .activitywatch-breakdown-control,
   .activitywatch-overlay-control {
     align-items: flex-start;
+  }
+
+  .activitywatch-chart-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .activitywatch-view-controls,
+  .activitywatch-breakdown-control,
+  .activitywatch-overlay-control {
     flex-direction: column;
   }
 

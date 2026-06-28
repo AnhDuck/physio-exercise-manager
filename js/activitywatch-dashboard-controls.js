@@ -12,14 +12,7 @@ function renderActivityWatchDashboardControls(days) {
   root.innerHTML = '';
 
   renderActivityWatchHeaderActions(days, status, progress, isSyncing);
-  renderActivityWatchDashboardTabs();
-
-  const heading = el('div', 'activitywatch-chart-heading');
-  const copy = el('div', '');
-  copy.appendChild(elText('h3', '', activityWatchDashboardChartTitle()));
-  copy.appendChild(elText('span', '', activityWatchDateRangeLabel(days)));
-  heading.appendChild(copy);
-  root.appendChild(heading);
+  renderActivityWatchDashboardTabs(days);
 
   const toolbar = el('div', 'activitywatch-chart-toolbar');
   const rangeTools = el('div', 'activitywatch-range-tools');
@@ -41,12 +34,13 @@ function renderActivityWatchDashboardControls(days) {
   warnings.forEach(warning => root.appendChild(elText('div', 'activitywatch-warning', warning)));
 }
 
-function renderActivityWatchDashboardTabs() {
+function renderActivityWatchDashboardTabs(days) {
   const root = document.getElementById('activitywatch-dashboard-view-tabs');
   if (!root) return;
   root.innerHTML = '';
-  root.setAttribute('role', 'tablist');
-  root.setAttribute('aria-label', 'ActivityWatch dashboard views');
+  const tabList = el('div', 'activitywatch-dashboard-view-tab-list');
+  tabList.setAttribute('role', 'tablist');
+  tabList.setAttribute('aria-label', 'ActivityWatch dashboard views');
   [
     ['exposure', 'Exposure'],
     ['workload', 'Workload'],
@@ -60,8 +54,16 @@ function renderActivityWatchDashboardTabs() {
     button.textContent = label;
     button.classList.toggle('is-active', activityWatchDashboardState.viewMode === mode);
     button.addEventListener('click', () => setActivityWatchDashboardViewMode(mode));
-    root.appendChild(button);
+    tabList.appendChild(button);
   });
+  root.appendChild(tabList);
+
+  const heading = el('div', 'activitywatch-chart-heading');
+  const copy = el('div', '');
+  copy.appendChild(elText('h3', '', activityWatchDashboardChartTitle()));
+  copy.appendChild(elText('span', '', activityWatchDateRangeLabel(days)));
+  heading.appendChild(copy);
+  root.appendChild(heading);
 }
 
 function activityWatchDashboardChartTitle() {
@@ -331,10 +333,11 @@ function buildActivityWatchRollingAverageToggle() {
   const wrap = el('label', 'activitywatch-overlay-toggle');
   const input = el('input', '');
   input.type = 'checkbox';
+  input.id = 'activitywatch-rolling-average-toggle';
   input.setAttribute('role', 'switch');
   input.setAttribute('aria-label', label);
+  input.setAttribute('aria-describedby', 'activitywatch-rolling-average-help');
   input.checked = Boolean(activityWatchDashboardState.showRollingAverage);
-  input.title = title;
   input.addEventListener('change', () => {
     activityWatchDashboardState.showRollingAverage = input.checked;
     activityWatchDashboardState.hoveredCategory = '';
@@ -342,8 +345,10 @@ function buildActivityWatchRollingAverageToggle() {
   });
   wrap.appendChild(input);
   wrap.appendChild(el('span', 'activitywatch-overlay-switch'));
-  wrap.appendChild(elText('span', '', label));
-  wrap.title = title;
+  const text = elText('span', '', label);
+  text.id = 'activitywatch-rolling-average-help';
+  text.setAttribute('aria-label', title);
+  wrap.appendChild(text);
   wrap.classList.toggle('is-active', Boolean(activityWatchDashboardState.showRollingAverage));
   return wrap;
 }

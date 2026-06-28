@@ -82,11 +82,19 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-dashboard-view-tabs {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  gap: 14px;
+  padding: 0 14px;
+  border-bottom: 1px solid rgba(255,255,255,.13);
+}
+
+.activitywatch-dashboard-view-tab-list {
   display: flex;
   align-items: flex-end;
   gap: 4px;
-  padding: 0 14px;
-  border-bottom: 1px solid rgba(255,255,255,.13);
+  min-width: 0;
 }
 
 .activitywatch-dashboard-view-tabs button {
@@ -218,9 +226,9 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .timeline-day-activitywatch.is-methodology-change {
-  border-color: rgba(245,196,90,.42);
-  background: rgba(245,196,90,.1);
-  color: #f8e3ae;
+  border-color: rgba(107,220,255,.42);
+  background: rgba(107,220,255,.1);
+  color: #d9f6ff;
 }
 
 .activitywatch-category-mode-toggle button:last-child {
@@ -373,7 +381,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(270px, 310px);
+  grid-template-columns: minmax(0, 1fr) minmax(310px, 360px);
   gap: 14px;
   align-items: stretch;
   flex: 1 1 auto;
@@ -394,12 +402,20 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   gap: 8px;
 }
 
+.activitywatch-chart-heading {
+  min-width: 0;
+  padding-bottom: 7px;
+}
+
 .activitywatch-chart-heading h3 {
   margin: 0;
   color: var(--text);
-  font-size: 17px;
+  overflow: hidden;
+  font-size: 15px;
   font-weight: 900;
   line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .activitywatch-chart-heading span {
@@ -412,20 +428,20 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-chart-toolbar {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px 14px;
+  gap: 8px;
   min-width: 0;
 }
 
 .activitywatch-range-tools {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 8px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .activitywatch-date-controls,
@@ -468,9 +484,10 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-view-controls {
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
   gap: 8px;
+  white-space: nowrap;
 }
 
 .activitywatch-breakdown-control,
@@ -495,21 +512,35 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-methodology-notice {
+  flex: 0 1 auto;
   min-height: 28px;
+  max-width: 220px;
   padding: 6px 8px;
-  border: 1px solid rgba(245,196,90,.26);
+  border: 1px solid rgba(107,220,255,.32);
   border-radius: 6px;
-  background: rgba(245,196,90,.075);
-  color: #f8e3ae;
+  background: rgba(107,220,255,.08);
+  color: #d9f6ff;
   cursor: help;
   font-size: 12px;
   font-weight: 850;
   line-height: 1.2;
   outline: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .activitywatch-methodology-notice:focus-visible {
+  box-shadow: 0 0 0 2px rgba(107,220,255,.34);
+}
+
+.activitywatch-coverage-notice {
+  border-color: rgba(245,196,90,.26);
+  background: rgba(245,196,90,.075);
+  color: #f8e3ae;
+}
+
+.activitywatch-coverage-notice:focus-visible {
   box-shadow: 0 0 0 2px rgba(245,196,90,.34);
 }
 
@@ -747,6 +778,15 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
     rgba(255,255,255,.012);
 }
 
+.activitywatch-chart-content {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+}
+
 .activitywatch-bars-row {
   display: grid;
   grid-template-columns: repeat(var(--activitywatch-day-count), minmax(12px, 1fr));
@@ -850,7 +890,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-day-bar.has-methodology-change .activitywatch-day-bar-stack {
-  box-shadow: inset 0 0 0 1px rgba(245,196,90,.18);
+  box-shadow: inset 0 0 0 1px rgba(107,220,255,.16);
 }
 
 .activitywatch-methodology-marker {
@@ -858,12 +898,17 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   top: 22px;
   bottom: 38px;
   left: 50%;
-  z-index: 2;
-  width: 3px;
-  border-radius: 999px;
-  background: rgba(245,196,90,.9);
-  box-shadow: 0 0 0 1px rgba(20,24,28,.65), 0 0 9px rgba(245,196,90,.18);
-  pointer-events: auto;
+  z-index: 0;
+  width: 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(107,220,255,.82) 0,
+    rgba(107,220,255,.82) 7px,
+    transparent 7px,
+    transparent 12px
+  );
+  filter: drop-shadow(0 0 5px rgba(107,220,255,.18));
+  pointer-events: none;
   transform: translateX(-50%);
 }
 
@@ -1050,6 +1095,10 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   max-width: 100%;
 }
 
+.activitywatch-stacked-chart.is-wide-range .activitywatch-chart-content {
+  min-width: calc(var(--activitywatch-day-count) * 27px);
+}
+
 .activitywatch-stacked-chart.is-wide-range .activitywatch-bars-row {
   grid-template-columns: repeat(var(--activitywatch-day-count), minmax(24px, 24px));
   gap: 3px;
@@ -1109,6 +1158,29 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   border: 1px solid var(--border);
   border-radius: 8px;
   background: rgba(255,255,255,.018);
+}
+
+.activitywatch-selected-day.is-stacked-summary {
+  gap: 10px;
+  padding: 10px;
+}
+
+.activitywatch-summary-card {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 7px;
+  background: rgba(255,255,255,.022);
+}
+
+.activitywatch-summary-card + .activitywatch-summary-card {
+  border-top-color: rgba(121,214,189,.24);
+}
+
+.activitywatch-summary-card .activitywatch-empty {
+  padding: 4px 0 0;
 }
 
 .activitywatch-selected-heading {

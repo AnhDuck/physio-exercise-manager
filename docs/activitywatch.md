@@ -90,13 +90,13 @@ Chart interaction:
 
 Right panel:
 
-- Exposure shows total computer active time, Computer Work, work share, daily average, synced-day count, and highest/lowest day.
-- Workload shows selected load, daily average, Computer active time, Computer Work, Physical work estimate, Timed work total, synced-day count, highest/lowest day, and conflict warnings.
+- Exposure shows selected day/week and visible range at the same time. The selected section uses total computer active time as the heading value and shows only Computer Work plus work share. The visible-range section shows range total, Computer Work, work share, daily average, synced-day count, and highest/lowest day.
+- Workload shows selected day/week and visible range at the same time. Each section uses the current load basis as the heading value. Supporting rows show Computer active time, Computer Work, Physical work estimate, Timed work total, and range context without repeating the heading value; range conflict warnings stay in the visible-range section.
 - Breakdown day/week mode shows selected categories/groups with swatch, name, duration, percent, and meter. Range mode aggregates visible days and uses percent of visible-range active total. Show top categories by default, with Show all / Show top categories.
-- The right panel detail scope control is labeled `Details` and visually reads as tabs for `Selected day` or `Selected week` / `Visible range`, distinct from the chart toolbar's segmented controls.
+- Breakdown keeps the right panel detail scope control labeled `Details`, visually reading as tabs for `Selected day` or `Selected week` / `Visible range`, distinct from the chart toolbar's segmented controls.
 - Timeline day headers may show compact chips for `Computer active time` and `Total tendon load`. Their hover text should explain what each value means, and copied timeline Markdown should include a short load-terms explanation plus per-day load summaries when copied days have ActivityWatch/timed work data.
 - Hard-coded ActivityWatch methodology changes are metadata annotations only. Use visible label `Methodology change` and tooltip/copy phrase `Break in series` to mean ActivityWatch data before and after that date may not be directly comparable because collection/classification changed. These markers must not mutate, recalculate, backfill, or store derived data in `pem_activitywatch`.
-- Methodology-change markers appear as subtle chart markers in dashboard views. When the visible dashboard range includes a marked date, show a compact `Methodology change` notice near the range controls instead of inside the right detail panel. Hover/focus text should show the date, `Methodology change`, `Break in series`, and the detail text. Timeline day headers should show a compact marker chip, and copied timeline Markdown should include the same note for copied days.
+- Methodology-change markers appear as subtle cyan/blue dashed chart markers behind the bars in dashboard views, distinct from the yellow 7-day average line. When the visible dashboard range includes a marked date, show a compact `Methodology change` notice near the range controls instead of inside the right detail panel. Hover/focus text should show the date, `Methodology change`, `Break in series`, and the detail text. Timeline day headers should show a compact marker chip, and copied timeline Markdown should include the same note for copied days.
 
 Visual rules:
 

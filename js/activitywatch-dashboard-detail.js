@@ -16,6 +16,7 @@ function renderActivityWatchBreakdownDetailPanel(days) {
   const root = document.getElementById('activitywatch-selected-day');
   if (!root) return;
   root.innerHTML = '';
+  root.classList.remove('is-stacked-summary');
   const selectedItem = activityWatchDashboardSelectedItem(days);
   const selectedDays = activityWatchDashboardSelectedPeriodDays(days);
   const mode = activityWatchDashboardState.detailMode;
@@ -222,67 +223,89 @@ function renderActivityWatchExposureDetailPanel(days) {
   const root = document.getElementById('activitywatch-selected-day');
   if (!root) return;
   root.innerHTML = '';
+  root.classList.add('is-stacked-summary');
   const selectedItem = activityWatchDashboardSelectedItem(days);
-  const periodDays = activityWatchDashboardSelectedPeriodDays(days);
-  const mode = activityWatchDashboardState.detailMode;
-  const dataDays = activityWatchDashboardDataDays(periodDays);
-  const totals = activityWatchDashboardExposureTotals(dataDays);
+  const selectedDays = activityWatchDashboardDataDays(activityWatchDashboardSelectedPeriodDays(days));
+  const rangeDays = activityWatchDashboardDataDays(days);
+  const selectedTotals = activityWatchDashboardExposureTotals(selectedDays);
+  const rangeTotals = activityWatchDashboardExposureTotals(rangeDays);
 
-  root.appendChild(buildActivityWatchSummaryHeading(
-    activityWatchDetailHeadingLabel(mode, selectedItem),
-    mode === 'range' ? activityWatchDateRangeLabel(days) : activityWatchDashboardItemLabel(selectedItem),
-    totals.totalActiveSeconds
+  root.appendChild(buildActivityWatchSummarySection(
+    activityWatchDetailHeadingLabel('day', selectedItem),
+    activityWatchDashboardItemLabel(selectedItem),
+    selectedTotals.totalActiveSeconds,
+    [
+      [WORKLOAD_TERMS.computerWork, formatActivityWatchDuration(selectedTotals.computerWorkSeconds)],
+      ['Work share', formatActivityWatchPercent(selectedTotals.computerWorkSeconds, selectedTotals.totalActiveSeconds)],
+    ],
+    selectedDays.length ? '' : 'No ActivityWatch data for this selection.'
   ));
-  root.appendChild(buildActivityWatchDetailModeToggle());
-  root.appendChild(buildActivityWatchMetricList([
-    ['Total computer active time', formatActivityWatchDuration(totals.totalActiveSeconds)],
-    [WORKLOAD_TERMS.computerWork, formatActivityWatchDuration(totals.computerWorkSeconds)],
-    ['Work share', formatActivityWatchPercent(totals.computerWorkSeconds, totals.totalActiveSeconds)],
-    ['Daily average', formatActivityWatchDuration(activityWatchDashboardAverageSeconds(totals.totalActiveSeconds, dataDays.length))],
-    ['Synced days', formatNumber(dataDays.length)],
-  ]));
-  root.appendChild(buildActivityWatchRangeExtremes(dataDays, 'exposure'));
-  if (!dataDays.length) {
-    root.appendChild(elText('div', 'activitywatch-empty', 'No ActivityWatch data for this selection.'));
-  }
+
+  root.appendChild(buildActivityWatchSummarySection(
+    'Visible range',
+    activityWatchDateRangeLabel(days),
+    rangeTotals.totalActiveSeconds,
+    [
+      [WORKLOAD_TERMS.computerWork, formatActivityWatchDuration(rangeTotals.computerWorkSeconds)],
+      ['Work share', formatActivityWatchPercent(rangeTotals.computerWorkSeconds, rangeTotals.totalActiveSeconds)],
+      ['Daily average', formatActivityWatchDuration(activityWatchDashboardAverageSeconds(rangeTotals.totalActiveSeconds, rangeDays.length))],
+      ['Synced days', formatNumber(rangeDays.length)],
+    ],
+    rangeDays.length ? '' : 'No ActivityWatch data for this range.',
+    buildActivityWatchRangeExtremes(rangeDays, 'exposure')
+  ));
 }
 
 function renderActivityWatchWorkloadDetailPanel(days) {
   const root = document.getElementById('activitywatch-selected-day');
   if (!root) return;
   root.innerHTML = '';
+  root.classList.add('is-stacked-summary');
   const selectedItem = activityWatchDashboardSelectedItem(days);
-  const periodDays = activityWatchDashboardSelectedPeriodDays(days);
-  const mode = activityWatchDashboardState.detailMode;
-  const dataDays = activityWatchDashboardDataDays(periodDays);
-  const totals = activityWatchDashboardOverlayTotals(dataDays);
-  const totalLoad = totals.activityWatchTotalSeconds + totals.manualResidualSeconds;
-  const workOnlyLoad = totals.activityWatchWorkSeconds + totals.manualResidualSeconds;
-  const displayedLoad = activityWatchDashboardState.workloadBasis === 'work' ? workOnlyLoad : totalLoad;
+  const selectedDays = activityWatchDashboardDataDays(activityWatchDashboardSelectedPeriodDays(days));
+  const rangeDays = activityWatchDashboardDataDays(days);
+  const selectedTotals = activityWatchDashboardOverlayTotals(selectedDays);
+  const rangeTotals = activityWatchDashboardOverlayTotals(rangeDays);
+  const selectedTotalLoad = selectedTotals.activityWatchTotalSeconds + selectedTotals.manualResidualSeconds;
+  const selectedWorkOnlyLoad = selectedTotals.activityWatchWorkSeconds + selectedTotals.manualResidualSeconds;
+  const rangeTotalLoad = rangeTotals.activityWatchTotalSeconds + rangeTotals.manualResidualSeconds;
+  const rangeWorkOnlyLoad = rangeTotals.activityWatchWorkSeconds + rangeTotals.manualResidualSeconds;
+  const selectedDisplayedLoad = activityWatchDashboardState.workloadBasis === 'work' ? selectedWorkOnlyLoad : selectedTotalLoad;
+  const rangeDisplayedLoad = activityWatchDashboardState.workloadBasis === 'work' ? rangeWorkOnlyLoad : rangeTotalLoad;
 
-  root.appendChild(buildActivityWatchSummaryHeading(
-    activityWatchDetailHeadingLabel(mode, selectedItem),
-    mode === 'range' ? activityWatchDateRangeLabel(days) : activityWatchDashboardItemLabel(selectedItem),
-    displayedLoad
+  root.appendChild(buildActivityWatchSummarySection(
+    activityWatchDetailHeadingLabel('day', selectedItem),
+    activityWatchDashboardItemLabel(selectedItem),
+    selectedDisplayedLoad,
+    [
+      [WORKLOAD_TERMS.computerActiveTime, formatActivityWatchDuration(selectedTotals.activityWatchTotalSeconds)],
+      [WORKLOAD_TERMS.computerWork, formatActivityWatchDuration(selectedTotals.activityWatchWorkSeconds)],
+      [WORKLOAD_TERMS.physicalWorkEstimate, formatActivityWatchDuration(selectedTotals.manualResidualSeconds)],
+      [WORKLOAD_TERMS.timedWorkTotal, formatActivityWatchDuration(selectedTotals.workloadTotalSeconds)],
+    ],
+    selectedDays.length ? '' : 'No ActivityWatch data for this selection.'
   ));
-  root.appendChild(buildActivityWatchDetailModeToggle());
-  root.appendChild(buildActivityWatchMetricList([
-    [activityWatchDashboardState.workloadBasis === 'work' ? 'Work-only load' : WORKLOAD_TERMS.totalTendonLoad, formatActivityWatchDuration(displayedLoad)],
-    ['Daily average', formatActivityWatchDuration(activityWatchDashboardAverageSeconds(displayedLoad, dataDays.length))],
-    [WORKLOAD_TERMS.computerActiveTime, formatActivityWatchDuration(totals.activityWatchTotalSeconds)],
-    [WORKLOAD_TERMS.computerWork, formatActivityWatchDuration(totals.activityWatchWorkSeconds)],
-    [WORKLOAD_TERMS.physicalWorkEstimate, formatActivityWatchDuration(totals.manualResidualSeconds)],
-    [WORKLOAD_TERMS.timedWorkTotal, formatActivityWatchDuration(totals.workloadTotalSeconds)],
-    ['Synced days', formatNumber(dataDays.length)],
-  ]));
-  const conflictCount = dataDays.filter(day => activityWatchDashboardOverlayForDay(day).conflict).length;
+
+  const conflictCount = rangeDays.filter(day => activityWatchDashboardOverlayForDay(day).conflict).length;
+  const rangeSection = buildActivityWatchSummarySection(
+    'Visible range',
+    activityWatchDateRangeLabel(days),
+    rangeDisplayedLoad,
+    [
+      ['Daily average', formatActivityWatchDuration(activityWatchDashboardAverageSeconds(rangeDisplayedLoad, rangeDays.length))],
+      [WORKLOAD_TERMS.computerActiveTime, formatActivityWatchDuration(rangeTotals.activityWatchTotalSeconds)],
+      [WORKLOAD_TERMS.computerWork, formatActivityWatchDuration(rangeTotals.activityWatchWorkSeconds)],
+      [WORKLOAD_TERMS.physicalWorkEstimate, formatActivityWatchDuration(rangeTotals.manualResidualSeconds)],
+      [WORKLOAD_TERMS.timedWorkTotal, formatActivityWatchDuration(rangeTotals.workloadTotalSeconds)],
+      ['Synced days', formatNumber(rangeDays.length)],
+    ],
+    rangeDays.length ? '' : 'No ActivityWatch data for this range.',
+    buildActivityWatchRangeExtremes(rangeDays, 'workload')
+  );
   if (conflictCount) {
-    root.appendChild(elText('div', 'activitywatch-compact-warning activitywatch-overlay-conflict', `Data conflict: Computer Work exceeds Timed work total on ${formatNumber(conflictCount)} ${conflictCount === 1 ? 'day' : 'days'} shown.`));
+    rangeSection.appendChild(elText('div', 'activitywatch-compact-warning activitywatch-overlay-conflict', `Data conflict: Computer Work exceeds Timed work total on ${formatNumber(conflictCount)} range ${conflictCount === 1 ? 'day' : 'days'}.`));
   }
-  root.appendChild(buildActivityWatchRangeExtremes(dataDays, 'workload'));
-  if (!dataDays.length) {
-    root.appendChild(elText('div', 'activitywatch-empty', 'No ActivityWatch data for this selection.'));
-  }
+  root.appendChild(rangeSection);
 }
 
 function buildActivityWatchSummaryHeading(title, subtitle, seconds) {
@@ -293,6 +316,15 @@ function buildActivityWatchSummaryHeading(title, subtitle, seconds) {
   heading.appendChild(copy);
   heading.appendChild(elText('strong', '', formatActivityWatchDuration(seconds)));
   return heading;
+}
+
+function buildActivityWatchSummarySection(title, subtitle, seconds, rows, emptyMessage = '', extraContent = null) {
+  const section = el('section', 'activitywatch-summary-card');
+  section.appendChild(buildActivityWatchSummaryHeading(title, subtitle, seconds));
+  if (rows?.length) section.appendChild(buildActivityWatchMetricList(rows));
+  if (extraContent) section.appendChild(extraContent);
+  if (emptyMessage) section.appendChild(elText('div', 'activitywatch-empty', emptyMessage));
+  return section;
 }
 
 function buildActivityWatchMetricList(rows) {
@@ -322,7 +354,7 @@ function activityWatchDashboardAverageSeconds(total, count) {
   return count ? total / count : 0;
 }
 
-function buildActivityWatchRangeExtremes(days, metric) {
+function buildActivityWatchRangeExtremes(days, metric, labelPrefix = '') {
   const dataDays = activityWatchDashboardDataDays(days);
   const wrap = el('div', 'activitywatch-summary-list activitywatch-summary-extremes');
   if (!dataDays.length) return wrap;
@@ -339,7 +371,7 @@ function buildActivityWatchRangeExtremes(days, metric) {
     ['Lowest day', `${formatEventDate(lowest.day.date)} · ${formatActivityWatchDuration(lowest.seconds)}`],
   ].forEach(([label, value]) => {
     const row = el('div', 'activitywatch-summary-row');
-    row.appendChild(elText('span', '', label));
+    row.appendChild(elText('span', '', labelPrefix ? `${labelPrefix}${label.toLowerCase()}` : label));
     row.appendChild(elText('strong', '', value));
     wrap.appendChild(row);
   });

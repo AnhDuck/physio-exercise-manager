@@ -40,6 +40,8 @@ function renderActivityWatchStackedChart(days) {
   plot.style.setProperty('--activitywatch-day-count', items.length);
   plot.style.setProperty('--activitywatch-grid-step', `${100 / Math.max(1, axis.ticks.length - 1)}%`);
 
+  const content = el('div', 'activitywatch-chart-content');
+  content.style.setProperty('--activitywatch-day-count', items.length);
   const bars = el('div', 'activitywatch-bars-row');
   const axisLabels = activityWatchDashboardXAxisLabels(items);
   items.forEach((item, index) => {
@@ -101,8 +103,9 @@ function renderActivityWatchStackedChart(days) {
     barButton.appendChild(label);
     bars.appendChild(barButton);
   });
-  plot.appendChild(bars);
-  appendActivityWatchRollingAverage(plot, rollingAveragePoints, axis);
+  content.appendChild(bars);
+  appendActivityWatchRollingAverage(content, rollingAveragePoints, axis);
+  plot.appendChild(content);
   root.appendChild(plot);
   bindActivityWatchChartWheelScroll(plot);
   requestAnimationFrame(() => {
@@ -210,15 +213,6 @@ function addActivityWatchOverlaySegmentTooltipHandlers(segment, segmentData) {
 function buildActivityWatchMethodologyMarker(changes) {
   const marker = el('span', 'activitywatch-methodology-marker');
   marker.setAttribute('aria-hidden', 'true');
-  const tooltip = (Array.isArray(changes) ? changes : [changes]).filter(Boolean).map(activityWatchMethodologyTooltip).join(' ');
-  marker.addEventListener('pointerenter', (event) => {
-    showActivityWatchChartTooltipText(event, tooltip, true);
-  });
-  marker.addEventListener('pointermove', (event) => {
-    positionActivityWatchChartTooltip(event);
-  });
-  marker.addEventListener('pointerleave', hideActivityWatchChartTooltip);
-  marker.addEventListener('pointercancel', hideActivityWatchChartTooltip);
   return marker;
 }
 
@@ -235,6 +229,12 @@ function buildActivityWatchAxisLabel(labelData) {
 
 function addActivityWatchMethodologyFocusHandlers(barButton, changes) {
   const tooltip = (Array.isArray(changes) ? changes : [changes]).filter(Boolean).map(activityWatchMethodologyTooltip).join(' ');
+  barButton.addEventListener('pointerenter', (event) => {
+    showActivityWatchChartTooltipText(event, tooltip, true);
+  });
+  barButton.addEventListener('pointermove', positionActivityWatchChartTooltip);
+  barButton.addEventListener('pointerleave', hideActivityWatchChartTooltip);
+  barButton.addEventListener('pointercancel', hideActivityWatchChartTooltip);
   barButton.addEventListener('focus', () => {
     const rect = barButton.getBoundingClientRect();
     showActivityWatchChartTooltipText({

@@ -79,7 +79,8 @@ For ActivityWatch dashboard changes, smoke-check:
 - Breakdown shows Stack by Categories / Groups and does not show 7-day average
 - chart day selection works
 - category hover/filter behavior still works
-- Day/Range detail toggle works
+- Exposure and Workload right panels show selected day/week and visible range together without duplicate heading metrics
+- Breakdown Day/Range detail toggle still works
 - advanced sync panel opens and shows date options
 - methodology-change chart markers appear on June 18, 2026 and June 21, 2026 when those dates are visible
 - marker hover/focus text uses `Break in series`
