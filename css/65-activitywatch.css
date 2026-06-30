@@ -963,6 +963,42 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   background-image: linear-gradient(to top, rgba(255,255,255,.08), rgba(255,255,255,.01));
 }
 
+.activitywatch-average-checkbox {
+  position: absolute;
+  top: 7px;
+  right: 10px;
+  z-index: 7;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+  padding: 3px 7px;
+  border: 1px solid rgba(245,196,90,.28);
+  border-radius: 5px;
+  background: rgba(20,24,28,.82);
+  color: #f8e3ae;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.activitywatch-average-checkbox:hover,
+.activitywatch-average-checkbox:focus-within,
+.activitywatch-average-checkbox.is-active {
+  border-color: rgba(245,196,90,.54);
+  background: rgba(245,196,90,.13);
+  color: #ffe5a2;
+}
+
+.activitywatch-average-checkbox input {
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  accent-color: #f5c45a;
+}
+
 .activitywatch-average-overlay {
   position: absolute;
   inset: var(--activitywatch-chart-plot-top) 8px var(--activitywatch-chart-plot-bottom);

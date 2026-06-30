@@ -39,6 +39,9 @@ function renderActivityWatchStackedChart(days) {
   const plot = el('div', 'activitywatch-chart-plot');
   plot.style.setProperty('--activitywatch-day-count', items.length);
   plot.style.setProperty('--activitywatch-grid-step', `${100 / Math.max(1, axis.ticks.length - 1)}%`);
+  if (activityWatchDashboardState.chartGrain === 'daily') {
+    plot.appendChild(buildActivityWatchRollingAverageToggle());
+  }
 
   const content = el('div', 'activitywatch-chart-content');
   content.style.setProperty('--activitywatch-day-count', items.length);
@@ -522,7 +525,7 @@ function appendActivityWatchRollingAverage(plot, points, axis) {
     dot.style.left = `${x}%`;
     dot.style.top = `${y}%`;
     dot.tabIndex = 0;
-    const tooltip = `${formatEventDate(point.date)} 7-day average: ${formatActivityWatchDuration(point.averageSeconds)} using ${formatNumber(point.syncedDayCount)} synced ${point.syncedDayCount === 1 ? 'day' : 'days'}.`;
+    const tooltip = `${formatEventDate(point.date)} ${activityWatchRollingAverageMetricLabel()} 7-day average: ${formatActivityWatchDuration(point.averageSeconds)}.`;
     dot.setAttribute('aria-label', tooltip);
     dot.addEventListener('pointerenter', (event) => showActivityWatchChartTooltipText(event, tooltip, true));
     dot.addEventListener('pointermove', positionActivityWatchChartTooltip);
@@ -539,5 +542,17 @@ function appendActivityWatchRollingAverage(plot, points, axis) {
     overlay.appendChild(dot);
   });
   plot.appendChild(overlay);
+}
+
+function activityWatchRollingAverageMetricLabel() {
+  if (activityWatchDashboardState.viewMode === 'workload') {
+    return activityWatchDashboardState.workloadBasis === 'work'
+      ? 'Work-only load'
+      : 'Total load';
+  }
+  if (activityWatchDashboardState.viewMode === 'breakdown' && activityWatchDashboardState.selectedCategory) {
+    return activityWatchDashboardState.selectedCategory;
+  }
+  return WORKLOAD_TERMS.computerActiveTime;
 }
 

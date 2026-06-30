@@ -66,7 +66,7 @@ Dashboard control hierarchy is intentionally split:
 - Modal header is app-level only: `ActivityWatch`, combined sync/refresh, Advanced, and Close. The combined sync/refresh button is the everyday action and refreshes only the latest 3 waking days.
 - View tabs sit under the modal titlebar and are `Exposure`, `Workload`, and `Breakdown`.
 - Chart controls own the visible date/view state: chart title, visible date range, adjacent previous/next buttons, range dropdown, Today button, `Daily / Weekly`, and view-specific controls.
-- `Stack by: Categories / Groups` appears only in Breakdown. Workload has `Total load / Work only`. Exposure and Workload have a local `7-day average` switch only in Daily grain.
+- `Stack by: Categories / Groups` appears only in Breakdown. Workload has `Total load / Work only`. Daily chart grain has a floating chart-corner `7-day average` checkbox, checked by default, in Exposure, Workload, and Breakdown. Weekly grain hides the checkbox and average line while preserving the in-memory checked state.
 - Right panel owns selected day/week/range analytics and must be contextual to the current view.
 - Advanced panel owns sync/debug/metadata such as desktop, ActivityWatch version, server URL, bucket IDs, cached days, day start, and last sync. Advanced resync uses exact date strings through `maybeSyncActivityWatchDateStrings(...)`.
 
@@ -80,7 +80,7 @@ Chart interaction:
 - Use these terms consistently: `Timed work total` is the Timed Work Today timer/manual total; `Computer work` is ActivityWatch active time in the top-level `Work` category only; `Physical work estimate` is `max(0, Timed work total - Computer work)`; `Computer active time` is all ActivityWatch active computer time; `Total tendon load` is `Computer active time + Physical work estimate`.
 - Workload `Total load` is `Computer active time + Physical work estimate`. Workload `Work only` is `Computer work + Physical work estimate`. The physical work estimate subtracts only `Computer work` from `Timed work total` so computer Work is not double-counted.
 - Computer work means the top-level `Work` group, using `ACTIVITYWATCH_CATEGORY_JOINER` splitting. The shared overlay math lives in `workload-activitywatch-overlay.js` so the Timed Work card, dashboard, and timeline use the same comparison.
-- Daily 7-day average is fixed at 7 days for v1. Each point is aligned to that day's bar and averages that day plus the previous 6 local waking-day dates. Tooltip text must state the date, average value, and synced-day count used.
+- Daily 7-day average is fixed at 7 days for v1. Each point is aligned to that day's bar and averages that day plus the previous 6 local waking-day dates. Exposure averages Computer active time. Workload averages the active load basis, including `Work only` when selected. Breakdown averages the currently plotted metric: total Computer active time when unfiltered, or the locked category/group when filtered. Hover previews must not change the average line. Tooltip text must state the date, metric, and average value.
 - Weekly grain buckets run Monday through Sunday. Edge/current weeks may be partial. Weekly bars show average per synced day, while tooltips/right panel also show weekly total and synced-day count.
 - Breakdown unfiltered bars include computed `Other` so visible stacks add up to total active time.
 - `Other` is informational only and must not become a filter chip or locked filter.

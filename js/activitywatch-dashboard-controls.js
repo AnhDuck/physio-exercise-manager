@@ -247,12 +247,6 @@ function buildActivityWatchViewControls() {
     controls.appendChild(breakdown);
   }
 
-  if (['exposure', 'workload'].includes(activityWatchDashboardState.viewMode) && activityWatchDashboardState.chartGrain === 'daily') {
-    const average = el('div', 'activitywatch-overlay-control');
-    average.appendChild(elText('span', 'activitywatch-control-label', 'Trend:'));
-    average.appendChild(buildActivityWatchRollingAverageToggle());
-    controls.appendChild(average);
-  }
   return controls;
 }
 
@@ -330,11 +324,10 @@ function buildActivityWatchCategoryModeToggle() {
 function buildActivityWatchRollingAverageToggle() {
   const label = '7-day average';
   const title = 'Show trailing 7-day average. Each point uses that day plus the previous 6 waking days.';
-  const wrap = el('label', 'activitywatch-overlay-toggle');
+  const wrap = el('label', 'activitywatch-average-checkbox');
   const input = el('input', '');
   input.type = 'checkbox';
   input.id = 'activitywatch-rolling-average-toggle';
-  input.setAttribute('role', 'switch');
   input.setAttribute('aria-label', label);
   input.setAttribute('aria-describedby', 'activitywatch-rolling-average-help');
   input.checked = Boolean(activityWatchDashboardState.showRollingAverage);
@@ -344,7 +337,6 @@ function buildActivityWatchRollingAverageToggle() {
     renderActivityWatchDashboard();
   });
   wrap.appendChild(input);
-  wrap.appendChild(el('span', 'activitywatch-overlay-switch'));
   const text = elText('span', '', label);
   text.id = 'activitywatch-rolling-average-help';
   text.setAttribute('aria-label', title);

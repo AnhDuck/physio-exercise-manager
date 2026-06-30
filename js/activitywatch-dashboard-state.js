@@ -38,7 +38,7 @@ const ACTIVITYWATCH_METHODOLOGY_CHANGES = [
 const activityWatchDashboardState = {
   viewMode: 'exposure',
   chartGrain: 'daily',
-  showRollingAverage: false,
+  showRollingAverage: true,
   workloadBasis: 'total',
   selectedDate: '',
   rangeDays: ACTIVITYWATCH_DASHBOARD_DEFAULT_RANGE_DAYS,
@@ -188,7 +188,7 @@ function normalizeActivityWatchDashboardWorkloadBasis(value) {
 function activityWatchDashboardUsesRollingAverage() {
   return Boolean(activityWatchDashboardState.showRollingAverage)
     && activityWatchDashboardState.chartGrain === 'daily'
-    && ['exposure', 'workload'].includes(activityWatchDashboardState.viewMode);
+    && ['exposure', 'workload', 'breakdown'].includes(activityWatchDashboardState.viewMode);
 }
 
 function activityWatchDashboardUsesTopCategories() {
@@ -306,6 +306,9 @@ function activityWatchDashboardMetricSecondsForDay(day, metric = activityWatchDa
   if (!activityWatchDashboardDayHasData(day)) return 0;
   if (metric === 'workload') {
     return activityWatchDashboardWorkloadPlottedSecondsForDay(day);
+  }
+  if (metric === 'breakdown' && activityWatchDashboardState.selectedCategory) {
+    return activityWatchDashboardCategoryTotal(day, activityWatchDashboardState.selectedCategory);
   }
   if (metric === 'work') {
     return activityWatchDashboardOverlayForDay(day).activityWatchWorkSeconds;
@@ -432,9 +435,7 @@ function activityWatchDashboardRollingAveragePoints(days) {
       }))
       .filter(activityWatchDashboardDayHasData);
     const total = windowDays.reduce((sum, sourceDay) => (
-      sum + (activityWatchDashboardState.viewMode === 'workload'
-        ? activityWatchDashboardWorkloadPlottedSecondsForDay(sourceDay)
-        : sourceDay.totalActiveSeconds || 0)
+      sum + activityWatchDashboardMetricSecondsForDay(sourceDay)
     ), 0);
     return {
       date: day.date,
