@@ -252,7 +252,7 @@ function renderSetTracker() {
   const { ex, dateStr, progress } = current;
   const done = isProgressComplete(progress);
   const isHistoricalOnly = activeTracker?.readOnly || !isExerciseActive(ex) || ex.missing;
-  const group = GROUPS[ex.group] || {};
+  const group = groupConfig(ex.group) || {};
   const panel = el(
     'section',
     'set-tracker' +

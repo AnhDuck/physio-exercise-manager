@@ -6,7 +6,7 @@
   <title>Physio Exercise Management</title>
   <link rel="icon" type="image/svg+xml" href="assets/physio-icon.svg" />
   <script>
-    window.PEM_APP_VERSION = '1.0.178';
+    window.PEM_APP_VERSION = '1.0.180';
     const PEM_CSS_FILES = [
       'css/00-base.css',
       'css/10-header.css',
@@ -201,11 +201,7 @@
         <div class="form-row full">
           <div class="form-field">
             <label for="field-group">Group</label>
-            <select id="field-group">
-              <option value="arm-day1">Arm Day 1</option>
-              <option value="arm-day2">Arm Day 2</option>
-              <option value="legs">Legs</option>
-            </select>
+            <select id="field-group"></select>
           </div>
         </div>
 
@@ -274,6 +270,19 @@
             </span>
             <span>Blocks</span>
           </button>
+          <button class="settings-tab" id="settings-tab-groups" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-groups" data-settings-tab="groups">
+            <span class="settings-tab-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M4 6h16"></path>
+                <path d="M4 12h16"></path>
+                <path d="M4 18h16"></path>
+                <path d="M7 4v4"></path>
+                <path d="M12 10v4"></path>
+                <path d="M17 16v4"></path>
+              </svg>
+            </span>
+            <span>Groups</span>
+          </button>
           <button class="settings-tab" id="settings-tab-backup" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-backup" data-settings-tab="backup">
             <span class="settings-tab-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
@@ -317,6 +326,15 @@
                 <label for="setting-personal-day-start">Personal day starts at</label>
                 <input type="time" id="setting-personal-day-start" />
               </div>
+            </div>
+            <div class="settings-row-group settings-schedule-options">
+              <label class="settings-action-row" for="setting-arm-rotation-enabled">
+                <span class="settings-action-label">
+                  <strong>Arm Day rotation indicators</strong>
+                  <span>Show the blue and green Day 1 / Day 2 markers on Monday, Wednesday, and Friday.</span>
+                </span>
+                <input type="checkbox" id="setting-arm-rotation-enabled" />
+              </label>
             </div>
           </div>
 
@@ -508,6 +526,18 @@
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section class="settings-panel" id="settings-panel-groups" role="tabpanel" aria-labelledby="settings-tab-groups" data-settings-panel="groups" hidden>
+          <div class="settings-section is-first">
+            <div class="settings-section-header">
+              <h3>Groups</h3>
+            </div>
+            <div class="group-settings-help">
+              Groups keep stable internal IDs so old logs, blocks, and backups remain connected. Rename or reorder groups freely; hiding is only available after a group has no active exercises.
+            </div>
+            <div class="group-settings" id="settings-groups"></div>
           </div>
         </section>
 

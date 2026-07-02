@@ -50,9 +50,10 @@ Use:
 
 ## Core Behavior To Protect
 
-- Arm rotation is calendar-based: anchor Friday 2026-05-01 is `arm-day1`; Monday/Wednesday/Friday arm days alternate from there. Do not reintroduce completion-count rotation.
+- Arm rotation indicators are optional. When enabled, rotation is calendar-based: anchor Friday 2026-05-01 is `arm-day1`; Monday/Wednesday/Friday arm days alternate from there. Do not reintroduce completion-count rotation.
 - Dates are local `YYYY-MM-DD`; use the existing date helpers.
 - Hidden exercises stay stored so old logs survive. Preserve exercise snapshots for renamed, hidden, or deleted exercises.
+- Exercise groups use stable internal IDs with editable settings-backed labels, colors, order, and empty-group visibility. Do not delete group IDs to rename or hide a group.
 - Blocks are group-scoped in settings; exercises only store `blockId`.
 - Set tracker close paths must stop timers. Clear/delete progress actions must confirm first.
 - Keep the compact grid as one spreadsheet-like grid with group-header add controls.

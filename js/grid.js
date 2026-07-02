@@ -13,11 +13,12 @@ function render() {
   if (typeof buildHomeCardsRow === 'function') app.appendChild(buildHomeCardsRow());
 
   let exerciseNumber = 1;
-  for (const group of GROUP_ORDER) {
+  const groups = visibleGroupOrder();
+  for (const group of groups) {
     const exs = exercises
       .filter(e => e.group === group && isExerciseActive(e))
       .sort((a, b) => a.order - b.order);
-    app.appendChild(buildGroupSection(group, exs, dates, todayS, exerciseNumber));
+    app.appendChild(buildGroupSection(group, exs, dates, todayS, exerciseNumber, group === groups[0]));
     exerciseNumber += exs.length;
   }
 
@@ -45,7 +46,7 @@ function buildColHeaders(dates, todayS, monthLabel) {
     cell.appendChild(elText('div', 'day-name', DAY_NAMES[i]));
     cell.appendChild(elText('div', 'day-date', String(date.getDate())));
 
-    if (isArmDay) {
+    if (isArmDay && isArmRotationEnabled()) {
       const pillRow = el('div', 'day-pill-row');
       const armDay = getArmDayForDate(dateS);
       dayTags.push(armDay);
@@ -100,15 +101,15 @@ function buildWeekNav(monthLabel) {
 }
 
 // ── Group section ────────────────────────────────────────────────
-function buildGroupSection(group, exs, dates, todayS, startNumber) {
+function buildGroupSection(group, exs, dates, todayS, startNumber, isFirstGroup = false) {
   const frag = document.createDocumentFragment();
-  const cfg = GROUPS[group];
+  const cfg = groupConfig(group);
 
   // Section header
   const header = el('div', 'group-header');
   header.dataset.group = group;
   header.style.borderTopColor = cfg.color;
-  if (group === 'arm-day1') header.style.marginTop = '0';
+  if (isFirstGroup) header.style.marginTop = '0';
   header.addEventListener('dragover', handleExerciseDragOver);
   header.addEventListener('dragleave', clearDropPosition);
   header.addEventListener('drop', handleExerciseDropAtEnd);
@@ -158,7 +159,7 @@ function buildGroupSection(group, exs, dates, todayS, startNumber) {
 function buildExerciseRows(ex, group, dates, todayS, exerciseNumber, blockInfo = null) {
   const frag = document.createDocumentFragment();
   const row = el('div', 'exercise-row' + blockRowClass(blockInfo));
-  row.style.setProperty('--exercise-group-color', GROUPS[group].color);
+  row.style.setProperty('--exercise-group-color', groupConfig(group).color);
   row.dataset.exId = ex.id;
   row.dataset.group = group;
   row.addEventListener('dragstart', handleExerciseDragStart);

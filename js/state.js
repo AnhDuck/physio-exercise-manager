@@ -92,6 +92,7 @@ function runMigrations() {
     settings.activityWatchGroupsDefaultApplied = true;
   }
 
+  ensureExerciseGroupSettings();
   ensureBlockSettings();
   migrateSetProgressSnapshots();
 

@@ -22,7 +22,7 @@ Never load `main.js` before feature files it binds. Do not add imports, exports,
 
 ## File Ownership
 
-- `data.js`: default exercises and groups.
+- `data.js`: default exercises, default groups, and settings-backed group registry helpers.
 - `storage.js`: localStorage keys, safe-save helpers, and local date helpers.
 - `constants.js`: labels and static copy shared across features.
 - `state.js`: mutable app globals and migrations.
@@ -76,6 +76,8 @@ localStorage keys:
 
 Dashboard card preferences, including the Timed Work Today visibility toggle, timed-work running-border and reminder-sound settings, weather request cooldown metadata, and the cached last weather result live inside `pem_settings.homeCards` so backups and imports continue to use the existing settings safe-save path. When Timed Work Today is disabled, the home row should return to the old two-card Weather/ActivityWatch layout while preserving `pem_workload` data and active-timer safety cues. Weather, air quality, and official-alert refreshes share the same weather cadence to avoid extra background polling. The dashboard row's collapsed/expanded UI state is intentionally in-memory only; a fresh app load starts expanded. ActivityWatch dashboard overlay toggles are also in-memory only. On the Codex verification origin `http://127.0.0.1:8895`, `dev-sample-data.js` overwrites Weather, ActivityWatch, Timed Work, and sample timeline data on every load so verification does not fall back to empty states.
 
+Exercise group preferences live in `pem_settings.exerciseGroups`. Group IDs such as `arm-day1`, `arm-day2`, and `legs` are stable data keys; labels, colors, display order, and hidden state are settings-backed presentation. Empty groups can be hidden from normal tracking UI, but group IDs are not deleted. `pem_settings.armRotationEnabled` controls only the Day 1 / Day 2 calendar indicators; it does not change exercise availability or completion logic.
+
 All app-data writes must go through safe-save helpers in storage internals. Do not call `localStorage.setItem` directly for app keys outside storage internals.
 
 Load-side app-data parsing also belongs in `storage.js`. Persisted JSON loaders should use `safeParseStorageJson(...)` so one malformed localStorage key cannot crash startup. When a key fails to parse, PEM leaves the raw browser value untouched, records a Data Health warning, returns safe fallback data for the page load, and blocks ordinary saves to that key until a deliberate backup import or restore replaces it.
@@ -85,6 +87,7 @@ Load-side app-data parsing also belongs in `storage.js`. Persisted JSON loaders 
 - Dates are local `YYYY-MM-DD`; use `toDateStr()` and `dateFromStr()`.
 - `DEFAULT_EXERCISES` only seeds new installs when `pem_exercises` is missing.
 - Hidden exercises stay in `pem_exercises` to preserve linked session and timeline data.
+- Exercise groups keep stable IDs. Rename, recolor, reorder, or hide groups through `settings.exerciseGroups`; do not rewrite group IDs just to change presentation.
 - Exercise blocks are group-scoped in `settings.blocks[group]`; exercises store only `blockId`.
 - Stored events are `note`, `dose-change`, and `exercise-added`. Timeline exercise logs are derived from session progress and must not be stored in `pem_events`.
 - Folder auto-backup writes `physio-exercise-auto-backup-latest.json` after normal app-data saves while the folder is connected. It also writes a dated daily file at the scheduled time and rolling hourly recovery files while the app is open. Latest is read back and validated after writes. On startup or folder reconnect, if browser data looks fresh/empty and latest contains meaningful data, PEM prompts before restoring and offers an emergency JSON download first. If the user declines restore, automatic writes hold off while the browser data still looks empty so a good latest file is not overwritten by defaults; manual Backup now warns before replacing latest in that state. Import/folder restore suppresses live mirroring until every app storage key is replaced or rolled back.
@@ -92,7 +95,7 @@ Load-side app-data parsing also belongs in `storage.js`. Persisted JSON loaders 
 ## Where To Edit
 
 - Schedule/date bugs: `dates.js`, then `grid.js` if rendering is affected.
-- Exercise add/edit/order/block behavior: `exercises.js` and `settings.js`.
+- Exercise add/edit/order/block behavior and group settings UI: `exercises.js` and `settings.js`.
 - Set tracker/timer/log behavior: `tracker.js`, `sessions.js`, and timeline renderers if log display changes.
 - Timeline note/event behavior: `timeline-*.js`.
 - Backup/import/export: `backup.js`, `auto-backup.js`, and storage helpers.

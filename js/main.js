@@ -35,6 +35,8 @@ function fallbackStartupSettings() {
     setCueSpeech: false,
     setCueSpeechVolume: 1,
     personalDayStartTime: '07:00',
+    armRotationEnabled: false,
+    exerciseGroups: typeof defaultExerciseGroupSettings === 'function' ? defaultExerciseGroupSettings() : {},
     timelineRange: 'past-30-days',
     homeCards: typeof defaultHomeCardsSettings === 'function' ? defaultHomeCardsSettings() : {},
     autoBackup: typeof defaultAutoBackupSettings === 'function' ? defaultAutoBackupSettings() : {},
@@ -244,11 +246,15 @@ function bindStaticEvents() {
   bindClick('settings-auto-backup-history-toggle', toggleAutoBackupHistory);
   bindClick('settings-blocks-apply', applyBlockDraft);
   bindClick('settings-blocks-discard', discardBlockDraft);
+  bindClick('settings-groups', handleGroupSettingsClick, { required: false });
+  bindChange('settings-groups', handleGroupSettingsChange, { required: false });
+  bindEvent('settings-groups', 'focusout', handleGroupSettingsFocusout, { required: false });
   bindChange('settings-import-file', (e) => {
     handleBackupImportFile(e.target.files[0]);
     e.target.value = '';
   });
   bindChange('setting-personal-day-start', autosaveGeneralSettings);
+  bindChange('setting-arm-rotation-enabled', autosaveGeneralSettings);
   bindChange('setting-cue-sound', autosaveGeneralSettings);
   bindChange('setting-cue-vibrate', autosaveGeneralSettings);
   bindInput('setting-cue-speech-volume', handleSpeechVolumeInput);

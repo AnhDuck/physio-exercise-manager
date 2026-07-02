@@ -203,3 +203,152 @@ const GROUPS = {
   'arm-day2': { label: 'Arm Day 2', color: '#5ab89e', pill: 'D2' },
   'legs':     { label: 'Legs',      color: '#e8974a', pill: 'LEG' },
 };
+
+function defaultExerciseGroupSettings() {
+  return {
+    order: Object.keys(GROUPS),
+    items: Object.fromEntries(
+      Object.entries(GROUPS).map(([id, cfg]) => [
+        id,
+        {
+          label: cfg.label,
+          color: cfg.color,
+          hidden: false,
+        },
+      ])
+    ),
+  };
+}
+
+function normalizeGroupId(value) {
+  return String(value || '').trim();
+}
+
+function fallbackGroupLabel(groupId) {
+  const text = normalizeGroupId(groupId)
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return text
+    ? text.replace(/\b\w/g, letter => letter.toUpperCase())
+    : 'Exercise Group';
+}
+
+function normalizeGroupColor(value, fallback = '#4a90d9') {
+  const color = String(value || '').trim();
+  return /^#[0-9a-f]{6}$/i.test(color) ? color : fallback;
+}
+
+function normalizeExerciseGroupSettings(value = {}) {
+  const defaults = defaultExerciseGroupSettings();
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const sourceItems = source.items && typeof source.items === 'object' && !Array.isArray(source.items)
+    ? source.items
+    : {};
+  const order = [];
+  const addId = (id) => {
+    const cleanId = normalizeGroupId(id);
+    if (cleanId && !order.includes(cleanId)) order.push(cleanId);
+  };
+
+  if (Array.isArray(source.order)) source.order.forEach(addId);
+  defaults.order.forEach(addId);
+  Object.keys(sourceItems).forEach(addId);
+
+  const items = {};
+  order.forEach(id => {
+    const fallback = defaults.items[id] || {
+      label: fallbackGroupLabel(id),
+      color: '#4a90d9',
+      hidden: false,
+    };
+    const item = sourceItems[id] && typeof sourceItems[id] === 'object' && !Array.isArray(sourceItems[id])
+      ? sourceItems[id]
+      : {};
+    const label = String(item.label || fallback.label || fallbackGroupLabel(id)).trim();
+    items[id] = {
+      label: label || fallback.label || fallbackGroupLabel(id),
+      color: normalizeGroupColor(item.color, fallback.color),
+      hidden: Boolean(item.hidden),
+    };
+  });
+
+  return { order, items };
+}
+
+function ensureExerciseGroupSettings() {
+  if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return defaultExerciseGroupSettings();
+  const normalized = normalizeExerciseGroupSettings(settings.exerciseGroups);
+  const addId = (id) => {
+    const cleanId = normalizeGroupId(id);
+    if (!cleanId || normalized.order.includes(cleanId)) return;
+    normalized.order.push(cleanId);
+    normalized.items[cleanId] = {
+      label: GROUPS[cleanId]?.label || fallbackGroupLabel(cleanId),
+      color: GROUPS[cleanId]?.color || '#4a90d9',
+      hidden: false,
+    };
+  };
+
+  if (Array.isArray(exercises)) {
+    exercises.forEach(ex => addId(ex?.group));
+  }
+  Object.keys(settings.blocks || {}).forEach(addId);
+
+  settings.exerciseGroups = normalized;
+  return normalized;
+}
+
+function groupRegistry() {
+  return ensureExerciseGroupSettings();
+}
+
+function groupOrder() {
+  return groupRegistry().order.slice();
+}
+
+function groupExists(groupId) {
+  return groupOrder().includes(groupId);
+}
+
+function groupConfig(groupId) {
+  const registry = groupRegistry();
+  const fallback = GROUPS[groupId] || {
+    label: fallbackGroupLabel(groupId),
+    color: '#4a90d9',
+    pill: '',
+  };
+  const item = registry.items[groupId] || {};
+  return {
+    label: item.label || fallback.label || fallbackGroupLabel(groupId),
+    color: normalizeGroupColor(item.color, fallback.color),
+    hidden: Boolean(item.hidden),
+    pill: fallback.pill || '',
+  };
+}
+
+function activeExerciseCountForGroup(groupId) {
+  return Array.isArray(exercises)
+    ? exercises.filter(ex => ex?.group === groupId && isExerciseActive(ex)).length
+    : 0;
+}
+
+function canHideGroup(groupId) {
+  return activeExerciseCountForGroup(groupId) === 0;
+}
+
+function visibleGroupOrder() {
+  return groupOrder().filter(groupId => !groupConfig(groupId).hidden || !canHideGroup(groupId));
+}
+
+function groupOptionsForExerciseModal(selectedGroup = '') {
+  const options = visibleGroupOrder();
+  if (selectedGroup && !options.includes(selectedGroup) && groupExists(selectedGroup)) {
+    options.push(selectedGroup);
+  }
+  return options;
+}
+
+function isArmRotationEnabled() {
+  return Boolean(settings?.armRotationEnabled);
+}

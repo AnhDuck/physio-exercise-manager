@@ -89,14 +89,14 @@ function blockTitleFor(group, blockId) {
 
 function ensureBlockSettings() {
   if (!settings.blocks || typeof settings.blocks !== 'object') settings.blocks = {};
-  GROUP_ORDER.forEach(group => {
+  groupOrder().forEach(group => {
     if (!Array.isArray(settings.blocks[group])) settings.blocks[group] = [];
   });
 
   if (settings.blockTitles && typeof settings.blockTitles === 'object') {
     Object.entries(settings.blockTitles).forEach(([key, title]) => {
       const [group, blockId] = key.split(':');
-      if (GROUP_ORDER.includes(group) && blockId) ensureBlockDefinition(group, blockId, title);
+      if (groupExists(group) && blockId) ensureBlockDefinition(group, blockId, title);
     });
     delete settings.blockTitles;
   }
@@ -107,7 +107,7 @@ function ensureBlockSettings() {
     ensureBlockDefinition(ex.group, blockId, ex.blockTitle);
   });
 
-  GROUP_ORDER.forEach(group => normalizeBlockDefinitionOrders(group));
+  groupOrder().forEach(group => normalizeBlockDefinitionOrders(group));
 }
 
 function blockDefinitionsForGroup(group) {
@@ -162,8 +162,8 @@ function blockPositionClass(index, count) {
   return ' middle';
 }
 
-function normalizeGroupOrders(groups = GROUP_ORDER) {
-  groups.forEach(group => {
+function normalizeGroupOrders(groups = null) {
+  (groups || groupOrder()).forEach(group => {
     sortedExercisesInGroup(group).forEach((ex, i) => { ex.order = i + 1; });
   });
 }
@@ -336,6 +336,7 @@ function openEditModal(exId) {
   document.getElementById('field-resistance').value = ex.resistance || '';
   document.getElementById('field-frequency').value = ex.frequency || '';
   document.getElementById('field-instructions').value = ex.instructions || '';
+  renderExerciseGroupSelect(ex.group);
   document.getElementById('field-group').value = ex.group;
   document.getElementById('field-changed-since-physio').checked = Boolean(ex.changedSinceLastPhysioVisit);
 
@@ -346,6 +347,8 @@ function openEditModal(exId) {
 
 function openAddModal(group) {
   editingExId = null;
+  const groupOptions = groupOptionsForExerciseModal(group);
+  const defaultGroup = groupOptions.includes(group) ? group : (groupOptions[0] || groupOrder()[0] || group);
   document.getElementById('modal-title').textContent = 'Add Exercise';
   document.getElementById('field-name').value = '';
   document.getElementById('field-sets').value = '3';
@@ -353,10 +356,23 @@ function openAddModal(group) {
   document.getElementById('field-resistance').value = '';
   document.getElementById('field-frequency').value = '3x/week';
   document.getElementById('field-instructions').value = '';
-  document.getElementById('field-group').value = group;
+  renderExerciseGroupSelect(defaultGroup);
+  document.getElementById('field-group').value = defaultGroup;
   document.getElementById('field-changed-since-physio').checked = false;
   document.getElementById('hide-btn').style.display = 'none';
   showModal();
+}
+
+function renderExerciseGroupSelect(selectedGroup = '') {
+  const select = document.getElementById('field-group');
+  if (!select) return;
+  select.innerHTML = '';
+  groupOptionsForExerciseModal(selectedGroup).forEach(groupId => {
+    const option = document.createElement('option');
+    option.value = groupId;
+    option.textContent = groupConfig(groupId).label;
+    select.appendChild(option);
+  });
 }
 
 function showModal() {
@@ -397,6 +413,7 @@ function saveExerciseModal() {
       const previous = { ...exercises[idx] };
       const changes = doseChanges(previous, fields);
       exercises[idx] = { ...exercises[idx], ...fields };
+      if (previous.group !== fields.group) exercises[idx].blockId = '';
       delete exercises[idx].blockTitle;
       delete exercises[idx].blockMinGapHours;
       delete exercises[idx].blockPreferredGapHours;

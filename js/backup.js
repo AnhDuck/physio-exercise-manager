@@ -373,10 +373,14 @@ function settingsContainUserData(value) {
   const weather = value.homeCards?.weather;
   const activityWatchMini = value.homeCards?.activityWatchMini;
   const workload = value.homeCards?.workload;
+  const defaultGroups = JSON.stringify(defaultExerciseGroupSettings());
+  const currentGroups = JSON.stringify(normalizeExerciseGroupSettings(value.exerciseGroups));
   return Boolean(
     weather?.location ||
     weather?.lastResult ||
     weather?.searchText ||
+    Boolean(value.armRotationEnabled) ||
+    currentGroups !== defaultGroups ||
     value.timelineRange && value.timelineRange !== 'past-30-days' ||
     value.personalDayStartTime && value.personalDayStartTime !== '07:00' ||
     activityWatchMini?.categoryMode === 'top' ||

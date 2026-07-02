@@ -634,6 +634,20 @@
     padding: 0 8px;
   }
 
+  .group-settings-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .group-settings-controls {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .group-settings-name {
+    width: min(100%, 260px);
+  }
+
   .exercise-row {
     position: relative;
     grid-template-rows: auto 48px;

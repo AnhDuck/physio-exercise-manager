@@ -660,6 +660,8 @@ function loadSettings() {
       setCueSpeech: false,
       setCueSpeechVolume: 1,
       personalDayStartTime: '07:00',
+      armRotationEnabled: false,
+      exerciseGroups: defaultExerciseGroupSettings(),
       timelineRange: 'past-30-days',
       homeCards: defaultHomeCardsSettings(),
       autoBackup: defaultAutoBackupSettings(),
@@ -677,6 +679,8 @@ function loadSettings() {
     setCueSpeech: false,
     setCueSpeechVolume: 1,
     personalDayStartTime: '07:00',
+    armRotationEnabled: false,
+    exerciseGroups: defaultExerciseGroupSettings(),
     timelineRange: 'past-30-days',
     homeCards: defaultHomeCardsSettings(),
     autoBackup: defaultAutoBackupSettings(),
@@ -693,6 +697,8 @@ function saveSettings(settings) {
   const nextSettings = {
     ...cleanSettings,
     setCueSpeechVolume: clampSetCueSpeechVolume(cleanSettings.setCueSpeechVolume),
+    armRotationEnabled: Boolean(cleanSettings.armRotationEnabled),
+    exerciseGroups: normalizeExerciseGroupSettings(cleanSettings.exerciseGroups),
     timelineRange: normalizeStoredTimelineRange(cleanSettings.timelineRange),
     homeCards: normalizeHomeCardsSettings(cleanSettings.homeCards),
     autoBackup: normalizeAutoBackupSettings(cleanSettings.autoBackup),
@@ -705,6 +711,8 @@ function sanitizeLegacySettings(value) {
   delete settings.legsDays;
   delete settings.denseMode;
   delete settings.collapsedGroups;
+  settings.armRotationEnabled = Boolean(settings.armRotationEnabled);
+  settings.exerciseGroups = normalizeExerciseGroupSettings(settings.exerciseGroups);
   settings.timelineRange = normalizeStoredTimelineRange(settings.timelineRange);
   return settings;
 }

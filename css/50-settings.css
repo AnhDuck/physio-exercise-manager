@@ -371,6 +371,69 @@
   display: none;
 }
 
+.settings-schedule-options {
+  margin-top: 12px;
+}
+
+.group-settings {
+  display: grid;
+  gap: 10px;
+}
+
+.group-settings-help {
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.group-settings-row {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--exercise-group-color, var(--accent-green));
+  border-radius: var(--ui-panel-radius);
+  background: var(--ui-panel-bg);
+}
+
+.group-settings-label strong {
+  color: var(--exercise-group-color, var(--text));
+}
+
+.group-settings-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.group-settings-name {
+  width: min(220px, 28vw);
+}
+
+.group-settings-color {
+  width: 34px;
+  min-width: 34px;
+  height: 30px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--ui-control-bg);
+  cursor: pointer;
+}
+
+.group-settings-hidden {
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--ui-control-bg);
+}
+
+.group-settings-hidden:has(input:disabled) {
+  cursor: default;
+  opacity: .48;
+}
+
 .block-settings {
   display: grid;
   gap: 12px;

@@ -1,12 +1,13 @@
 // Settings modal, review markers, cue settings, and block settings UI.
 
-const SETTINGS_TABS = ['general', 'dashboard', 'blocks', 'backup', 'activitywatch', 'data-health'];
+const SETTINGS_TABS = ['general', 'dashboard', 'blocks', 'groups', 'backup', 'activitywatch', 'data-health'];
 
 function openSettingsModal() {
   ensureBlockSettings();
   settingsActiveTab = 'general';
   beginBlockDraft();
   syncSettingsControls();
+  renderGroupSettings();
   renderHiddenExerciseSettings();
   renderBlockSettings();
   hydrateSettingsFolderIcon();
@@ -81,6 +82,8 @@ function handleSettingsTabKeydown(e) {
 
 function syncSettingsControls() {
   document.getElementById('setting-personal-day-start').value = getPersonalDayStartTime();
+  const armRotation = document.getElementById('setting-arm-rotation-enabled');
+  if (armRotation) armRotation.checked = isArmRotationEnabled();
   document.getElementById('setting-cue-sound').checked = settings.setCueSound !== false;
   document.getElementById('setting-cue-vibrate').checked = settings.setCueVibrate !== false;
   document.getElementById('setting-cue-speech').checked = Boolean(settings.setCueSpeech);
@@ -100,6 +103,7 @@ function autosaveGeneralSettings() {
   settings.personalDayStartTime = isValidTime(personalDayStartTime)
     ? personalDayStartTime
     : DEFAULT_PERSONAL_DAY_START_TIME;
+  settings.armRotationEnabled = Boolean(document.getElementById('setting-arm-rotation-enabled')?.checked);
   settings.setCueSound = document.getElementById('setting-cue-sound').checked;
   settings.setCueVibrate = document.getElementById('setting-cue-vibrate').checked;
   settings.setCueSpeech = document.getElementById('setting-cue-speech').checked;
@@ -140,7 +144,7 @@ function renderHiddenExerciseSettings() {
 
   const hiddenExercises = exercises
     .filter(isExerciseHidden)
-    .sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group) || a.order - b.order);
+    .sort((a, b) => groupOrder().indexOf(a.group) - groupOrder().indexOf(b.group) || a.order - b.order);
 
   if (!hiddenExercises.length) {
     group.appendChild(buildHiddenExerciseEmptyRow());
@@ -193,7 +197,7 @@ function buildHiddenExerciseEmptyRow() {
 }
 
 function hiddenExerciseMeta(ex) {
-  const group = GROUPS[ex.group]?.label || 'Exercise';
+  const group = groupConfig(ex.group).label || 'Exercise';
   const dose = `${targetSetsForExercise(ex)} sets / ${ex.reps || '?'} reps${ex.resistance ? ` / ${ex.resistance}` : ''}`;
   const hiddenDate = formatHiddenExerciseDate(ex.hiddenAt);
   const details = hiddenDate ? `${dose} | Hidden ${hiddenDate}` : dose;
@@ -203,6 +207,179 @@ function hiddenExerciseMeta(ex) {
 function formatHiddenExerciseDate(iso) {
   const date = dateFromIso(iso);
   return date ? formatEventDate(toDateStr(date)) : '';
+}
+
+function renderGroupSettings() {
+  const root = document.getElementById('settings-groups');
+  if (!root) return;
+  ensureExerciseGroupSettings();
+  root.innerHTML = '';
+  const groups = groupOrder();
+  groups.forEach((groupId, index) => {
+    root.appendChild(buildGroupSettingsRow(groupId, index, groups.length));
+  });
+}
+
+function buildGroupSettingsRow(groupId, index, count) {
+  const cfg = groupConfig(groupId);
+  const activeCount = activeExerciseCountForGroup(groupId);
+  const hidden = Boolean(cfg.hidden);
+  const canHide = canHideGroup(groupId);
+  const row = el('div', 'settings-action-row group-settings-row');
+  row.style.setProperty('--exercise-group-color', cfg.color);
+
+  const label = el('div', 'settings-action-label group-settings-label');
+  label.appendChild(elText('strong', '', groupId));
+  label.appendChild(elText(
+    'span',
+    '',
+    activeCount
+      ? `${formatNumber(activeCount)} active exercise${activeCount === 1 ? '' : 's'}`
+      : hidden ? 'Hidden from normal tracking because the group is empty.' : 'Empty group.'
+  ));
+  row.appendChild(label);
+
+  const controls = el('div', 'group-settings-controls');
+
+  const name = document.createElement('input');
+  name.type = 'text';
+  name.className = 'group-settings-name';
+  name.value = cfg.label;
+  name.dataset.groupLabel = groupId;
+  name.setAttribute('aria-label', `Label for ${cfg.label}`);
+  controls.appendChild(name);
+
+  const color = document.createElement('input');
+  color.type = 'color';
+  color.className = 'group-settings-color';
+  color.value = cfg.color;
+  color.dataset.groupColor = groupId;
+  color.setAttribute('aria-label', `Color for ${cfg.label}`);
+  controls.appendChild(color);
+
+  const up = el('button', 'block-settings-move');
+  up.type = 'button';
+  up.disabled = index === 0;
+  up.title = 'Move group up';
+  up.setAttribute('aria-label', `Move ${cfg.label} up`);
+  up.dataset.groupMove = groupId;
+  up.dataset.direction = '-1';
+  up.appendChild(buildAppIconSvg('chevron-up'));
+  controls.appendChild(up);
+
+  const down = el('button', 'block-settings-move');
+  down.type = 'button';
+  down.disabled = index === count - 1;
+  down.title = 'Move group down';
+  down.setAttribute('aria-label', `Move ${cfg.label} down`);
+  down.dataset.groupMove = groupId;
+  down.dataset.direction = '1';
+  down.appendChild(buildAppIconSvg('chevron-down'));
+  controls.appendChild(down);
+
+  const hideLabel = el('label', 'cue-check-label group-settings-hidden');
+  const hide = document.createElement('input');
+  hide.type = 'checkbox';
+  hide.dataset.groupHidden = groupId;
+  hide.checked = hidden;
+  hide.disabled = !hidden && !canHide;
+  hideLabel.appendChild(hide);
+  hideLabel.appendChild(elText('strong', '', 'Hide'));
+  if (hide.disabled) {
+    hideLabel.title = 'Only empty groups can be hidden.';
+  }
+  controls.appendChild(hideLabel);
+
+  row.appendChild(controls);
+  return row;
+}
+
+function handleGroupSettingsClick(e) {
+  const move = e.target.closest('[data-group-move]');
+  if (!move) return;
+  moveGroupSetting(move.dataset.groupMove, Number(move.dataset.direction) || 0);
+}
+
+function handleGroupSettingsChange(e) {
+  const labelInput = e.target.closest('[data-group-label]');
+  if (labelInput) {
+    saveGroupLabelInput(labelInput);
+    return;
+  }
+
+  const colorInput = e.target.closest('[data-group-color]');
+  if (colorInput) {
+    saveGroupColorInput(colorInput);
+    return;
+  }
+
+  const hiddenInput = e.target.closest('[data-group-hidden]');
+  if (hiddenInput) {
+    updateGroupHidden(hiddenInput.dataset.groupHidden, hiddenInput.checked);
+  }
+}
+
+function handleGroupSettingsFocusout(e) {
+  const labelInput = e.target.closest('[data-group-label]');
+  if (labelInput) {
+    saveGroupLabelInput(labelInput);
+    return;
+  }
+
+  const colorInput = e.target.closest('[data-group-color]');
+  if (colorInput) saveGroupColorInput(colorInput);
+}
+
+function saveGroupLabelInput(input) {
+  updateGroupSetting(input.dataset.groupLabel, {
+    label: input.value.trim(),
+  });
+}
+
+function saveGroupColorInput(input) {
+  updateGroupSetting(input.dataset.groupColor, {
+    color: input.value,
+  });
+}
+
+function updateGroupSetting(groupId, changes) {
+  const registry = ensureExerciseGroupSettings();
+  if (!registry.items[groupId]) return;
+  registry.items[groupId] = {
+    ...registry.items[groupId],
+    ...changes,
+  };
+  saveGroupSettings();
+}
+
+function updateGroupHidden(groupId, hidden) {
+  const registry = ensureExerciseGroupSettings();
+  if (!registry.items[groupId]) return;
+  if (hidden && !canHideGroup(groupId)) {
+    showToast('Only empty groups can be hidden.');
+    renderGroupSettings();
+    return;
+  }
+  registry.items[groupId].hidden = Boolean(hidden);
+  saveGroupSettings();
+}
+
+function moveGroupSetting(groupId, direction) {
+  const registry = ensureExerciseGroupSettings();
+  const index = registry.order.indexOf(groupId);
+  const target = index + direction;
+  if (index === -1 || target < 0 || target >= registry.order.length) return;
+  [registry.order[index], registry.order[target]] = [registry.order[target], registry.order[index]];
+  saveGroupSettings();
+}
+
+function saveGroupSettings() {
+  settings.exerciseGroups = normalizeExerciseGroupSettings(settings.exerciseGroups);
+  saveSettings(settings);
+  renderGroupSettings();
+  renderHiddenExerciseSettings();
+  renderBlockSettings();
+  render();
 }
 
 function clearChangedSincePhysioMarkers() {
@@ -261,7 +438,7 @@ function beginBlockDraft() {
 
 function cloneBlockSettings(blocks) {
   const output = {};
-  GROUP_ORDER.forEach(group => {
+  groupOrder().forEach(group => {
     output[group] = Array.isArray(blocks?.[group])
       ? blocks[group].map(block => ({
           id: normalizeBlockInput(block.id),
@@ -290,7 +467,7 @@ function normalizeDraftBlockOrders(group, draftBlocks = settingsBlockDraft?.bloc
 function serializeBlockDraft() {
   if (!settingsBlockDraft) return '';
   const blocks = {};
-  GROUP_ORDER.forEach(group => {
+  groupOrder().forEach(group => {
     blocks[group] = draftBlockDefinitionsForGroup(group).map(block => ({
       id: block.id,
       title: block.title,
@@ -331,7 +508,7 @@ function applyBlockDraft() {
   readBlockSettingsForm({ updateActions: false });
 
   settings.blocks = cloneBlockSettings(settingsBlockDraft.blocks);
-  GROUP_ORDER.forEach(group => normalizeBlockDefinitionOrders(group));
+  groupOrder().forEach(group => normalizeBlockDefinitionOrders(group));
   exercises.forEach(ex => {
     ex.blockId = settingsBlockDraft.exerciseBlocks[ex.id] || '';
   });
@@ -355,7 +532,7 @@ function renderBlockSettings() {
   if (!root) return;
   if (!settingsBlockDraft) beginBlockDraft();
   root.innerHTML = '';
-  GROUP_ORDER.forEach(group => root.appendChild(buildBlockSettingsGroup(group)));
+  groupOrder().forEach(group => root.appendChild(buildBlockSettingsGroup(group)));
   updateBlockDraftActions();
 }
 
@@ -367,7 +544,7 @@ function refreshOpenBlockSettings() {
 }
 
 function buildBlockSettingsGroup(group) {
-  const cfg = GROUPS[group];
+  const cfg = groupConfig(group);
   const panel = el('section', 'block-settings-group');
   panel.style.setProperty('--exercise-group-color', cfg.color);
 
