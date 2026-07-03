@@ -55,7 +55,7 @@ Never load `main.js` before feature files it binds. Do not add imports, exports,
 - `timeline-*.js`: notes, events, Markdown, filters, export, and edit flows.
 - `backup.js`: JSON import/export, validation, shared restore rollback, and empty-browser/meaningful-backup detection helpers.
 - `auto-backup.js`: folder backup, live latest-file mirror, empty-browser recovery prompt, health banner, and backup history.
-- `settings.js`: settings modal, review markers, block settings, and backup UI.
+- `settings.js`: settings modal, review markers, combined group/block settings, and backup UI.
 - `images.js`: exercise image upload and URL import.
 - `main.js`: guarded startup bootstrap and static event binding. Startup phases should use `runStartupStep(...)` so a failed optional feature logs a non-blocking warning instead of stopping later phases. Static DOM bindings should use the local `bindClick` / `bindChange` / `bindInput` / `bindKeydown` helpers so missing optional controls fail softly and missing required controls warn clearly.
 
@@ -95,7 +95,7 @@ Load-side app-data parsing also belongs in `storage.js`. Persisted JSON loaders 
 ## Where To Edit
 
 - Schedule/date bugs: `dates.js`, then `grid.js` if rendering is affected.
-- Exercise add/edit/order/block behavior and group settings UI: `exercises.js` and `settings.js`.
+- Exercise add/edit/order/block behavior and the combined Groups & Blocks settings UI: `exercises.js` and `settings.js`.
 - Set tracker/timer/log behavior: `tracker.js`, `sessions.js`, and timeline renderers if log display changes.
 - Timeline note/event behavior: `timeline-*.js`.
 - Backup/import/export: `backup.js`, `auto-backup.js`, and storage helpers.

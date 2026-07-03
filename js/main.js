@@ -246,9 +246,9 @@ function bindStaticEvents() {
   bindClick('settings-auto-backup-history-toggle', toggleAutoBackupHistory);
   bindClick('settings-blocks-apply', applyBlockDraft);
   bindClick('settings-blocks-discard', discardBlockDraft);
-  bindClick('settings-groups', handleGroupSettingsClick, { required: false });
-  bindChange('settings-groups', handleGroupSettingsChange, { required: false });
-  bindEvent('settings-groups', 'focusout', handleGroupSettingsFocusout, { required: false });
+  bindClick('settings-groups-blocks', handleGroupSettingsClick, { required: false });
+  bindChange('settings-groups-blocks', handleGroupSettingsChange, { required: false });
+  bindEvent('settings-groups-blocks', 'focusout', handleGroupSettingsFocusout, { required: false });
   bindChange('settings-import-file', (e) => {
     handleBackupImportFile(e.target.files[0]);
     e.target.value = '';

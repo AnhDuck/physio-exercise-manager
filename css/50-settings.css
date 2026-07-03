@@ -51,7 +51,7 @@
   margin-top: 0;
 }
 
-.cue-check-label {
+.settings-check-label {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -66,16 +66,57 @@
   padding: 0 9px;
 }
 
-.cue-check-label input {
-  width: 15px;
-  height: 15px;
-  accent-color: var(--c-day1);
-}
-
-.cue-check-label strong {
+.settings-check-label strong {
   font-size: 12px;
   letter-spacing: 0;
   text-transform: none;
+}
+
+#settings-modal input[type="checkbox"] {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  margin: 0;
+  border: 1px solid rgba(160,164,173,.62);
+  border-radius: 4px;
+  background: rgba(255,255,255,.045);
+  color: #061414;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s, opacity .15s;
+}
+
+#settings-modal input[type="checkbox"]::before {
+  width: 9px;
+  height: 9px;
+  background: currentColor;
+  clip-path: polygon(14% 48%, 0 64%, 38% 100%, 100% 20%, 84% 7%, 35% 68%);
+  content: "";
+  opacity: 0;
+  transform: scale(.8);
+  transition: opacity .12s, transform .12s;
+}
+
+#settings-modal input[type="checkbox"]:checked {
+  border-color: rgba(49,185,170,.78);
+  background: var(--accent-green);
+}
+
+#settings-modal input[type="checkbox"]:checked::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+#settings-modal input[type="checkbox"]:focus-visible {
+  box-shadow: var(--ui-focus-ring);
+  outline: none;
+}
+
+#settings-modal input[type="checkbox"]:disabled {
+  cursor: default;
+  opacity: .45;
 }
 
 .cue-volume-label,
@@ -375,7 +416,7 @@
   margin-top: 12px;
 }
 
-.group-settings {
+.group-block-settings {
   display: grid;
   gap: 10px;
 }
@@ -388,10 +429,21 @@
 }
 
 .group-settings-row {
+  background: transparent;
+}
+
+.group-block-settings-card {
+  overflow: hidden;
   border: 1px solid var(--border);
   border-left: 3px solid var(--exercise-group-color, var(--accent-green));
   border-radius: var(--ui-panel-radius);
   background: var(--ui-panel-bg);
+}
+
+.group-block-settings-card .group-settings-row {
+  border: 0;
+  border-bottom: 1px solid var(--settings-row-border);
+  border-radius: 0;
 }
 
 .group-settings-label strong {
@@ -447,6 +499,13 @@
   padding: 12px;
 }
 
+.block-settings-group.is-embedded {
+  border: 0;
+  border-left: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
 .block-settings-group-header {
   display: flex;
   align-items: center;
@@ -465,7 +524,7 @@
 }
 
 .block-settings-add,
-.block-settings-move,
+.settings-icon-btn,
 .block-settings-delete,
 .settings-clear-review,
 .settings-draft-btn,
@@ -505,7 +564,7 @@
 }
 
 .block-settings-add:hover,
-.block-settings-move:hover:not(:disabled),
+.settings-icon-btn:hover:not(:disabled),
 .block-settings-delete:hover,
 .settings-clear-review:hover:not(:disabled),
 .settings-draft-btn:hover:not(:disabled),
@@ -515,7 +574,7 @@
 }
 
 .block-settings-add:focus-visible,
-.block-settings-move:focus-visible:not(:disabled),
+.settings-icon-btn:focus-visible:not(:disabled),
 .block-settings-delete:focus-visible,
 .settings-clear-review:focus-visible:not(:disabled),
 .settings-draft-btn:focus-visible:not(:disabled),
@@ -1019,12 +1078,12 @@
   gap: 4px;
 }
 
-.block-settings-move {
+.settings-icon-btn {
   width: 28px;
   padding: 0;
 }
 
-.block-settings-move:disabled {
+.settings-icon-btn:disabled {
   cursor: default;
   opacity: .35;
 }
@@ -1035,7 +1094,7 @@
   color: #fecaca;
 }
 
-.block-settings-move .ui-button-icon,
+.settings-icon-btn .ui-button-icon,
 .settings-close .ui-button-icon {
   width: 17px;
   height: 17px;

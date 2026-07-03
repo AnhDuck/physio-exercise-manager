@@ -1,15 +1,18 @@
-// Settings modal, review markers, cue settings, and block settings UI.
+// Settings modal, review markers, cue settings, group settings, and block settings UI.
 
-const SETTINGS_TABS = ['general', 'dashboard', 'blocks', 'groups', 'backup', 'activitywatch', 'data-health'];
+const SETTINGS_TABS = ['general', 'dashboard', 'groups-blocks', 'backup', 'activitywatch', 'data-health'];
+const SETTINGS_TAB_ALIASES = {
+  blocks: 'groups-blocks',
+  groups: 'groups-blocks',
+};
 
 function openSettingsModal() {
   ensureBlockSettings();
   settingsActiveTab = 'general';
   beginBlockDraft();
   syncSettingsControls();
-  renderGroupSettings();
   renderHiddenExerciseSettings();
-  renderBlockSettings();
+  renderGroupBlockSettings();
   hydrateSettingsFolderIcon();
   hydrateSettingsIconButtons(document.getElementById('settings-modal'));
   renderAutoBackupSettings();
@@ -42,7 +45,8 @@ function handleSettingsKeydown(e) {
 }
 
 function setSettingsTab(tabName, focusTab = false) {
-  const nextTab = SETTINGS_TABS.includes(tabName) ? tabName : 'general';
+  const requestedTab = SETTINGS_TAB_ALIASES[tabName] || tabName;
+  const nextTab = SETTINGS_TABS.includes(requestedTab) ? requestedTab : 'general';
   settingsActiveTab = nextTab;
 
   document.querySelectorAll('#settings-modal [data-settings-tab]').forEach(tab => {
@@ -209,15 +213,30 @@ function formatHiddenExerciseDate(iso) {
   return date ? formatEventDate(toDateStr(date)) : '';
 }
 
-function renderGroupSettings() {
-  const root = document.getElementById('settings-groups');
+function renderGroupBlockSettings() {
+  const root = document.getElementById('settings-groups-blocks');
   if (!root) return;
   ensureExerciseGroupSettings();
+  if (!settingsBlockDraft) beginBlockDraft();
   root.innerHTML = '';
   const groups = groupOrder();
   groups.forEach((groupId, index) => {
-    root.appendChild(buildGroupSettingsRow(groupId, index, groups.length));
+    root.appendChild(buildGroupBlockSettingsCard(groupId, index, groups.length));
   });
+  updateBlockDraftActions();
+}
+
+function renderGroupSettings() {
+  renderGroupBlockSettings();
+}
+
+function buildGroupBlockSettingsCard(groupId, index, count) {
+  const cfg = groupConfig(groupId);
+  const card = el('section', 'group-block-settings-card');
+  card.style.setProperty('--exercise-group-color', cfg.color);
+  card.appendChild(buildGroupSettingsRow(groupId, index, count));
+  card.appendChild(buildBlockSettingsGroup(groupId, { embedded: true }));
+  return card;
 }
 
 function buildGroupSettingsRow(groupId, index, count) {
@@ -257,7 +276,7 @@ function buildGroupSettingsRow(groupId, index, count) {
   color.setAttribute('aria-label', `Color for ${cfg.label}`);
   controls.appendChild(color);
 
-  const up = el('button', 'block-settings-move');
+  const up = el('button', 'settings-icon-btn');
   up.type = 'button';
   up.disabled = index === 0;
   up.title = 'Move group up';
@@ -267,7 +286,7 @@ function buildGroupSettingsRow(groupId, index, count) {
   up.appendChild(buildAppIconSvg('chevron-up'));
   controls.appendChild(up);
 
-  const down = el('button', 'block-settings-move');
+  const down = el('button', 'settings-icon-btn');
   down.type = 'button';
   down.disabled = index === count - 1;
   down.title = 'Move group down';
@@ -277,7 +296,7 @@ function buildGroupSettingsRow(groupId, index, count) {
   down.appendChild(buildAppIconSvg('chevron-down'));
   controls.appendChild(down);
 
-  const hideLabel = el('label', 'cue-check-label group-settings-hidden');
+  const hideLabel = el('label', 'settings-check-label group-settings-hidden');
   const hide = document.createElement('input');
   hide.type = 'checkbox';
   hide.dataset.groupHidden = groupId;
@@ -374,11 +393,11 @@ function moveGroupSetting(groupId, direction) {
 }
 
 function saveGroupSettings() {
+  if (settingsBlockDraft) readBlockSettingsForm({ updateActions: false });
   settings.exerciseGroups = normalizeExerciseGroupSettings(settings.exerciseGroups);
   saveSettings(settings);
-  renderGroupSettings();
   renderHiddenExerciseSettings();
-  renderBlockSettings();
+  renderGroupBlockSettings();
   render();
 }
 
@@ -516,7 +535,7 @@ function applyBlockDraft() {
   saveSettings(settings);
   saveExercises(exercises);
   beginBlockDraft();
-  renderBlockSettings();
+  renderGroupBlockSettings();
   render();
   showToast('Block changes applied.');
 }
@@ -524,32 +543,27 @@ function applyBlockDraft() {
 function discardBlockDraft() {
   if (!settingsBlockDraft) return;
   beginBlockDraft();
-  renderBlockSettings();
+  renderGroupBlockSettings();
 }
 
 function renderBlockSettings() {
-  const root = document.getElementById('settings-blocks');
-  if (!root) return;
-  if (!settingsBlockDraft) beginBlockDraft();
-  root.innerHTML = '';
-  groupOrder().forEach(group => root.appendChild(buildBlockSettingsGroup(group)));
-  updateBlockDraftActions();
+  renderGroupBlockSettings();
 }
 
 function refreshOpenBlockSettings() {
   const modal = document.getElementById('settings-modal');
   if (!modal || modal.classList.contains('hidden')) return;
   readBlockSettingsForm();
-  renderBlockSettings();
+  renderGroupBlockSettings();
 }
 
-function buildBlockSettingsGroup(group) {
+function buildBlockSettingsGroup(group, options = {}) {
   const cfg = groupConfig(group);
-  const panel = el('section', 'block-settings-group');
+  const panel = el('section', options.embedded ? 'block-settings-group is-embedded' : 'block-settings-group');
   panel.style.setProperty('--exercise-group-color', cfg.color);
 
   const header = el('div', 'block-settings-group-header');
-  header.appendChild(elText('h4', '', cfg.label));
+  header.appendChild(elText('h4', '', options.embedded ? 'Blocks' : cfg.label));
   const addBtn = el('button', 'block-settings-add');
   addBtn.type = 'button';
   addBtn.appendChild(buildAppIconSvg('add'));
@@ -560,7 +574,7 @@ function buildBlockSettingsGroup(group) {
     renderBlockSettings();
     window.setTimeout(() => {
       const escapeIdent = window.CSS?.escape || (value => String(value).replace(/"/g, '\\"'));
-      document.querySelector(`#settings-blocks input[data-block-title="${escapeIdent(`${group}:${block.id}`)}"]`)?.focus();
+      document.querySelector(`#settings-groups-blocks input[data-block-title="${escapeIdent(`${group}:${block.id}`)}"]`)?.focus();
     }, 0);
   });
   header.appendChild(addBtn);
@@ -599,7 +613,7 @@ function buildBlockSettingsRow(group, block, index, count) {
   row.appendChild(input);
 
   const actions = el('div', 'block-settings-actions');
-  const up = el('button', 'block-settings-move');
+  const up = el('button', 'settings-icon-btn');
   up.type = 'button';
   up.title = 'Move block up';
   up.setAttribute('aria-label', 'Move block up');
@@ -612,7 +626,7 @@ function buildBlockSettingsRow(group, block, index, count) {
   });
   actions.appendChild(up);
 
-  const down = el('button', 'block-settings-move');
+  const down = el('button', 'settings-icon-btn');
   down.type = 'button';
   down.title = 'Move block down';
   down.setAttribute('aria-label', 'Move block down');
@@ -666,12 +680,12 @@ function buildBlockExerciseAssignment(group, ex) {
 function readBlockSettingsForm(options = {}) {
   if (!settingsBlockDraft) return;
   const updateActions = options.updateActions !== false;
-  document.querySelectorAll('#settings-blocks input[data-block-title]').forEach(input => {
+  document.querySelectorAll('#settings-groups-blocks input[data-block-title]').forEach(input => {
     const [group, blockId] = input.dataset.blockTitle.split(':');
     const block = draftBlockDefinitionsForGroup(group).find(item => item.id === blockId);
     if (block) block.title = input.value.trim();
   });
-  document.querySelectorAll('#settings-blocks select[data-exercise-block]').forEach(select => {
+  document.querySelectorAll('#settings-groups-blocks select[data-exercise-block]').forEach(select => {
     settingsBlockDraft.exerciseBlocks[select.dataset.exerciseBlock] = select.value;
   });
   if (updateActions) updateBlockDraftActions();
