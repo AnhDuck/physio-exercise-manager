@@ -597,7 +597,7 @@ body.workload-timer-running::before {
 
 .weather-facts {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(0, .78fr) minmax(84px, 1.04fr) minmax(0, .78fr) minmax(112px, 1.4fr);
   gap: 7px;
 }
 

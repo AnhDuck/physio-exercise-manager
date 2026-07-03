@@ -201,7 +201,7 @@ function buildWeatherHourlyStrip(data) {
     const item = el('div', 'weather-hourly-item');
     const isCountdownHour = countdown && weatherTimestamp(hour.time) === countdown.timeMs;
     if (isCountdownHour) item.classList.add('is-countdown');
-    item.appendChild(elText('span', '', isCountdownHour ? countdown.label : homeCardFormatTime(hour.time, data.timezone).replace(/\s/g, '')));
+    item.appendChild(elText('span', '', homeCardFormatTime(hour.time, data.timezone).replace(/\s/g, '')));
     item.appendChild(buildWeatherIcon(condition.icon, hour.isDay, 'weather-hourly-icon'));
     item.appendChild(elText('strong', '', `${Math.round(hour.temperature)}°`));
     strip.appendChild(item);
