@@ -73,15 +73,18 @@ For ActivityWatch dashboard changes, smoke-check:
 - dashboard opens and closes
 - visible header version matches the expected version
 - range select and pager render
+- range select does not include Last 7 days
 - default dashboard view is Exposure
 - Exposure, Workload, and Breakdown tabs switch cleanly
 - Daily/Weekly grain controls render in all three views
-- 7-day average checkbox is checked by default and appears only in Daily grain
-- Daily Exposure, Daily Workload, and Daily Breakdown show the 7-day average line
+- no 7-day average checkbox/toggle appears
+- Daily Exposure, Daily Workload, and Daily Breakdown show the 7-day average line with the chart-heading legend
+- 7-day average dots align with the center of their bars across Last 2 weeks, Last 30 days, Last 60 days, and Last 90 days
 - Workload `Work only` updates the 7-day average to the work-only load basis
 - Breakdown category/group lock updates the 7-day average to that locked category/group, while hover preview does not change the line
 - Workload shows Total load / Work only and does not show Stack by
 - Breakdown shows Stack by Categories / Groups
+- Weekly views hide the 7-day average line and legend
 - chart day selection works
 - category hover/filter behavior still works
 - Exposure and Workload right panels show selected day/week and visible range together without duplicate heading metrics

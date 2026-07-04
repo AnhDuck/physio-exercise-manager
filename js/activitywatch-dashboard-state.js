@@ -1,7 +1,6 @@
 // ActivityWatch dashboard state and shared range/category helpers.
 
 const ACTIVITYWATCH_DASHBOARD_RANGE_OPTIONS = [
-  { days: 7, label: 'Last 7 days' },
   { days: 14, label: 'Last 2 weeks' },
   { days: 30, label: 'Last 30 days' },
   { days: 60, label: 'Last 60 days' },
@@ -38,7 +37,6 @@ const ACTIVITYWATCH_METHODOLOGY_CHANGES = [
 const activityWatchDashboardState = {
   viewMode: 'exposure',
   chartGrain: 'daily',
-  showRollingAverage: true,
   workloadBasis: 'total',
   selectedDate: '',
   rangeDays: ACTIVITYWATCH_DASHBOARD_DEFAULT_RANGE_DAYS,
@@ -186,8 +184,7 @@ function normalizeActivityWatchDashboardWorkloadBasis(value) {
 }
 
 function activityWatchDashboardUsesRollingAverage() {
-  return Boolean(activityWatchDashboardState.showRollingAverage)
-    && activityWatchDashboardState.chartGrain === 'daily'
+  return activityWatchDashboardState.chartGrain === 'daily'
     && ['exposure', 'workload', 'breakdown'].includes(activityWatchDashboardState.viewMode);
 }
 

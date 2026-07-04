@@ -53,9 +53,9 @@ The main-screen ActivityWatch mini card is a glanceable current waking-day surfa
 
 ## Dashboard Rules
 
-The dashboard is a small three-view analytics surface, not one chart with global filters. Dashboard UI state is not persisted. The single dashboard state object includes view mode, chart grain, rolling-average toggle, workload basis, selected date, range length/end date, category mode, selected category, hovered category, detail mode, show-all state, chart scroll state, and advanced sync state.
+The dashboard is a small three-view analytics surface, not one chart with global filters. Dashboard UI state is not persisted. The single dashboard state object includes view mode, chart grain, workload basis, selected date, range length/end date, category mode, selected category, hovered category, detail mode, show-all state, chart scroll state, and advanced sync state.
 
-Default range is Last 2 weeks ending on the current waking day. Opening the dashboard selects the current waking day when visible. Range paging jumps by the selected range length. Latest returns to the current waking-day range.
+Default range is Last 2 weeks ending on the current waking day. Range options start at Last 2 weeks; do not include a Last 7 days option. Opening the dashboard selects the current waking day when visible. Range paging jumps by the selected range length. Latest returns to the current waking-day range.
 
 ActivityWatch dashboard coverage starts on 2026-04-17. Earlier dates are treated as no data and excluded from averages. Missing/unsynced dates are excluded from average denominators; true synced zero-activity days count as zero.
 
@@ -66,7 +66,7 @@ Dashboard control hierarchy is intentionally split:
 - Modal header is app-level only: `ActivityWatch`, combined sync/refresh, Advanced, and Close. The combined sync/refresh button is the everyday action and refreshes only the latest 3 waking days.
 - View tabs sit under the modal titlebar and are `Exposure`, `Workload`, and `Breakdown`.
 - Chart controls own the visible date/view state: chart title, visible date range, adjacent previous/next buttons, range dropdown, Today button, `Daily / Weekly`, and view-specific controls.
-- `Stack by: Categories / Groups` appears only in Breakdown. Workload has `Total load / Work only`. Daily chart grain has a floating chart-corner `7-day average` checkbox, checked by default, in Exposure, Workload, and Breakdown. Weekly grain hides the checkbox and average line while preserving the in-memory checked state.
+- `Stack by: Categories / Groups` appears only in Breakdown. Workload has `Total load / Work only`. Daily chart grain always shows the 7-day average line in Exposure, Workload, and Breakdown with a compact non-interactive legend in the chart heading. Weekly grain hides the legend and average line.
 - Right panel owns selected day/week/range analytics and must be contextual to the current view.
 - Advanced panel owns sync/debug/metadata such as desktop, ActivityWatch version, server URL, bucket IDs, cached days, day start, and last sync. Advanced resync uses exact date strings through `maybeSyncActivityWatchDateStrings(...)`.
 

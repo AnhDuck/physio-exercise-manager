@@ -39,9 +39,6 @@ function renderActivityWatchStackedChart(days) {
   const plot = el('div', 'activitywatch-chart-plot');
   plot.style.setProperty('--activitywatch-day-count', items.length);
   plot.style.setProperty('--activitywatch-grid-step', `${100 / Math.max(1, axis.ticks.length - 1)}%`);
-  if (activityWatchDashboardState.chartGrain === 'daily') {
-    plot.appendChild(buildActivityWatchRollingAverageToggle());
-  }
 
   const content = el('div', 'activitywatch-chart-content');
   content.style.setProperty('--activitywatch-day-count', items.length);
@@ -107,9 +104,9 @@ function renderActivityWatchStackedChart(days) {
     bars.appendChild(barButton);
   });
   content.appendChild(bars);
-  appendActivityWatchRollingAverage(content, rollingAveragePoints, axis);
   plot.appendChild(content);
   root.appendChild(plot);
+  appendActivityWatchRollingAverage(content, rollingAveragePoints, axis);
   bindActivityWatchChartWheelScroll(plot);
   requestAnimationFrame(() => {
     if (shouldRestoreScroll) {
@@ -506,15 +503,20 @@ function appendActivityWatchRollingAverage(plot, points, axis) {
     .map((point, index) => ({ ...point, index }))
     .filter(point => point.syncedDayCount > 0);
   if (!usable.length) return;
+  const bars = Array.from(plot.querySelectorAll('.activitywatch-day-bar'));
+  const barsRow = plot.querySelector('.activitywatch-bars-row');
+  const overlayWidth = barsRow?.offsetWidth || plot.clientWidth || plot.offsetWidth || 1;
+  if (!bars.length || !overlayWidth) return;
   const overlay = el('div', 'activitywatch-average-overlay');
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 100 100');
+  svg.setAttribute('viewBox', `0 0 ${overlayWidth} 100`);
   svg.setAttribute('preserveAspectRatio', 'none');
   svg.setAttribute('aria-hidden', 'true');
   const polyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
   const max = Math.max(1, axis.maxSeconds);
   const pointText = usable.map(point => {
-    const x = ((point.index + 0.5) / points.length) * 100;
+    const bar = bars[point.index];
+    const x = bar ? bar.offsetLeft + (bar.offsetWidth / 2) : ((point.index + 0.5) / points.length) * overlayWidth;
     const y = 100 - Math.max(0, Math.min(100, (point.averageSeconds / max) * 100));
     return `${x.toFixed(2)},${y.toFixed(2)}`;
   }).join(' ');
@@ -522,10 +524,11 @@ function appendActivityWatchRollingAverage(plot, points, axis) {
   svg.appendChild(polyline);
   overlay.appendChild(svg);
   usable.forEach(point => {
-    const x = ((point.index + 0.5) / points.length) * 100;
+    const bar = bars[point.index];
+    const x = bar ? bar.offsetLeft + (bar.offsetWidth / 2) : ((point.index + 0.5) / points.length) * overlayWidth;
     const y = 100 - Math.max(0, Math.min(100, (point.averageSeconds / max) * 100));
     const dot = el('span', 'activitywatch-average-dot');
-    dot.style.left = `${x}%`;
+    dot.style.left = `${x}px`;
     dot.style.top = `${y}%`;
     dot.tabIndex = 0;
     const metricLabel = activityWatchRollingAverageMetricLabel();

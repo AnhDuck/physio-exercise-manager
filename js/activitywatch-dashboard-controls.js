@@ -61,7 +61,12 @@ function renderActivityWatchDashboardTabs(days) {
   const heading = el('div', 'activitywatch-chart-heading');
   const copy = el('div', '');
   copy.appendChild(elText('h3', '', activityWatchDashboardChartTitle()));
-  copy.appendChild(elText('span', '', activityWatchDateRangeLabel(days)));
+  const meta = el('div', 'activitywatch-chart-heading-meta');
+  meta.appendChild(elText('span', '', activityWatchDateRangeLabel(days)));
+  if (activityWatchDashboardUsesRollingAverage()) {
+    meta.appendChild(buildActivityWatchRollingAverageLegend());
+  }
+  copy.appendChild(meta);
   heading.appendChild(copy);
   root.appendChild(heading);
 }
@@ -321,30 +326,6 @@ function buildActivityWatchCategoryModeToggle() {
   );
 }
 
-function buildActivityWatchRollingAverageToggle() {
-  const label = '7-day average';
-  const title = 'Show trailing 7-day average. Each point uses that day plus the previous 6 waking days.';
-  const wrap = el('label', 'activitywatch-average-checkbox');
-  const input = el('input', '');
-  input.type = 'checkbox';
-  input.id = 'activitywatch-rolling-average-toggle';
-  input.setAttribute('aria-label', label);
-  input.setAttribute('aria-describedby', 'activitywatch-rolling-average-help');
-  input.checked = Boolean(activityWatchDashboardState.showRollingAverage);
-  input.addEventListener('change', () => {
-    activityWatchDashboardState.showRollingAverage = input.checked;
-    activityWatchDashboardState.hoveredCategory = '';
-    renderActivityWatchDashboard();
-  });
-  wrap.appendChild(input);
-  const text = elText('span', '', label);
-  text.id = 'activitywatch-rolling-average-help';
-  text.setAttribute('aria-label', title);
-  wrap.appendChild(text);
-  wrap.classList.toggle('is-active', Boolean(activityWatchDashboardState.showRollingAverage));
-  return wrap;
-}
-
 function buildActivityWatchPagerButton(title, iconName, onClick) {
   const button = el('button', 'activitywatch-pager-btn');
   button.type = 'button';
@@ -362,5 +343,13 @@ function buildActivityWatchTodayButton(onClick) {
   button.textContent = 'Today';
   button.addEventListener('click', onClick);
   return button;
+}
+
+function buildActivityWatchRollingAverageLegend() {
+  const legend = el('span', 'activitywatch-average-legend');
+  legend.setAttribute('aria-label', 'Yellow line shows the trailing 7-day average');
+  legend.appendChild(el('span', 'activitywatch-average-legend-line'));
+  legend.appendChild(elText('span', '', '7-day average'));
+  return legend;
 }
 

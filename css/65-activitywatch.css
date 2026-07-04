@@ -243,94 +243,6 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   outline: none;
 }
 
-.activitywatch-overlay-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 26px;
-  padding: 2px 0;
-  border: 0;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 850;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.activitywatch-overlay-toggle:hover,
-.activitywatch-overlay-toggle:focus-visible,
-.activitywatch-overlay-toggle.is-active {
-  color: #c7f7ea;
-  outline: none;
-}
-
-.activitywatch-overlay-toggle.is-disabled {
-  color: var(--text-dim);
-  cursor: not-allowed;
-  opacity: .62;
-}
-
-.activitywatch-overlay-toggle.is-disabled:hover,
-.activitywatch-overlay-toggle.is-disabled:focus-visible {
-  color: var(--text-dim);
-}
-
-.activitywatch-overlay-toggle input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.activitywatch-overlay-switch {
-  position: relative;
-  display: inline-block;
-  flex: 0 0 auto;
-  width: 30px;
-  height: 16px;
-  border: 1px solid rgba(160,164,173,.34);
-  border-radius: 999px;
-  background: rgba(255,255,255,.08);
-  transition: border-color .14s ease, background .14s ease;
-}
-
-.activitywatch-overlay-switch::after {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: var(--text-muted);
-  content: "";
-  transition: transform .14s ease, background .14s ease;
-}
-
-.activitywatch-overlay-toggle input:focus-visible + .activitywatch-overlay-switch {
-  box-shadow: var(--ui-focus-ring);
-}
-
-.activitywatch-overlay-toggle input:checked + .activitywatch-overlay-switch {
-  border-color: rgba(121,214,189,.78);
-  background: rgba(121,214,189,.22);
-}
-
-.activitywatch-overlay-toggle input:checked + .activitywatch-overlay-switch::after {
-  background: #c7f7ea;
-  transform: translateX(14px);
-}
-
-.activitywatch-overlay-toggle input:disabled + .activitywatch-overlay-switch {
-  border-color: rgba(160,164,173,.2);
-  background: rgba(255,255,255,.035);
-}
-
-.activitywatch-overlay-toggle input:disabled + .activitywatch-overlay-switch::after {
-  background: rgba(160,164,173,.42);
-}
-
 .activitywatch-sync-progress {
   display: grid;
   gap: 6px;
@@ -425,6 +337,39 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   font-size: 12px;
   font-weight: 750;
   line-height: 1.25;
+}
+
+.activitywatch-chart-heading-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  margin-top: 2px;
+}
+
+.activitywatch-chart-heading-meta > span {
+  margin-top: 0;
+}
+
+.activitywatch-chart-heading .activitywatch-average-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #f8d57d;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.activitywatch-chart-heading .activitywatch-average-legend-line {
+  display: inline-block;
+  width: 20px;
+  height: 0;
+  border-top: 2px solid #f5c45a;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgba(245,196,90,.12);
 }
 
 .activitywatch-chart-toolbar {
@@ -963,45 +908,9 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   background-image: linear-gradient(to top, rgba(255,255,255,.08), rgba(255,255,255,.01));
 }
 
-.activitywatch-average-checkbox {
-  position: absolute;
-  top: 7px;
-  right: 10px;
-  z-index: 7;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 24px;
-  padding: 3px 7px;
-  border: 1px solid rgba(245,196,90,.28);
-  border-radius: 5px;
-  background: rgba(20,24,28,.82);
-  color: #f8e3ae;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 850;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.activitywatch-average-checkbox:hover,
-.activitywatch-average-checkbox:focus-within,
-.activitywatch-average-checkbox.is-active {
-  border-color: rgba(245,196,90,.54);
-  background: rgba(245,196,90,.13);
-  color: #ffe5a2;
-}
-
-.activitywatch-average-checkbox input {
-  width: 13px;
-  height: 13px;
-  margin: 0;
-  accent-color: #f5c45a;
-}
-
 .activitywatch-average-overlay {
   position: absolute;
-  inset: var(--activitywatch-chart-plot-top) 8px var(--activitywatch-chart-plot-bottom);
+  inset: var(--activitywatch-chart-plot-top) 0 var(--activitywatch-chart-plot-bottom);
   z-index: 5;
   pointer-events: none;
 }
