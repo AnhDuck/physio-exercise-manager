@@ -1033,6 +1033,16 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   box-shadow: 0 0 0 2px rgba(245,196,90,.18);
   pointer-events: auto;
   transform: translate(-50%, -50%);
+  transition: box-shadow .12s ease, transform .12s ease;
+}
+
+.activitywatch-average-dot:hover,
+.activitywatch-average-dot.is-active {
+  box-shadow:
+    0 0 0 3px rgba(20,24,28,.9),
+    0 0 0 6px rgba(245,196,90,.46),
+    0 0 16px rgba(245,196,90,.42);
+  transform: translate(-50%, -50%) scale(1.35);
 }
 
 .activitywatch-average-dot:focus-visible {
@@ -1064,6 +1074,39 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-chart-tooltip[hidden] {
   display: none;
+}
+
+.activitywatch-chart-tooltip.is-average-tooltip {
+  display: grid;
+  gap: 3px;
+  min-width: 142px;
+  padding: 9px 10px;
+  border-color: rgba(245,196,90,.34);
+  background: rgba(20,24,28,.96);
+}
+
+.activitywatch-chart-tooltip-date,
+.activitywatch-chart-tooltip-metric,
+.activitywatch-chart-tooltip-label {
+  display: block;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.15;
+}
+
+.activitywatch-chart-tooltip-value {
+  display: block;
+  color: #ffe2a1;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.activitywatch-chart-tooltip-label {
+  color: #f8d57d;
+  font-size: 10px;
+  text-transform: uppercase;
 }
 
 .activitywatch-day-bar-empty {

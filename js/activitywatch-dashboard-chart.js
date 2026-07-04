@@ -174,20 +174,6 @@ function addActivityWatchDashboardSegmentTooltipHandlers(segment, segmentData) {
   if (segmentData.category && activityWatchDashboardState.viewMode === 'breakdown') {
     addActivityWatchCategoryPreviewHandlers(segment, segmentData.category);
   }
-  segment.addEventListener('pointerenter', (event) => {
-    showActivityWatchChartTooltipText(event, activityWatchDashboardSegmentTooltip(segmentData), true);
-  });
-  segment.addEventListener('pointermove', (event) => {
-    positionActivityWatchChartTooltip(event);
-  });
-  segment.addEventListener('pointerleave', hideActivityWatchChartTooltip);
-  segment.addEventListener('pointercancel', hideActivityWatchChartTooltip);
-}
-
-function activityWatchDashboardSegmentTooltip(segmentData) {
-  const value = `${segmentData.label}: ${formatActivityWatchDuration(segmentData.seconds)}`;
-  if (!segmentData.detail) return value;
-  return `${value}. ${segmentData.detail}`;
 }
 
 function activityWatchDashboardBarAriaLabel(item, methodologyChanges) {
@@ -266,7 +252,20 @@ function showActivityWatchChartTooltip(event, category, seconds) {
 function showActivityWatchChartTooltipText(event, text, allowWrap = false) {
   const tooltip = ensureActivityWatchChartTooltip();
   tooltip.textContent = text;
+  tooltip.classList.remove('is-average-tooltip');
   tooltip.classList.toggle('allows-wrap', allowWrap);
+  tooltip.hidden = false;
+  tooltip.classList.add('is-visible');
+  positionActivityWatchChartTooltip(event);
+}
+
+function showActivityWatchAverageTooltip(event, point, metricLabel) {
+  const tooltip = ensureActivityWatchChartTooltip();
+  tooltip.textContent = '';
+  tooltip.classList.add('is-average-tooltip', 'allows-wrap');
+  tooltip.appendChild(elText('span', 'activitywatch-chart-tooltip-date', formatEventDate(point.date)));
+  tooltip.appendChild(elText('span', 'activitywatch-chart-tooltip-value', formatActivityWatchDuration(point.averageSeconds)));
+  tooltip.appendChild(elText('span', 'activitywatch-chart-tooltip-label', '7-day average'));
   tooltip.hidden = false;
   tooltip.classList.add('is-visible');
   positionActivityWatchChartTooltip(event);
@@ -295,6 +294,10 @@ function hideActivityWatchChartTooltip() {
   if (!tooltip) return;
   tooltip.classList.remove('is-visible');
   tooltip.hidden = true;
+}
+
+function setActivityWatchAverageDotActive(dot, active) {
+  dot.classList.toggle('is-active', Boolean(active));
 }
 
 function activityWatchDashboardChartCategories(days) {
@@ -525,20 +528,34 @@ function appendActivityWatchRollingAverage(plot, points, axis) {
     dot.style.left = `${x}%`;
     dot.style.top = `${y}%`;
     dot.tabIndex = 0;
-    const tooltip = `${formatEventDate(point.date)} ${activityWatchRollingAverageMetricLabel()} 7-day average: ${formatActivityWatchDuration(point.averageSeconds)}.`;
+    const metricLabel = activityWatchRollingAverageMetricLabel();
+    const tooltip = `${formatEventDate(point.date)} ${metricLabel} 7-day average: ${formatActivityWatchDuration(point.averageSeconds)}.`;
     dot.setAttribute('aria-label', tooltip);
-    dot.addEventListener('pointerenter', (event) => showActivityWatchChartTooltipText(event, tooltip, true));
+    dot.addEventListener('pointerenter', (event) => {
+      setActivityWatchAverageDotActive(dot, true);
+      showActivityWatchAverageTooltip(event, point, metricLabel);
+    });
     dot.addEventListener('pointermove', positionActivityWatchChartTooltip);
-    dot.addEventListener('pointerleave', hideActivityWatchChartTooltip);
-    dot.addEventListener('pointercancel', hideActivityWatchChartTooltip);
+    dot.addEventListener('pointerleave', () => {
+      setActivityWatchAverageDotActive(dot, false);
+      hideActivityWatchChartTooltip();
+    });
+    dot.addEventListener('pointercancel', () => {
+      setActivityWatchAverageDotActive(dot, false);
+      hideActivityWatchChartTooltip();
+    });
     dot.addEventListener('focus', () => {
       const rect = dot.getBoundingClientRect();
-      showActivityWatchChartTooltipText({
+      setActivityWatchAverageDotActive(dot, true);
+      showActivityWatchAverageTooltip({
         clientX: rect.left + (rect.width / 2),
         clientY: rect.top,
-      }, tooltip, true);
+      }, point, metricLabel);
     });
-    dot.addEventListener('blur', hideActivityWatchChartTooltip);
+    dot.addEventListener('blur', () => {
+      setActivityWatchAverageDotActive(dot, false);
+      hideActivityWatchChartTooltip();
+    });
     overlay.appendChild(dot);
   });
   plot.appendChild(overlay);
