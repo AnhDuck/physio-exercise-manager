@@ -17,8 +17,6 @@ function renderActivityWatchDashboardControls(days) {
   const toolbar = el('div', 'activitywatch-chart-toolbar');
   const rangeTools = el('div', 'activitywatch-range-tools');
   rangeTools.appendChild(buildActivityWatchDateControls(isSyncing));
-  const methodologyNotice = buildActivityWatchMethodologyNotice(days);
-  if (methodologyNotice) rangeTools.appendChild(methodologyNotice);
   const coverageNotice = buildActivityWatchCoverageNotice(days);
   if (coverageNotice) rangeTools.appendChild(coverageNotice);
   toolbar.appendChild(rangeTools);
@@ -42,16 +40,17 @@ function renderActivityWatchDashboardTabs(days) {
   tabList.setAttribute('role', 'tablist');
   tabList.setAttribute('aria-label', 'ActivityWatch dashboard views');
   [
-    ['exposure', 'Exposure'],
-    ['workload', 'Workload'],
-    ['breakdown', 'Breakdown'],
-  ].forEach(([mode, label]) => {
+    ['exposure', 'Exposure', 'exposure'],
+    ['workload', 'Workload', 'workload'],
+    ['breakdown', 'Breakdown', 'breakdown'],
+  ].forEach(([mode, label, icon]) => {
     const button = el('button', '');
     button.type = 'button';
     button.id = `activitywatch-dashboard-view-${mode}`;
     button.setAttribute('role', 'tab');
     button.setAttribute('aria-selected', activityWatchDashboardState.viewMode === mode ? 'true' : 'false');
-    button.textContent = label;
+    button.appendChild(buildAppIconSvg(icon, 'activitywatch-view-tab-icon'));
+    button.appendChild(elText('span', '', label));
     button.classList.toggle('is-active', activityWatchDashboardState.viewMode === mode);
     button.addEventListener('click', () => setActivityWatchDashboardViewMode(mode));
     tabList.appendChild(button);
@@ -59,15 +58,8 @@ function renderActivityWatchDashboardTabs(days) {
   root.appendChild(tabList);
 
   const heading = el('div', 'activitywatch-chart-heading');
-  const copy = el('div', '');
-  copy.appendChild(elText('h3', '', activityWatchDashboardChartTitle()));
-  const meta = el('div', 'activitywatch-chart-heading-meta');
-  meta.appendChild(elText('span', '', activityWatchDateRangeLabel(days)));
-  if (activityWatchDashboardUsesRollingAverage()) {
-    meta.appendChild(buildActivityWatchRollingAverageLegend());
-  }
-  copy.appendChild(meta);
-  heading.appendChild(copy);
+  heading.appendChild(elText('h3', '', activityWatchDashboardChartTitle()));
+  heading.appendChild(elText('span', 'activitywatch-chart-date-range', activityWatchDateRangeLabel(days)));
   root.appendChild(heading);
 }
 
@@ -173,18 +165,16 @@ function buildActivityWatchDateControls(isSyncing) {
   return controls;
 }
 
-function buildActivityWatchMethodologyNotice(days) {
+function buildActivityWatchMethodologyLegend(days) {
   const changes = getActivityWatchMethodologyChangesForDates((days || []).map(day => day.date));
   if (!changes.length) return null;
-  const notice = el('div', 'activitywatch-methodology-notice');
+  const notice = el('span', 'activitywatch-methodology-legend');
   notice.tabIndex = 0;
   notice.setAttribute('role', 'note');
-  const label = changes.length === 1
-    ? 'Methodology change - Break in series'
-    : `Methodology change - ${formatNumber(changes.length)} breaks in series`;
   const tooltip = changes.map(activityWatchMethodologyTooltip).join(' ');
   notice.setAttribute('aria-label', tooltip);
-  notice.textContent = label;
+  notice.appendChild(el('span', 'activitywatch-methodology-legend-marker'));
+  notice.appendChild(elText('span', '', 'Methodology change'));
   notice.addEventListener('pointerenter', (event) => {
     showActivityWatchChartTooltipText(event, tooltip, true);
   });

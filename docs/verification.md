@@ -75,16 +75,16 @@ For ActivityWatch dashboard changes, smoke-check:
 - range select and pager render
 - range select does not include Last 7 days
 - default dashboard view is Exposure
-- Exposure, Workload, and Breakdown tabs switch cleanly
+- Exposure, Workload, and Breakdown tabs show their icons and switch cleanly
 - Daily/Weekly grain controls render in all three views
 - no 7-day average checkbox/toggle appears
-- Daily Exposure, Daily Workload, and Daily Breakdown show the 7-day average line with the chart-heading legend
+- Daily Exposure, Daily Workload, and Daily Breakdown show the 7-day average line with the chart-footer legend below the x-axis
 - 7-day average dots align with the center of their bars across Last 2 weeks, Last 30 days, Last 60 days, and Last 90 days
 - Workload `Work only` updates the 7-day average to the work-only load basis
 - Breakdown category/group lock updates the 7-day average to that locked category/group, while hover preview does not change the line
 - Workload shows Total load / Work only and does not show Stack by
 - Breakdown shows Stack by Categories / Groups
-- Weekly views hide the 7-day average line and legend
+- Weekly views hide the 7-day average line and average legend
 - chart day selection works
 - category hover/filter behavior still works
 - Exposure and Workload right panels show selected day/week and visible range together without duplicate heading metrics
@@ -92,7 +92,7 @@ For ActivityWatch dashboard changes, smoke-check:
 - advanced sync panel opens and shows date options
 - methodology-change chart markers appear on June 18, 2026 and June 21, 2026 when those dates are visible
 - marker hover/focus text uses `Break in series`
-- the compact methodology-change notice appears near the range controls when marked dates are visible, shows `Break in series` on hover/focus, and the right panel does not show the old large methodology card
+- the methodology-change chart-footer legend appears below the x-axis when marked dates are visible, uses a dashed vertical marker, shows `Break in series` on hover/focus, and the heading/range controls/right panel do not show the old methodology notices
 - timeline day headers and copied timeline Markdown include the methodology-change note for marked days
 - Workload total load avoids double-counting Computer Work and conflict warnings still render when Computer Work exceeds Timed Work total
 

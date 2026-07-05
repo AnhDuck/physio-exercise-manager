@@ -98,6 +98,10 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-dashboard-view-tabs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   min-height: 38px;
   margin-bottom: -1px;
   padding: 9px 13px 8px;
@@ -111,6 +115,18 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   font-size: 13px;
   font-weight: 850;
   line-height: 1;
+}
+
+.activitywatch-view-tab-icon {
+  display: block;
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
 }
 
 .activitywatch-dashboard-view-tabs button:hover,
@@ -337,39 +353,6 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   font-size: 12px;
   font-weight: 750;
   line-height: 1.25;
-}
-
-.activitywatch-chart-heading-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 7px;
-  min-width: 0;
-  margin-top: 2px;
-}
-
-.activitywatch-chart-heading-meta > span {
-  margin-top: 0;
-}
-
-.activitywatch-chart-heading .activitywatch-average-legend {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: #f8d57d;
-  font-size: 12px;
-  font-weight: 850;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.activitywatch-chart-heading .activitywatch-average-legend-line {
-  display: inline-block;
-  width: 20px;
-  height: 0;
-  border-top: 2px solid #f5c45a;
-  border-radius: 999px;
-  box-shadow: 0 0 0 1px rgba(245,196,90,.12);
 }
 
 .activitywatch-chart-toolbar {
@@ -683,6 +666,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   --activitywatch-chart-plot-bottom: 38px;
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: 4px;
   height: 100%;
   min-height: 438px;
@@ -694,7 +678,14 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
     rgba(255,255,255,.018);
 }
 
+.activitywatch-stacked-chart.has-footer-legend {
+  grid-template-rows: minmax(0, 1fr) auto;
+  row-gap: 6px;
+}
+
 .activitywatch-chart-scale {
+  grid-column: 1;
+  grid-row: 1;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -713,6 +704,8 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-chart-plot {
   position: relative;
+  grid-column: 2;
+  grid-row: 1;
   display: grid;
   grid-template-rows: minmax(0, 1fr);
   min-width: 0;
@@ -721,6 +714,70 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   padding: 0 8px 0;
   border-left: 1px solid rgba(255,255,255,.12);
   background: rgba(255,255,255,.012);
+}
+
+.activitywatch-chart-footer-legend {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  height: 24px;
+  padding: 0 8px;
+}
+
+.activitywatch-chart-footer-legend .activitywatch-average-legend,
+.activitywatch-chart-footer-legend .activitywatch-methodology-legend {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  gap: 7px;
+  height: 24px;
+  padding: 2px 9px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 5px;
+  background: rgba(20,24,28,.42);
+  color: #f8d57d;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.activitywatch-chart-footer-legend .activitywatch-methodology-legend {
+  color: #d9f6ff;
+  outline: none;
+}
+
+.activitywatch-chart-footer-legend .activitywatch-average-legend-line {
+  display: inline-block;
+  width: 24px;
+  height: 0;
+  border-top: 3px solid #f5c45a;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgba(245,196,90,.16);
+}
+
+.activitywatch-chart-footer-legend .activitywatch-methodology-legend-marker {
+  display: inline-block;
+  width: 4px;
+  height: 20px;
+  border-radius: 999px;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(107,220,255,.82) 0,
+    rgba(107,220,255,.82) 5px,
+    transparent 5px,
+    transparent 7px
+  );
+  filter: drop-shadow(0 0 5px rgba(107,220,255,.22));
+}
+
+.activitywatch-chart-footer-legend .activitywatch-methodology-legend:focus-visible {
+  box-shadow: 0 0 0 2px rgba(107,220,255,.34);
 }
 
 .activitywatch-chart-content {

@@ -106,6 +106,9 @@ function renderActivityWatchStackedChart(days) {
   content.appendChild(bars);
   plot.appendChild(content);
   root.appendChild(plot);
+  const footerLegend = buildActivityWatchChartFooterLegend(days);
+  root.classList.toggle('has-footer-legend', Boolean(footerLegend));
+  if (footerLegend) root.appendChild(footerLegend);
   appendActivityWatchRollingAverage(content, rollingAveragePoints, axis);
   bindActivityWatchChartWheelScroll(plot);
   requestAnimationFrame(() => {
@@ -118,6 +121,16 @@ function renderActivityWatchStackedChart(days) {
     activityWatchDashboardState.chartScrollLeft = plot.scrollLeft;
     activityWatchDashboardState.chartScrollToEnd = false;
   });
+}
+
+function buildActivityWatchChartFooterLegend(days) {
+  const legend = el('div', 'activitywatch-chart-footer-legend');
+  if (activityWatchDashboardUsesRollingAverage()) {
+    legend.appendChild(buildActivityWatchRollingAverageLegend());
+  }
+  const methodology = buildActivityWatchMethodologyLegend(days);
+  if (methodology) legend.appendChild(methodology);
+  return legend.childElementCount ? legend : null;
 }
 
 function activityWatchChartScrollKey(days) {

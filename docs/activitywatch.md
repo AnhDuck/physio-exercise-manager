@@ -64,9 +64,9 @@ If the page is refreshed while the ActivityWatch dashboard is open, reopen the d
 Dashboard control hierarchy is intentionally split:
 
 - Modal header is app-level only: `ActivityWatch`, combined sync/refresh, Advanced, and Close. The combined sync/refresh button is the everyday action and refreshes only the latest 3 waking days.
-- View tabs sit under the modal titlebar and are `Exposure`, `Workload`, and `Breakdown`.
+- View tabs sit under the modal titlebar and are `Exposure`, `Workload`, and `Breakdown`, each with a simple line icon plus text label.
 - Chart controls own the visible date/view state: chart title, visible date range, adjacent previous/next buttons, range dropdown, Today button, `Daily / Weekly`, and view-specific controls.
-- `Stack by: Categories / Groups` appears only in Breakdown. Workload has `Total load / Work only`. Daily chart grain always shows the 7-day average line in Exposure, Workload, and Breakdown with a compact non-interactive legend in the chart heading. Weekly grain hides the legend and average line.
+- `Stack by: Categories / Groups` appears only in Breakdown. Workload has `Total load / Work only`. Daily chart grain always shows the 7-day average line in Exposure, Workload, and Breakdown with a compact non-interactive legend centered in the chart footer below the x-axis. Weekly grain hides the 7-day average line and average legend. Methodology-change markers use the same chart-footer legend area when marked dates are visible.
 - Right panel owns selected day/week/range analytics and must be contextual to the current view.
 - Advanced panel owns sync/debug/metadata such as desktop, ActivityWatch version, server URL, bucket IDs, cached days, day start, and last sync. Advanced resync uses exact date strings through `maybeSyncActivityWatchDateStrings(...)`.
 
@@ -96,7 +96,7 @@ Right panel:
 - Breakdown keeps the right panel detail scope control labeled `Details`, visually reading as tabs for `Selected day` or `Selected week` / `Visible range`, distinct from the chart toolbar's segmented controls.
 - Timeline day headers may show compact chips for `Computer active time` and `Total tendon load`. Their hover text should explain what each value means, and copied timeline Markdown should include a short load-terms explanation plus per-day load summaries when copied days have ActivityWatch/timed work data.
 - Hard-coded ActivityWatch methodology changes are metadata annotations only. Use visible label `Methodology change` and tooltip/copy phrase `Break in series` to mean ActivityWatch data before and after that date may not be directly comparable because collection/classification changed. These markers must not mutate, recalculate, backfill, or store derived data in `pem_activitywatch`.
-- Methodology-change markers appear as subtle cyan/blue dashed chart markers behind the bars in dashboard views, distinct from the yellow 7-day average line. When the visible dashboard range includes a marked date, show a compact `Methodology change` notice near the range controls instead of inside the right detail panel. Hover/focus text should show the date, `Methodology change`, `Break in series`, and the detail text. Timeline day headers should show a compact marker chip, and copied timeline Markdown should include the same note for copied days.
+- Methodology-change markers appear as subtle cyan/blue dashed chart markers behind the bars in dashboard views, distinct from the yellow 7-day average line. When the visible dashboard range includes a marked date, show `Methodology change` in the chart-footer legend below the x-axis with a matching dashed vertical marker instead of inside the range controls, heading, or right detail panel. Hover/focus text should show the date, `Methodology change`, `Break in series`, and the detail text. Timeline day headers should show a compact marker chip, and copied timeline Markdown should include the same note for copied days.
 
 Visual rules:
 
