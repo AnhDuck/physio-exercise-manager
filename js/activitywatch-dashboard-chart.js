@@ -341,7 +341,7 @@ function positionActivityWatchSelectedCallout(chartRoot = document.getElementByI
   const stackRect = stack.getBoundingClientRect();
   const cardRect = card.getBoundingClientRect();
   card.style.left = `${stackRect.left + (stackRect.width / 2)}px`;
-  card.style.top = `${stackRect.top - cardRect.height - 10}px`;
+  card.style.top = `${stackRect.top - cardRect.height - 30}px`;
 }
 
 function hideActivityWatchSelectedCallout() {

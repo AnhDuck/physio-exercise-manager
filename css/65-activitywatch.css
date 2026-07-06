@@ -902,16 +902,14 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   left: 50%;
   bottom: calc(var(--activitywatch-stack-height, 0%) + 8px);
   display: grid;
-  gap: 4px;
+  gap: 5px;
   width: max-content;
-  min-width: 122px;
-  max-width: 184px;
-  padding: 8px 10px;
-  border: 1px solid rgba(255,255,255,.22);
+  min-width: 146px;
+  max-width: 221px;
+  padding: 11px 13px 12px;
+  border: 1px solid #3a3d42;
   border-radius: 7px;
-  background: rgba(54,54,57,.72);
-  backdrop-filter: blur(12px) saturate(1.25);
-  box-shadow: 0 10px 22px rgba(0,0,0,.34);
+  background: #17191c;
   text-align: left;
   transform: translateX(-50%);
 }
@@ -923,8 +921,8 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-selected-callout-date {
-  color: rgba(232,234,237,.76);
-  font-size: 11px;
+  color: #c5c9d0;
+  font-size: 12px;
   font-weight: 800;
   line-height: 1.15;
   white-space: nowrap;
@@ -934,16 +932,17 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   display: grid;
   grid-template-columns: auto auto minmax(0, 1fr);
   align-items: baseline;
-  gap: 5px;
+  gap: 6px;
   min-width: 0;
 }
 
 .activitywatch-selected-callout-dot {
   align-self: center;
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 999px;
   background: #63b3ff;
+  box-shadow: 0 0 0 2px #21394f;
 }
 
 .activitywatch-selected-callout.is-workload .activitywatch-selected-callout-dot {
@@ -952,7 +951,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-selected-callout-main strong {
   color: var(--text);
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 900;
   line-height: 1;
   white-space: nowrap;
@@ -960,8 +959,8 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-selected-callout-main span:last-child {
   overflow: hidden;
-  color: rgba(232,234,237,.82);
-  font-size: 11px;
+  color: #d7dbe0;
+  font-size: 12px;
   font-weight: 750;
   line-height: 1.1;
   text-overflow: ellipsis;
@@ -970,23 +969,23 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-selected-callout-list {
   display: grid;
-  gap: 3px;
-  padding-top: 3px;
-  border-top: 1px solid rgba(255,255,255,.1);
+  gap: 4px;
+  padding-top: 5px;
+  border-top: 1px solid #34373c;
 }
 
 .activitywatch-selected-callout-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: baseline;
-  gap: 8px;
+  gap: 10px;
   min-width: 0;
 }
 
 .activitywatch-selected-callout-row span {
   overflow: hidden;
-  color: rgba(232,234,237,.72);
-  font-size: 10px;
+  color: #b6bbc3;
+  font-size: 11px;
   font-weight: 750;
   line-height: 1.1;
   text-overflow: ellipsis;
@@ -995,7 +994,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-selected-callout-row strong {
   color: var(--text);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 900;
   line-height: 1.1;
   white-space: nowrap;
@@ -1125,12 +1124,10 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   z-index: 320;
   max-width: min(260px, calc(100vw - 16px));
   padding: 7px 9px;
-  border: 1px solid var(--border);
+  border: 1px solid #3a3d42;
   border-radius: 6px;
-  background: rgba(17,17,17,.72);
-  backdrop-filter: blur(12px) saturate(1.2);
+  background: #17191c;
   color: var(--text);
-  box-shadow: 0 8px 18px rgba(0,0,0,.32);
   font-size: 12px;
   font-weight: 700;
   line-height: 1.25;
@@ -1152,8 +1149,8 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   gap: 3px;
   min-width: 142px;
   padding: 9px 10px;
-  border-color: rgba(245,196,90,.34);
-  background: rgba(20,24,28,.72);
+  border-color: #4a4d52;
+  background: #17191c;
 }
 
 .activitywatch-chart-tooltip-date,
