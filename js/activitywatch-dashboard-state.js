@@ -39,6 +39,7 @@ const activityWatchDashboardState = {
   chartGrain: 'daily',
   workloadBasis: 'total',
   selectedDate: '',
+  selectedCalloutDate: '',
   rangeDays: ACTIVITYWATCH_DASHBOARD_DEFAULT_RANGE_DAYS,
   rangeEndDate: '',
   categoryMode: 'top',
@@ -77,6 +78,7 @@ function shiftActivityWatchDashboardRange(direction) {
   end.setDate(end.getDate() + (direction * activityWatchDashboardState.rangeDays));
   const nextEnd = toDateStr(end);
   activityWatchDashboardState.rangeEndDate = nextEnd > current ? current : nextEnd;
+  activityWatchDashboardState.selectedCalloutDate = '';
   activityWatchDashboardState.showAllCategories = false;
   activityWatchDashboardState.hoveredCategory = '';
   activityWatchDashboardState.chartScrollToEnd = true;
@@ -87,6 +89,7 @@ function showLatestActivityWatchDashboardRange() {
   const current = activityWatchCurrentWakingDateStr();
   activityWatchDashboardState.rangeEndDate = current;
   activityWatchDashboardState.selectedDate = current;
+  activityWatchDashboardState.selectedCalloutDate = '';
   activityWatchDashboardState.showAllCategories = false;
   activityWatchDashboardState.hoveredCategory = '';
   activityWatchDashboardState.chartScrollToEnd = true;
@@ -97,6 +100,7 @@ function setActivityWatchDashboardViewMode(mode) {
   const nextMode = normalizeActivityWatchDashboardViewMode(mode);
   if (activityWatchDashboardState.viewMode === nextMode) return;
   activityWatchDashboardState.viewMode = nextMode;
+  activityWatchDashboardState.selectedCalloutDate = '';
   activityWatchDashboardState.hoveredCategory = '';
   activityWatchDashboardState.workloadOverlayMode = '';
   activityWatchDashboardState.showAllCategories = false;

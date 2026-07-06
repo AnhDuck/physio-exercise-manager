@@ -85,9 +85,13 @@ For ActivityWatch dashboard changes, smoke-check:
 - Workload shows Total load / Work only and does not show Stack by
 - Breakdown shows Stack by Categories / Groups
 - Weekly views hide the 7-day average line and average legend
-- chart day selection works
+- chart day/week selection works
+- Exposure and Workload selected bars show a persistent frosted chart callout anchored above the selected bar, with no vertical guide line and with compact selected metrics
+- selected-bar callouts can extend outside the scrollable plot instead of clipping at plot edges
+- Exposure and Workload selected callouts remain attached to the selected bar position while checking Last 2 weeks, Last 30 days, Last 60 days, and Last 90 days, including horizontal scroll in dense ranges
 - category hover/filter behavior still works
-- Exposure and Workload right panels show selected day/week and visible range together without duplicate heading metrics
+- Exposure and Workload right panels show visible range only, use compact metric tiles directly in the right panel without a nested range card, and do not show Synced days
+- Workload right panel labels the top range value as `Total tendon load` or `Work-only load` and shows the formula instead of an anonymous total
 - Breakdown Day/Range detail toggle still works
 - advanced sync panel opens and shows date options
 - methodology-change chart markers appear on June 18, 2026 and June 21, 2026 when those dates are visible

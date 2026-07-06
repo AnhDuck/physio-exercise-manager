@@ -4,6 +4,7 @@ function renderActivityWatchStackedChart(days) {
   const root = document.getElementById('activitywatch-stacked-chart');
   if (!root) return;
   hideActivityWatchChartTooltip();
+  hideActivityWatchSelectedCallout();
   rememberActivityWatchChartScroll(root);
   const items = activityWatchDashboardChartItems(days);
   const scrollKey = activityWatchChartScrollKey(items);
@@ -16,6 +17,7 @@ function renderActivityWatchStackedChart(days) {
   root.classList.toggle('is-weekly-grain', activityWatchDashboardState.chartGrain === 'weekly');
   root.classList.toggle('is-filtered', activityWatchDashboardState.viewMode === 'breakdown' && Boolean(activityWatchDashboardState.selectedCategory));
   root.classList.toggle('is-workload-overlay', activityWatchDashboardState.viewMode === 'workload');
+  root.classList.toggle('has-selected-callout', activityWatchDashboardUsesSelectedCallout());
   root.dataset.awViewMode = activityWatchDashboardState.viewMode;
   root.dataset.awChartGrain = activityWatchDashboardState.chartGrain;
   root.dataset.awScrollKey = scrollKey;
@@ -44,6 +46,7 @@ function renderActivityWatchStackedChart(days) {
   content.style.setProperty('--activitywatch-day-count', items.length);
   const bars = el('div', 'activitywatch-bars-row');
   const axisLabels = activityWatchDashboardXAxisLabels(items);
+  let selectedCalloutData = null;
   items.forEach((item, index) => {
     const methodologyChanges = activityWatchDashboardMethodologyChangesForItem(item);
     const barButton = el('button', 'activitywatch-day-bar');
@@ -55,6 +58,7 @@ function renderActivityWatchStackedChart(days) {
     barButton.setAttribute('aria-label', activityWatchDashboardBarAriaLabel(item, methodologyChanges));
     barButton.addEventListener('click', () => {
       activityWatchDashboardState.selectedDate = item.date;
+      activityWatchDashboardState.selectedCalloutDate = item.date;
       activityWatchDashboardState.detailMode = 'day';
       activityWatchDashboardState.showAllCategories = false;
       activityWatchDashboardState.hoveredCategory = '';
@@ -66,15 +70,13 @@ function renderActivityWatchStackedChart(days) {
 
     const plottedSeconds = activityWatchDashboardPlottedSeconds(item);
     barButton.classList.toggle('has-workload-conflict', Boolean(item.overlay?.conflict || item.overlayTotals?.conflict));
-    const totalLabelText = activityWatchBarTotalLabel(item, plottedSeconds, index, items.length);
-    const totalLabel = elText('span', 'activitywatch-day-bar-total', totalLabelText);
-    totalLabel.classList.toggle('has-label', Boolean(totalLabelText));
-    barButton.appendChild(totalLabel);
-
     const stackWrap = el('span', 'activitywatch-day-bar-stack-wrap');
     const stackHeight = plottedSeconds
       ? `${Math.max(3, Math.min(100, (plottedSeconds / axis.maxSeconds) * 100))}%`
       : '4px';
+    if (activityWatchDashboardUsesSelectedCallout() && item.date === activityWatchDashboardState.selectedCalloutDate) {
+      selectedCalloutData = { item, index };
+    }
     stackWrap.style.setProperty('--activitywatch-stack-height', stackHeight);
     const stack = el('span', 'activitywatch-day-bar-stack');
     stack.style.height = stackHeight;
@@ -120,6 +122,7 @@ function renderActivityWatchStackedChart(days) {
     activityWatchDashboardState.chartScrollKey = scrollKey;
     activityWatchDashboardState.chartScrollLeft = plot.scrollLeft;
     activityWatchDashboardState.chartScrollToEnd = false;
+    renderActivityWatchSelectedFloatingCallout(root, selectedCalloutData);
   });
 }
 
@@ -147,6 +150,7 @@ function rememberActivityWatchChartScroll(root) {
 function bindActivityWatchChartWheelScroll(plot) {
   plot.addEventListener('scroll', () => {
     activityWatchDashboardState.chartScrollLeft = plot.scrollLeft;
+    positionActivityWatchSelectedCallout();
   }, { passive: true });
 
   plot.addEventListener('wheel', (event) => {
@@ -193,6 +197,157 @@ function activityWatchDashboardBarAriaLabel(item, methodologyChanges) {
     ? `. ${methodologyChanges.map(activityWatchMethodologyTooltip).join(' ')}`
     : '';
   return `${base}${dataNote}${methodology}`;
+}
+
+function activityWatchDashboardUsesSelectedCallout() {
+  return activityWatchDashboardState.viewMode === 'exposure'
+    || activityWatchDashboardState.viewMode === 'workload';
+}
+
+function buildActivityWatchSelectedCallout(item) {
+  const card = el('span', `activitywatch-selected-callout is-${activityWatchDashboardState.viewMode}`);
+  card.setAttribute('aria-hidden', 'true');
+  card.appendChild(elText('span', 'activitywatch-selected-callout-date', activityWatchDashboardItemLabel(item)));
+
+  const main = activityWatchSelectedCalloutMain(item);
+  const value = el('span', 'activitywatch-selected-callout-main');
+  value.appendChild(el('span', 'activitywatch-selected-callout-dot'));
+  value.appendChild(elText('strong', '', main.value));
+  value.appendChild(elText('span', '', main.label));
+  card.appendChild(value);
+
+  const rows = activityWatchSelectedCalloutRows(item);
+  if (rows.length) {
+    const list = el('span', 'activitywatch-selected-callout-list');
+    rows.forEach(([label, rowValue]) => {
+      const row = el('span', 'activitywatch-selected-callout-row');
+      row.appendChild(elText('span', '', label));
+      row.appendChild(elText('strong', '', rowValue));
+      list.appendChild(row);
+    });
+    card.appendChild(list);
+  }
+
+  return card;
+}
+
+function activityWatchSelectedCalloutMain(item) {
+  if (!item?.syncedDayCount) {
+    return {
+      label: 'No data',
+      value: '0m',
+    };
+  }
+  if (activityWatchDashboardState.viewMode === 'workload') {
+    return {
+      label: item.isWeekly
+        ? `${activityWatchWorkloadBasisLabel()} avg/day`
+        : activityWatchWorkloadBasisLabel(),
+      value: formatActivityWatchDuration(activityWatchDashboardWorkloadItemSeconds(item, activityWatchDashboardState.workloadBasis)),
+    };
+  }
+  return {
+    label: item.isWeekly ? `${WORKLOAD_TERMS.computerActiveTime} avg/day` : WORKLOAD_TERMS.computerActiveTime,
+    value: formatActivityWatchDuration(item.totalActiveSeconds || 0),
+  };
+}
+
+function activityWatchSelectedCalloutRows(item) {
+  if (!item?.syncedDayCount) return [];
+  if (activityWatchDashboardState.viewMode === 'workload') {
+    return activityWatchSelectedWorkloadCalloutRows(item);
+  }
+  return activityWatchSelectedExposureCalloutRows(item);
+}
+
+function activityWatchSelectedExposureCalloutRows(item) {
+  const overlay = activityWatchDashboardOverlayForItem(item);
+  const totalActiveSeconds = Math.max(0, Number(item?.totalActiveSeconds) || 0);
+  if (!item.isWeekly) {
+    return [
+      [WORKLOAD_TERMS.computerWork, formatActivityWatchDuration(overlay.activityWatchWorkSeconds)],
+      ['Work share', formatActivityWatchPercent(overlay.activityWatchWorkSeconds, totalActiveSeconds)],
+    ];
+  }
+  const totals = item.overlayTotals || activityWatchDashboardOverlayTotals(item.dataDays || []);
+  const weeklyTotal = Math.max(0, Number(item.weeklyTotalActiveSeconds) || 0);
+  return [
+    ['Weekly total', formatActivityWatchDuration(weeklyTotal)],
+    [WORKLOAD_TERMS.computerWork, formatActivityWatchDuration(totals.activityWatchWorkSeconds)],
+    ['Work share', formatActivityWatchPercent(totals.activityWatchWorkSeconds, weeklyTotal)],
+  ];
+}
+
+function activityWatchSelectedWorkloadCalloutRows(item) {
+  const overlay = activityWatchDashboardOverlayForItem(item);
+  if (!item.isWeekly) {
+    return [
+      [WORKLOAD_TERMS.computerActiveTime, formatActivityWatchDuration(overlay.activityWatchTotalSeconds)],
+      [WORKLOAD_TERMS.computerWork, formatActivityWatchDuration(overlay.activityWatchWorkSeconds)],
+      [WORKLOAD_TERMS.physicalWorkEstimate, formatActivityWatchDuration(overlay.manualResidualSeconds)],
+      [WORKLOAD_TERMS.timedWorkTotal, formatActivityWatchDuration(overlay.workloadTotalSeconds)],
+    ];
+  }
+  const totals = item.overlayTotals || activityWatchDashboardOverlayTotals(item.dataDays || []);
+  const weeklyLoad = activityWatchDashboardState.workloadBasis === 'work'
+    ? activityWatchDashboardWorkOnlyLoadSecondsForOverlay(totals)
+    : activityWatchDashboardTotalLoadSecondsForOverlay(totals);
+  return [
+    ['Weekly total', formatActivityWatchDuration(weeklyLoad)],
+    [WORKLOAD_TERMS.computerActiveTime, formatActivityWatchDuration(totals.activityWatchTotalSeconds)],
+    [WORKLOAD_TERMS.computerWork, formatActivityWatchDuration(totals.activityWatchWorkSeconds)],
+    [WORKLOAD_TERMS.physicalWorkEstimate, formatActivityWatchDuration(totals.manualResidualSeconds)],
+    [WORKLOAD_TERMS.timedWorkTotal, formatActivityWatchDuration(totals.workloadTotalSeconds)],
+  ];
+}
+
+function activityWatchWorkloadBasisLabel() {
+  return activityWatchDashboardState.workloadBasis === 'work'
+    ? 'Work-only load'
+    : WORKLOAD_TERMS.totalTendonLoad;
+}
+
+function ensureActivityWatchSelectedCalloutRoot() {
+  let root = document.getElementById('activitywatch-selected-callout-root');
+  if (root) return root;
+  root = el('div', 'activitywatch-selected-callout-root');
+  root.id = 'activitywatch-selected-callout-root';
+  document.body.appendChild(root);
+  return root;
+}
+
+function renderActivityWatchSelectedFloatingCallout(chartRoot, selectedCalloutData) {
+  if (!activityWatchDashboardUsesSelectedCallout() || !selectedCalloutData?.item) {
+    hideActivityWatchSelectedCallout();
+    return;
+  }
+  const root = ensureActivityWatchSelectedCalloutRoot();
+  root.textContent = '';
+  const card = buildActivityWatchSelectedCallout(selectedCalloutData.item);
+  card.classList.add('is-floating');
+  root.appendChild(card);
+  positionActivityWatchSelectedCallout(chartRoot);
+}
+
+function positionActivityWatchSelectedCallout(chartRoot = document.getElementById('activitywatch-stacked-chart')) {
+  const card = document.querySelector('#activitywatch-selected-callout-root .activitywatch-selected-callout');
+  if (!card || !chartRoot) return;
+  const selected = chartRoot.querySelector('.activitywatch-day-bar.is-selected');
+  const stack = selected?.querySelector('.activitywatch-day-bar-stack');
+  if (!stack) {
+    hideActivityWatchSelectedCallout();
+    return;
+  }
+  const stackRect = stack.getBoundingClientRect();
+  const cardRect = card.getBoundingClientRect();
+  card.style.left = `${stackRect.left + (stackRect.width / 2)}px`;
+  card.style.top = `${stackRect.top - cardRect.height - 10}px`;
+}
+
+function hideActivityWatchSelectedCallout() {
+  const root = document.getElementById('activitywatch-selected-callout-root');
+  if (!root) return;
+  root.textContent = '';
 }
 
 function addActivityWatchOverlaySegmentTooltipHandlers(segment, segmentData) {

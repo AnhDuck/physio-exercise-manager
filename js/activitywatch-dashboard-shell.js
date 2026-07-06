@@ -19,6 +19,7 @@ function openActivityWatchDashboard() {
 
 function closeActivityWatchDashboard() {
   hideActivityWatchChartTooltip();
+  if (typeof hideActivityWatchSelectedCallout === 'function') hideActivityWatchSelectedCallout();
   document.getElementById('activitywatch-dashboard-modal')?.classList.add('hidden');
   rememberActivityWatchDashboardOpen(false);
 }

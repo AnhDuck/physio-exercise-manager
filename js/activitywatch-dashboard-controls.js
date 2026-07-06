@@ -154,6 +154,7 @@ function buildActivityWatchDateControls(isSyncing) {
   select.disabled = isSyncing;
   select.addEventListener('change', () => {
     activityWatchDashboardState.rangeDays = normalizeActivityWatchDashboardRange(select.value);
+    activityWatchDashboardState.selectedCalloutDate = '';
     activityWatchDashboardState.showAllCategories = false;
     renderActivityWatchDashboard();
   });
@@ -255,6 +256,7 @@ function buildActivityWatchChartGrainToggle() {
     activityWatchDashboardState.chartGrain,
     (mode) => {
       activityWatchDashboardState.chartGrain = normalizeActivityWatchDashboardChartGrain(mode);
+      activityWatchDashboardState.selectedCalloutDate = '';
       activityWatchDashboardState.hoveredCategory = '';
       activityWatchDashboardState.showAllCategories = false;
       activityWatchDashboardState.chartScrollToEnd = true;
@@ -273,6 +275,7 @@ function buildActivityWatchWorkloadBasisToggle() {
     activityWatchDashboardState.workloadBasis,
     (mode) => {
       activityWatchDashboardState.workloadBasis = normalizeActivityWatchDashboardWorkloadBasis(mode);
+      activityWatchDashboardState.selectedCalloutDate = '';
       activityWatchDashboardState.chartScrollToEnd = true;
       renderActivityWatchDashboard();
     }

@@ -53,7 +53,7 @@ The main-screen ActivityWatch mini card is a glanceable current waking-day surfa
 
 ## Dashboard Rules
 
-The dashboard is a small three-view analytics surface, not one chart with global filters. Dashboard UI state is not persisted. The single dashboard state object includes view mode, chart grain, workload basis, selected date, range length/end date, category mode, selected category, hovered category, detail mode, show-all state, chart scroll state, and advanced sync state.
+The dashboard is a small three-view analytics surface, not one chart with global filters. Dashboard UI state is not persisted. The single dashboard state object includes view mode, chart grain, workload basis, selected date, selected callout date, range length/end date, category mode, selected category, hovered category, detail mode, show-all state, chart scroll state, and advanced sync state.
 
 Default range is Last 2 weeks ending on the current waking day. Range options start at Last 2 weeks; do not include a Last 7 days option. Opening the dashboard selects the current waking day when visible. Range paging jumps by the selected range length. Latest returns to the current waking-day range.
 
@@ -67,7 +67,7 @@ Dashboard control hierarchy is intentionally split:
 - View tabs sit under the modal titlebar and are `Exposure`, `Workload`, and `Breakdown`, each with a simple line icon plus text label.
 - Chart controls own the visible date/view state: chart title, visible date range, adjacent previous/next buttons, range dropdown, Today button, `Daily / Weekly`, and view-specific controls.
 - `Stack by: Categories / Groups` appears only in Breakdown. Workload has `Total load / Work only`. Daily chart grain always shows the 7-day average line in Exposure, Workload, and Breakdown with a compact non-interactive legend centered in the chart footer below the x-axis. Weekly grain hides the 7-day average line and average legend. Methodology-change markers use the same chart-footer legend area when marked dates are visible.
-- Right panel owns selected day/week/range analytics and must be contextual to the current view.
+- Right panel owns range analytics for Exposure and Workload, and selected/range category analytics for Breakdown.
 - Advanced panel owns sync/debug/metadata such as desktop, ActivityWatch version, server URL, bucket IDs, cached days, day start, and last sync. Advanced resync uses exact date strings through `maybeSyncActivityWatchDateStrings(...)`.
 
 Chart interaction:
@@ -84,14 +84,14 @@ Chart interaction:
 - Weekly grain buckets run Monday through Sunday. Edge/current weeks may be partial. Weekly bars show average per synced day, while tooltips/right panel also show weekly total and synced-day count.
 - Breakdown unfiltered bars include computed `Other` so visible stacks add up to total active time.
 - `Other` is informational only and must not become a filter chip or locked filter.
-- Bar click selects the day or week.
+- Bar click selects the day or week. In Exposure and Workload, the selected day/week appears as a persistent Garmin-style frosted callout anchored above the selected bar, with compact view-specific metrics and no vertical guide line. The callout is positioned outside the scrollable plot so edge selections are not clipped by the plot. It stays until another bar is selected, the chart context changes, or the dashboard closes.
 - Category hover/lock behavior is scoped to Breakdown. Detail rows lock exact categories with one click; clicking the locked row clears it. Before lock, hover previews that category and dims unrelated categories. Once locked, unrelated hover/click must not preview or switch until `All categories` clears the lock.
 - Filtered Breakdown charts show only the locked category and rescale the y-axis to that category's own daily/weekly max.
 
 Right panel:
 
-- Exposure shows selected day/week and visible range at the same time. The selected section uses total computer active time as the heading value and shows only Computer Work plus work share. The visible-range section shows range total, Computer Work, work share, daily average, synced-day count, and highest/lowest day.
-- Workload shows selected day/week and visible range at the same time. Each section uses the current load basis as the heading value. Supporting rows show Computer active time, Computer Work, Physical work estimate, Timed work total, and range context without repeating the heading value; range conflict warnings stay in the visible-range section.
+- Exposure right panel shows only the visible range, with the panel itself acting as the card. Do not wrap the range metrics in a nested `Visible range` card. Use compact metric tiles for Computer active time, Computer Work, work share, daily average, and highest/lowest day or week. Do not show synced-day count there.
+- Workload right panel shows only the visible range, with the panel itself acting as the card. Do not wrap the range metrics in a nested `Visible range` card. The top tile must explicitly be `Total tendon load` or `Work-only load`, include the matching formula, and never show an anonymous total. Supporting tiles show daily average, Computer active time, Computer Work, Physical work estimate, Timed work total, highest/lowest day or week, and range conflict warnings. Do not show synced-day count there.
 - Breakdown day/week mode shows selected categories/groups with swatch, name, duration, percent, and meter. Range mode aggregates visible days and uses percent of visible-range active total. Show top categories by default, with Show all / Show top categories.
 - Breakdown keeps the right panel detail scope control labeled `Details`, visually reading as tabs for `Selected day` or `Selected week` / `Visible range`, distinct from the chart toolbar's segmented controls.
 - Timeline day headers may show compact chips for `Computer active time` and `Total tendon load`. Their hover text should explain what each value means, and copied timeline Markdown should include a short load-terms explanation plus per-day load summaries when copied days have ActivityWatch/timed work data.
@@ -102,8 +102,10 @@ Visual rules:
 
 - Keep category chips and row labels compact without clipping.
 - X-axis month context belongs under the relevant day label, not in a separate month band above the bars. Month labels use a compact two-line `day` over `month` treatment and must not clip at desktop or mobile widths. Long ranges intentionally use a wider horizontal scroll area so every daily x-axis label can remain visible.
+- Do not show per-bar total labels above the bars; selected values belong in the selected-bar callout.
 - Hide or reduce labels on narrow screens rather than letting them overlap.
 - Use dashboard-only color mapping/fallback adjustments for visible colors; never rewrite stored ActivityWatch colors.
+- Chart hover tooltips and selected-bar callouts should use a semi-transparent frosted surface.
 - Timeline day headers show compact active-time metadata only; do not add separate ActivityWatch rows to the timeline.
 
 ## Dashboard File Ownership
