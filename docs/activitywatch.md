@@ -63,7 +63,7 @@ If the page is refreshed while the ActivityWatch dashboard is open, reopen the d
 
 Dashboard control hierarchy is intentionally split:
 
-- Modal header is app-level only: `ActivityWatch`, combined sync/refresh, Advanced, and Close. The combined sync/refresh button is the everyday action and refreshes only the latest 3 waking days.
+- Modal header is app-level only: `ActivityWatch`, inline sync progress, combined sync/refresh, Advanced, and Close. The combined sync/refresh button is the everyday action and refreshes only the latest 3 waking days. Routine sync progress belongs to the left of that button in this fixed header row, using about half the row on desktop so automatic refreshes do not change the chart height.
 - View tabs sit under the modal titlebar and are `Exposure`, `Workload`, and `Breakdown`, each with a simple line icon plus text label.
 - Chart controls own the visible date/view state: chart title, visible date range, adjacent previous/next buttons, range dropdown, Today button, `Daily / Weekly`, and view-specific controls.
 - `Stack by: Categories / Groups` appears only in Breakdown. Workload has `Total load / Work only`. Daily chart grain always shows the 7-day average line in Exposure, Workload, and Breakdown with a compact non-interactive legend centered in the chart footer below the x-axis. Weekly grain hides the 7-day average line and average legend. Methodology-change markers use the same chart-footer legend area when marked dates are visible.

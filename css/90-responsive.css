@@ -485,6 +485,11 @@
     min-width: 0;
   }
 
+  .activitywatch-header-actions .activitywatch-sync-progress {
+    width: 118px;
+    min-width: 0;
+  }
+
   .activitywatch-chart-toolbar,
   .activitywatch-view-controls,
   .activitywatch-breakdown-control,

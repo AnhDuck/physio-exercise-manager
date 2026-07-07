@@ -26,9 +26,6 @@ function renderActivityWatchDashboardControls(days) {
   if (activityWatchDashboardState.advancedSyncOpen) {
     root.appendChild(buildActivityWatchAdvancedSyncPanel(days, isSyncing, status, progress));
   }
-  if (isSyncing) {
-    root.appendChild(buildActivityWatchSyncProgress(progress));
-  }
   warnings.forEach(warning => root.appendChild(elText('div', 'activitywatch-warning', warning)));
 }
 
@@ -80,6 +77,9 @@ function renderActivityWatchHeaderActions(days, status, progress, isSyncing) {
   const root = document.getElementById('activitywatch-header-actions');
   if (!root) return;
   root.innerHTML = '';
+  if (isSyncing) {
+    root.appendChild(buildActivityWatchSyncProgress(progress));
+  }
   root.appendChild(buildActivityWatchSyncRefreshButton(status, progress, isSyncing));
   root.appendChild(buildActivityWatchAdvancedButton(days));
   const close = el('button', 'modal-close');

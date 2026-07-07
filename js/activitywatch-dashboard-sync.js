@@ -186,6 +186,8 @@ function buildActivityWatchSyncProgress(progress) {
   const total = Math.max(1, Number(progress.totalDays) || 1);
   const completed = Math.min(total, Math.max(0, Number(progress.completedDays) || 0));
   const wrap = el('div', 'activitywatch-sync-progress');
+  wrap.setAttribute('role', 'status');
+  wrap.setAttribute('aria-live', 'polite');
   const range = activityWatchProgressDateRange(progress);
   const label = progress.mode === 'fallback'
     ? activityWatchFallbackProgressLabel(progress, completed, total, range)

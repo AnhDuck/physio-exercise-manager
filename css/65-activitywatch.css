@@ -268,11 +268,30 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   font-weight: 750;
 }
 
+.activitywatch-header-actions .activitywatch-sync-progress {
+  flex: 0 1 50vw;
+  width: 50vw;
+  min-width: 360px;
+  margin-top: 0;
+  gap: 4px;
+}
+
+.activitywatch-header-actions .activitywatch-sync-progress > span {
+  overflow: hidden;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .activitywatch-sync-progress-track {
   height: 6px;
   overflow: hidden;
   border-radius: 999px;
   background: rgba(255,255,255,.08);
+}
+
+.activitywatch-header-actions .activitywatch-sync-progress-track {
+  height: 4px;
 }
 
 .activitywatch-sync-progress-track span {
