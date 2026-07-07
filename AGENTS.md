@@ -47,6 +47,7 @@ Use:
 - App-data writes must go through storage safe-save helpers. Do not call `localStorage.setItem` directly for app keys outside storage internals.
 - User data and folder backup permissions are origin-scoped. Do not use the user's real origin `http://127.0.0.1:8891` for Codex verification unless explicitly asked; use `http://127.0.0.1:8895` when browser checks are useful.
 - If `http://127.0.0.1:8895` is already serving this workspace, reuse it and do not stop, restart, replace, or kill it unless it is broken, serving the wrong root, blocking verification, or Bill explicitly asks.
+- During ActivityWatch dashboard verification, do not open the Advanced settings/sync panel unless the change directly affects that panel or its contents. It is not needed for routine Exposure, Workload, Breakdown, chart, callout, or right-panel checks.
 
 ## Core Behavior To Protect
 

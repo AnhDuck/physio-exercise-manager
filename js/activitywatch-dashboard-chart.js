@@ -219,10 +219,28 @@ function buildActivityWatchSelectedCallout(item) {
   const rows = activityWatchSelectedCalloutRows(item);
   if (rows.length) {
     const list = el('span', 'activitywatch-selected-callout-list');
-    rows.forEach(([label, rowValue]) => {
-      const row = el('span', 'activitywatch-selected-callout-row');
-      row.appendChild(elText('span', '', label));
-      row.appendChild(elText('strong', '', rowValue));
+    rows.forEach((rowData) => {
+      const row = el('span', `activitywatch-selected-callout-row ${rowData.color ? 'has-meter' : ''}`);
+      if (rowData.color) {
+        const swatch = el('span', 'activitywatch-selected-callout-swatch');
+        swatch.style.background = rowData.color;
+        row.appendChild(swatch);
+      }
+      row.appendChild(elText('span', 'activitywatch-selected-callout-row-label', rowData.label));
+      const meta = el('span', 'activitywatch-selected-callout-row-meta');
+      meta.appendChild(elText('strong', '', rowData.value));
+      if (rowData.percent) {
+        meta.appendChild(elText('span', '', rowData.percent));
+      }
+      row.appendChild(meta);
+      if (rowData.color) {
+        const meter = el('span', 'activitywatch-selected-callout-meter');
+        const fill = el('span', '');
+        fill.style.width = `${rowData.meterPercent}%`;
+        fill.style.background = rowData.color;
+        meter.appendChild(fill);
+        row.appendChild(meter);
+      }
       list.appendChild(row);
     });
     card.appendChild(list);
@@ -262,43 +280,79 @@ function activityWatchSelectedCalloutRows(item) {
 
 function activityWatchSelectedExposureCalloutRows(item) {
   const overlay = activityWatchDashboardOverlayForItem(item);
+  const workColor = activityWatchDashboardCategoryColor('Work');
   const totalActiveSeconds = Math.max(0, Number(item?.totalActiveSeconds) || 0);
   if (!item.isWeekly) {
     return [
-      [WORKLOAD_TERMS.computerWork, formatActivityWatchDuration(overlay.activityWatchWorkSeconds)],
-      ['Work share', formatActivityWatchPercent(overlay.activityWatchWorkSeconds, totalActiveSeconds)],
+      activityWatchSelectedMeterCalloutRow(WORKLOAD_TERMS.computerWork, overlay.activityWatchWorkSeconds, totalActiveSeconds, workColor),
     ];
   }
   const totals = item.overlayTotals || activityWatchDashboardOverlayTotals(item.dataDays || []);
   const weeklyTotal = Math.max(0, Number(item.weeklyTotalActiveSeconds) || 0);
   return [
-    ['Weekly total', formatActivityWatchDuration(weeklyTotal)],
-    [WORKLOAD_TERMS.computerWork, formatActivityWatchDuration(totals.activityWatchWorkSeconds)],
-    ['Work share', formatActivityWatchPercent(totals.activityWatchWorkSeconds, weeklyTotal)],
+    activityWatchSelectedPlainCalloutRow('Weekly total', formatActivityWatchDuration(weeklyTotal)),
+    activityWatchSelectedMeterCalloutRow(WORKLOAD_TERMS.computerWork, totals.activityWatchWorkSeconds, weeklyTotal, workColor),
   ];
 }
 
 function activityWatchSelectedWorkloadCalloutRows(item) {
   const overlay = activityWatchDashboardOverlayForItem(item);
   if (!item.isWeekly) {
-    return [
-      [WORKLOAD_TERMS.computerActiveTime, formatActivityWatchDuration(overlay.activityWatchTotalSeconds)],
-      [WORKLOAD_TERMS.computerWork, formatActivityWatchDuration(overlay.activityWatchWorkSeconds)],
-      [WORKLOAD_TERMS.physicalWorkEstimate, formatActivityWatchDuration(overlay.manualResidualSeconds)],
-      [WORKLOAD_TERMS.timedWorkTotal, formatActivityWatchDuration(overlay.workloadTotalSeconds)],
-    ];
+    return activityWatchSelectedWorkloadMeterRows(overlay, activityWatchDashboardWorkloadItemSeconds(item, activityWatchDashboardState.workloadBasis), false);
   }
   const totals = item.overlayTotals || activityWatchDashboardOverlayTotals(item.dataDays || []);
   const weeklyLoad = activityWatchDashboardState.workloadBasis === 'work'
     ? activityWatchDashboardWorkOnlyLoadSecondsForOverlay(totals)
     : activityWatchDashboardTotalLoadSecondsForOverlay(totals);
-  return [
-    ['Weekly total', formatActivityWatchDuration(weeklyLoad)],
-    [WORKLOAD_TERMS.computerActiveTime, formatActivityWatchDuration(totals.activityWatchTotalSeconds)],
-    [WORKLOAD_TERMS.computerWork, formatActivityWatchDuration(totals.activityWatchWorkSeconds)],
-    [WORKLOAD_TERMS.physicalWorkEstimate, formatActivityWatchDuration(totals.manualResidualSeconds)],
-    [WORKLOAD_TERMS.timedWorkTotal, formatActivityWatchDuration(totals.workloadTotalSeconds)],
-  ];
+  return activityWatchSelectedWorkloadMeterRows(totals, weeklyLoad, true);
+}
+
+function activityWatchSelectedWorkloadMeterRows(overlay, totalSeconds, includeWeeklyTotal) {
+  const computerWork = Math.min(overlay.activityWatchWorkSeconds, overlay.activityWatchTotalSeconds);
+  const computerRemainder = Math.max(0, overlay.activityWatchTotalSeconds - computerWork);
+  const rows = [];
+  if (includeWeeklyTotal) {
+    rows.push(activityWatchSelectedPlainCalloutRow('Weekly total', formatActivityWatchDuration(totalSeconds)));
+  }
+  if (activityWatchDashboardState.workloadBasis === 'total' && computerRemainder) {
+    rows.push(activityWatchSelectedMeterCalloutRow(
+      'Other computer',
+      computerRemainder,
+      totalSeconds,
+      'rgba(99,179,255,.52)'
+    ));
+  }
+  rows.push(activityWatchSelectedMeterCalloutRow(
+    WORKLOAD_TERMS.computerWork,
+    computerWork,
+    totalSeconds,
+    activityWatchDashboardCategoryColor('Work')
+  ));
+  rows.push(activityWatchSelectedMeterCalloutRow(
+    WORKLOAD_TERMS.physicalWorkEstimate,
+    overlay.manualResidualSeconds,
+    totalSeconds,
+    'rgba(121,214,189,.88)'
+  ));
+  rows.push(activityWatchSelectedPlainCalloutRow(WORKLOAD_TERMS.timedWorkTotal, formatActivityWatchDuration(overlay.workloadTotalSeconds)));
+  return rows;
+}
+
+function activityWatchSelectedPlainCalloutRow(label, value) {
+  return { label, value };
+}
+
+function activityWatchSelectedMeterCalloutRow(label, seconds, totalSeconds, color) {
+  const safeSeconds = Math.max(0, Number(seconds) || 0);
+  const safeTotal = Math.max(0, Number(totalSeconds) || 0);
+  const rawPercent = safeTotal ? (safeSeconds / safeTotal) * 100 : 0;
+  return {
+    label,
+    value: formatActivityWatchDuration(safeSeconds),
+    percent: formatActivityWatchPercent(safeSeconds, safeTotal),
+    meterPercent: safeSeconds > 0 ? Math.max(2, Math.min(100, rawPercent)) : 0,
+    color,
+  };
 }
 
 function activityWatchWorkloadBasisLabel() {
