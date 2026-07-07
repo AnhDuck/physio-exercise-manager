@@ -29,9 +29,9 @@ Never load `main.js` before feature files it binds. Do not add imports, exports,
 - `dates.js`: calendar and schedule logic.
 - `dom.js`: DOM helpers, icons, and toasts.
 - `sessions.js`: exercise completion and set progress.
-- `exercises.js`: exercise ordering, blocks, drag/drop, add/edit/hide/delete.
+- `exercises.js`: exercise ordering, blocks, drag/drop, add/edit/hide/delete, and the per-exercise Quick complete option.
 - `grid.js`: compact calendar grid and week navigation.
-- `tracker.js`: set tracker, timer, log edit, cues, and shortcuts.
+- `tracker.js`: set tracker, timer, Quick complete logging, log edit, cues, and shortcuts.
 - `activitywatch-model.js`: ActivityWatch aggregate storage shape, normalization, server URL normalization, localStorage load/save, public getters, and bucket/status normalization.
 - `activitywatch-time.js`: ActivityWatch waking-day date/time helpers that wrap PEM's local date helpers and personal-day start setting.
 - `activitywatch-query.js`: ActivityWatch REST fetch helpers, bucket discovery, query construction, query result normalization, and daily sync period construction.
@@ -87,6 +87,7 @@ Load-side app-data parsing also belongs in `storage.js`. Persisted JSON loaders 
 - Dates are local `YYYY-MM-DD`; use `toDateStr()` and `dateFromStr()`.
 - `DEFAULT_EXERCISES` only seeds new installs when `pem_exercises` is missing.
 - Hidden exercises stay in `pem_exercises` to preserve linked session and timeline data.
+- Exercises with `quickComplete` enabled skip the set tracker on the first day-cell click and write a normal completed set-progress log for the full target set count, so timeline/log display remains compatible with tracked exercises.
 - Exercise groups keep stable IDs. Rename, recolor, reorder, or hide groups through `settings.exerciseGroups`; do not rewrite group IDs just to change presentation.
 - Exercise blocks are group-scoped in `settings.blocks[group]`; exercises store only `blockId`.
 - Stored events are `note`, `dose-change`, and `exercise-added`. Timeline exercise logs are derived from session progress and must not be stored in `pem_events`.

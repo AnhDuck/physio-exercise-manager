@@ -470,6 +470,29 @@
   transition: opacity .12s, transform .12s, color .12s;
 }
 
+.ex-quick-complete-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(250,204,21,.34);
+  border-radius: 999px;
+  background: rgba(250,204,21,.09);
+  color: #fde68a;
+}
+
+.ex-quick-complete-svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.35;
+}
+
 .ex-name:hover,
 .ex-name:focus-visible {
   background: rgba(255,255,255,.035);

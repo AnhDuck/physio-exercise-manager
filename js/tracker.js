@@ -5,7 +5,40 @@ function handleSetCellClick(exId, dateStr) {
     completeActiveExercise();
     return;
   }
+  const ex = exercises.find(item => item.id === exId);
+  if (ex?.quickComplete && !isExerciseDone(dateStr, exId)) {
+    quickCompleteExercise(ex, dateStr);
+    return;
+  }
   openSetTracker(exId, dateStr);
+}
+
+function quickCompleteExercise(ex, dateStr) {
+  if (!ex || !isExerciseActive(ex)) return;
+  const session = getSessionForEdit(dateStr);
+  const now = new Date().toISOString();
+  const targetSets = targetSetsForExercise(ex);
+  session.setProgress[ex.id] = {
+    completedSets: targetSets,
+    targetSets,
+    startedAt: now,
+    updatedAt: now,
+    completedAt: now,
+    finishedEarly: false,
+    setDurations: [],
+    setCompletedAt: Array.from({ length: targetSets }, () => now),
+    timerStartedAt: null,
+    elapsedSeconds: 0,
+    timerStoppedAt: now,
+    timerCapped: false,
+    exerciseSnapshot: exerciseSnapshot(ex),
+  };
+  if (session.activeExerciseId === ex.id) delete session.activeExerciseId;
+  if (activeTracker?.exerciseId === ex.id && activeTracker?.dateStr === dateStr) activeTracker = null;
+  setCompletion(dateStr, ex.id, true);
+  saveSession(dateStr, session);
+  playFinishCue();
+  render();
 }
 function openSetTracker(exId, dateStr, options = {}) {
   let ex = exercises.find(item => item.id === exId);

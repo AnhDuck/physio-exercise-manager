@@ -221,6 +221,12 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber, blockInfo =
   nameText.appendChild(elText('span', 'ex-name-text', ex.name));
   nameText.appendChild(elText('span', 'edit-glyph', String.fromCharCode(9998)));
   nameRow.appendChild(nameText);
+  if (ex.quickComplete) {
+    const quickIcon = el('span', 'ex-quick-complete-icon');
+    quickIcon.setAttribute('aria-label', 'Quick complete');
+    quickIcon.appendChild(buildAppIconSvg('lightning', 'ex-quick-complete-svg'));
+    nameRow.appendChild(quickIcon);
+  }
   nameText.title = 'Edit exercise';
   nameText.setAttribute('role', 'button');
   nameText.setAttribute('tabindex', '0');
@@ -286,7 +292,9 @@ function buildExerciseRows(ex, group, dates, todayS, exerciseNumber, blockInfo =
     );
 
     const btn = el('button', 'check-btn set-cell-btn' + (done ? ' done' : '') + (progress && !done ? ' in-progress' : ''));
-    btn.title = isActive ? 'Complete all sets' : (done ? 'Open set tracker' : 'Track sets');
+    btn.title = isActive
+      ? 'Complete all sets'
+      : (done ? 'Open set tracker' : (ex.quickComplete ? 'Quick complete' : 'Track sets'));
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       handleSetCellClick(ex.id, dateS);

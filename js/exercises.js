@@ -339,6 +339,7 @@ function openEditModal(exId) {
   renderExerciseGroupSelect(ex.group);
   document.getElementById('field-group').value = ex.group;
   document.getElementById('field-changed-since-physio').checked = Boolean(ex.changedSinceLastPhysioVisit);
+  document.getElementById('field-quick-complete').checked = Boolean(ex.quickComplete);
 
   document.getElementById('hide-btn').style.display = 'inline-flex';
   setIconButtonContent(document.getElementById('hide-btn'), 'Hide exercise', 'trash');
@@ -359,6 +360,7 @@ function openAddModal(group) {
   renderExerciseGroupSelect(defaultGroup);
   document.getElementById('field-group').value = defaultGroup;
   document.getElementById('field-changed-since-physio').checked = false;
+  document.getElementById('field-quick-complete').checked = false;
   document.getElementById('hide-btn').style.display = 'none';
   showModal();
 }
@@ -405,6 +407,7 @@ function saveExerciseModal() {
     instructions: document.getElementById('field-instructions').value.trim(),
     group:        document.getElementById('field-group').value,
     changedSinceLastPhysioVisit: document.getElementById('field-changed-since-physio').checked,
+    quickComplete: document.getElementById('field-quick-complete').checked,
   };
 
   if (editingExId) {

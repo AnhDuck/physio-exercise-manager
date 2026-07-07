@@ -66,6 +66,7 @@ function buildAppIconSvg(iconName, className = 'ui-button-icon') {
     ],
     import: ['M12 5v10', 'M8.5 11.5L12 15l3.5-3.5', 'M5 19h14'],
     location: ['M12 21s6-5.2 6-11a6 6 0 0 0-12 0c0 5.8 6 11 6 11z', 'M12 12.2a2.2 2.2 0 1 0 0-4.4 2.2 2.2 0 0 0 0 4.4z'],
+    lightning: ['M13 2.5 5.5 13h5L9 21.5 18.5 10h-5z'],
     pencil: ['M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z', 'M12 20h9'],
     reconnect: [
       'M7 8.5a6 6 0 0 1 9.6-1.6L18.5 9',
