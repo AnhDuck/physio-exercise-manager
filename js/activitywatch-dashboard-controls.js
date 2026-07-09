@@ -120,8 +120,8 @@ function activityWatchSyncRefreshLabel(status, progress, isSyncing) {
 function buildActivityWatchAdvancedButton(days) {
   const advanced = el('button', 'activitywatch-advanced-sync-toggle');
   advanced.type = 'button';
-  advanced.title = 'Advanced ActivityWatch sync';
-  advanced.setAttribute('aria-label', 'Advanced ActivityWatch sync');
+  advanced.title = 'Resync and connection details';
+  advanced.setAttribute('aria-label', 'Resync and connection details');
   advanced.setAttribute('aria-expanded', activityWatchDashboardState.advancedSyncOpen ? 'true' : 'false');
   advanced.appendChild(buildAppIconSvg('wrench'));
   advanced.addEventListener('click', () => {

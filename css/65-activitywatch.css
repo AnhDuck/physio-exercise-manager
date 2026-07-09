@@ -41,6 +41,7 @@
 }
 
 .activitywatch-dashboard-modal {
+  position: relative;
   display: flex;
   flex-direction: column;
   width: calc(100vw - 16px);
@@ -545,13 +546,23 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-advanced-sync-panel {
+  position: absolute;
+  z-index: 30;
+  top: 56px;
+  right: 0;
+  bottom: 0;
   display: grid;
+  align-content: start;
   gap: 10px;
-  margin-top: 8px;
-  padding: 10px;
-  border: 1px solid rgba(160,164,173,.26);
-  border-radius: 8px;
-  background: rgba(255,255,255,.025);
+  width: min(430px, calc(100% - 24px));
+  margin: 0;
+  padding: 16px;
+  overflow: auto;
+  border: 0;
+  border-left: 1px solid rgba(160,164,173,.34);
+  border-radius: 0 0 8px 0;
+  background: #242526;
+  box-shadow: -18px 0 42px rgba(0,0,0,.38);
 }
 
 .activitywatch-advanced-sync-header {
@@ -570,7 +581,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 .activitywatch-advanced-sync-header strong,
 .activitywatch-advanced-sync-summary strong {
   color: var(--text);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 850;
 }
 
@@ -584,10 +595,10 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-advanced-sync-form {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
-  gap: 8px;
+  gap: 10px;
 }
 
 .activitywatch-advanced-sync-field {
@@ -612,7 +623,8 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-advanced-sync-field select {
-  min-width: 180px;
+  width: 100%;
+  min-width: 0;
   padding-right: 28px;
 }
 
@@ -629,6 +641,7 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-advanced-sync-summary {
   display: grid;
+  grid-column: 1 / -1;
   gap: 2px;
   min-width: 170px;
   padding: 5px 0;
@@ -638,10 +651,62 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   min-height: 32px;
 }
 
+.activitywatch-advanced-details {
+  border-top: 1px solid rgba(255,255,255,.1);
+}
+
+.activitywatch-advanced-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 2px;
+  color: var(--text);
+  cursor: pointer;
+  list-style: none;
+}
+
+.activitywatch-advanced-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.activitywatch-advanced-details summary::after {
+  content: '+';
+  color: var(--text-muted);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.activitywatch-advanced-details[open] summary::after {
+  content: '\2212';
+}
+
+.activitywatch-advanced-details summary > span {
+  display: grid;
+  gap: 2px;
+}
+
+.activitywatch-advanced-details summary strong {
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.activitywatch-advanced-details summary small {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.activitywatch-advanced-details summary:focus-visible {
+  outline: none;
+  box-shadow: var(--ui-focus-ring);
+}
+
 .activitywatch-advanced-metadata {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+  padding-top: 2px;
 }
 
 .activitywatch-advanced-metadata-item {
@@ -749,7 +814,8 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-chart-footer-legend .activitywatch-average-legend,
-.activitywatch-chart-footer-legend .activitywatch-methodology-legend {
+.activitywatch-chart-footer-legend .activitywatch-methodology-legend,
+.activitywatch-source-legend {
   display: inline-flex;
   align-items: center;
   box-sizing: border-box;
@@ -764,6 +830,25 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   font-weight: 850;
   line-height: 1;
   white-space: nowrap;
+}
+
+.activitywatch-source-legend {
+  color: var(--text-muted);
+}
+
+.activitywatch-source-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.activitywatch-source-legend-item + .activitywatch-source-legend-item {
+  margin-left: 4px;
+}
+
+.activitywatch-source-legend .activitywatch-legend-swatch {
+  width: 8px;
+  height: 8px;
 }
 
 .activitywatch-chart-footer-legend .activitywatch-methodology-legend {
@@ -1411,8 +1496,8 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 }
 
 .activitywatch-selected-day.is-stacked-summary {
-  gap: 10px;
-  padding: 10px;
+  gap: 12px;
+  padding: 14px;
 }
 
 .activitywatch-summary-card {
@@ -1450,8 +1535,8 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-selected-heading strong {
   color: var(--text);
-  font-size: 16px;
-  font-weight: 850;
+  font-size: 23px;
+  font-weight: 900;
   line-height: 1.1;
   white-space: nowrap;
 }
@@ -1603,10 +1688,66 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 .activitywatch-source-breakdown {
   display: grid;
   gap: 8px;
-  padding: 9px;
-  border: 1px solid rgba(121,214,189,.22);
-  border-radius: 8px;
-  background: rgba(255,255,255,.018);
+  padding-top: 12px;
+  border: 0;
+  border-top: 1px solid rgba(255,255,255,.1);
+  border-radius: 0;
+  background: transparent;
+}
+
+.activitywatch-summary-formula {
+  margin-top: -6px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.activitywatch-context-metric {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid rgba(255,255,255,.08);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.activitywatch-context-metric > div {
+  display: grid;
+  gap: 2px;
+}
+
+.activitywatch-context-metric span {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.activitywatch-context-metric small {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.activitywatch-context-metric strong {
+  font-size: 15px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.activitywatch-source-composition {
+  display: flex;
+  width: 100%;
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.07);
+}
+
+.activitywatch-source-composition span {
+  min-width: 0;
 }
 
 .activitywatch-overlay-summary-header {
@@ -1743,8 +1884,11 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
 .activitywatch-summary-tile-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  padding: 8px 0;
+  border-top: 1px solid rgba(255,255,255,.08);
+  border-bottom: 1px solid rgba(255,255,255,.08);
 }
 
 .activitywatch-summary-tile {
@@ -1753,11 +1897,16 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
   align-content: start;
   gap: 3px;
   min-width: 0;
-  min-height: 48px;
-  padding: 7px 8px 7px 10px;
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 7px;
-  background: rgba(255,255,255,.026);
+  min-height: 42px;
+  padding: 4px 9px;
+  border: 0;
+  border-right: 1px solid rgba(255,255,255,.08);
+  border-radius: 0;
+  background: transparent;
+}
+
+.activitywatch-summary-tile:last-child {
+  border-right: 0;
 }
 
 .activitywatch-summary-tile.is-wide {
@@ -2170,6 +2319,12 @@ body:has(#activitywatch-dashboard-modal:not(.hidden)) {
 
   .activitywatch-dashboard-titlebar {
     flex-basis: auto;
+  }
+
+  .activitywatch-advanced-sync-panel {
+    width: 100%;
+    border-left: 0;
+    border-radius: 0;
   }
 
   .activitywatch-category-row,

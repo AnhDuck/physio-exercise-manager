@@ -5,8 +5,8 @@ function buildActivityWatchAdvancedSyncPanel(days, isSyncing, status = getActivi
   const panel = el('section', 'activitywatch-advanced-sync-panel');
   const header = el('div', 'activitywatch-advanced-sync-header');
   const copy = el('div', '');
-  copy.appendChild(elText('strong', '', 'Advanced sync'));
-  copy.appendChild(elText('span', '', 'Use this after ActivityWatch category rules change. Choose the dates first; routine dashboard updates should use Refresh.'));
+  copy.appendChild(elText('strong', '', 'Resync ActivityWatch'));
+  copy.appendChild(elText('span', '', 'Rebuild saved summaries after changing ActivityWatch categories or rules.'));
   header.appendChild(copy);
   const close = el('button', 'activitywatch-advanced-sync-close');
   close.type = 'button';
@@ -66,7 +66,15 @@ function buildActivityWatchAdvancedSyncPanel(days, isSyncing, status = getActivi
   if (count > 90) {
     panel.appendChild(elText('div', 'activitywatch-advanced-sync-warning', 'Large resyncs can take a while. Last 30 days or the visible range is usually enough after small category edits.'));
   }
-  panel.appendChild(buildActivityWatchAdvancedMetadata(status, progress));
+  const details = el('details', 'activitywatch-advanced-details');
+  const detailsSummary = el('summary', '');
+  const detailsCopy = el('span', '');
+  detailsCopy.appendChild(elText('strong', '', 'Connection details'));
+  detailsCopy.appendChild(elText('small', '', activityWatchDashboardStatusTitle(status, progress)));
+  detailsSummary.appendChild(detailsCopy);
+  details.appendChild(detailsSummary);
+  details.appendChild(buildActivityWatchAdvancedMetadata(status, progress));
+  panel.appendChild(details);
   return panel;
 }
 

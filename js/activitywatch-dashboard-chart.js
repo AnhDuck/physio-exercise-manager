@@ -128,12 +128,41 @@ function renderActivityWatchStackedChart(days) {
 
 function buildActivityWatchChartFooterLegend(days) {
   const legend = el('div', 'activitywatch-chart-footer-legend');
+  const sources = buildActivityWatchChartSourceLegend();
+  if (sources) legend.appendChild(sources);
   if (activityWatchDashboardUsesRollingAverage()) {
     legend.appendChild(buildActivityWatchRollingAverageLegend());
   }
   const methodology = buildActivityWatchMethodologyLegend(days);
   if (methodology) legend.appendChild(methodology);
   return legend.childElementCount ? legend : null;
+}
+
+function buildActivityWatchChartSourceLegend() {
+  let items = [];
+  if (activityWatchDashboardState.viewMode === 'workload') {
+    items = [
+      ['Other computer', 'rgba(99,179,255,.62)'],
+      [WORKLOAD_TERMS.computerWork, activityWatchDashboardCategoryColor('Work')],
+      [WORKLOAD_TERMS.physicalWorkEstimate, 'rgba(121,214,189,.88)'],
+    ];
+  } else if (activityWatchDashboardState.viewMode === 'work') {
+    items = [
+      [WORKLOAD_TERMS.computerWork, activityWatchDashboardCategoryColor('Work')],
+      [WORKLOAD_TERMS.physicalWorkEstimate, 'rgba(121,214,189,.88)'],
+    ];
+  }
+  if (!items.length) return null;
+  const legend = el('span', 'activitywatch-source-legend');
+  items.forEach(([label, color]) => {
+    const item = el('span', 'activitywatch-source-legend-item');
+    const swatch = el('span', 'activitywatch-legend-swatch');
+    swatch.style.background = color;
+    item.appendChild(swatch);
+    item.appendChild(elText('span', '', label));
+    legend.appendChild(item);
+  });
+  return legend;
 }
 
 function activityWatchChartScrollKey(days) {
@@ -188,6 +217,12 @@ function addActivityWatchDashboardSegmentTooltipHandlers(segment, segmentData) {
   if (segmentData.category && activityWatchDashboardState.viewMode === 'breakdown') {
     addActivityWatchCategoryPreviewHandlers(segment, segmentData.category);
   }
+  segment.addEventListener('pointerenter', (event) => {
+    showActivityWatchChartTooltip(event, segmentData.label, segmentData.seconds);
+  });
+  segment.addEventListener('pointermove', positionActivityWatchChartTooltip);
+  segment.addEventListener('pointerleave', hideActivityWatchChartTooltip);
+  segment.addEventListener('pointercancel', hideActivityWatchChartTooltip);
 }
 
 function activityWatchDashboardBarAriaLabel(item, methodologyChanges) {
@@ -200,9 +235,7 @@ function activityWatchDashboardBarAriaLabel(item, methodologyChanges) {
 }
 
 function activityWatchDashboardUsesSelectedCallout() {
-  return activityWatchDashboardState.viewMode === 'exposure'
-    || activityWatchDashboardState.viewMode === 'workload'
-    || activityWatchDashboardState.viewMode === 'work';
+  return false;
 }
 
 function buildActivityWatchSelectedCallout(item) {
@@ -586,33 +619,38 @@ function activityWatchDashboardChartSegments(item, items) {
 }
 
 function activityWatchDashboardExposureSegments(item) {
-  const workSeconds = Math.min(activityWatchDashboardOverlayForItem(item).activityWatchWorkSeconds, item.totalActiveSeconds || 0);
-  const remainderSeconds = Math.max(0, (item.totalActiveSeconds || 0) - workSeconds);
   return [
     {
       label: WORKLOAD_TERMS.computerActiveTime,
-      seconds: remainderSeconds,
-      color: 'rgba(99,179,255,.62)',
-      className: 'activitywatch-exposure-remainder-segment',
-      detail: 'Total computer active time excluding the highlighted Computer Work portion.',
-    },
-    {
-      label: WORKLOAD_TERMS.computerWork,
-      seconds: workSeconds,
-      color: activityWatchDashboardCategoryColor('Work'),
-      className: 'activitywatch-exposure-work-segment',
+      seconds: Math.max(0, Number(item.totalActiveSeconds) || 0),
+      color: 'rgba(99,179,255,.78)',
+      className: 'activitywatch-exposure-total-segment',
     },
   ];
 }
 
 function activityWatchDashboardLoadSegments(item) {
+  const overlay = activityWatchDashboardOverlayForItem(item);
+  const computerWork = Math.min(overlay.activityWatchWorkSeconds, overlay.activityWatchTotalSeconds);
+  const otherComputer = Math.max(0, overlay.activityWatchTotalSeconds - computerWork);
   return [
     {
-      label: WORKLOAD_TERMS.totalTendonLoad,
-      seconds: activityWatchDashboardWorkloadItemSeconds(item, 'total'),
+      label: 'Other computer',
+      seconds: otherComputer,
+      color: 'rgba(99,179,255,.62)',
+      className: 'activitywatch-overlay-segment is-other-computer',
+    },
+    {
+      label: WORKLOAD_TERMS.computerWork,
+      seconds: computerWork,
+      color: activityWatchDashboardCategoryColor('Work'),
+      className: 'activitywatch-overlay-segment is-computer-work',
+    },
+    {
+      label: WORKLOAD_TERMS.physicalWorkEstimate,
+      seconds: overlay.manualResidualSeconds,
       color: 'rgba(121,214,189,.88)',
-      className: 'activitywatch-load-total-segment',
-      detail: 'Computer active time plus physical work estimate.',
+      className: 'activitywatch-overlay-segment is-manual-estimate',
     },
   ];
 }

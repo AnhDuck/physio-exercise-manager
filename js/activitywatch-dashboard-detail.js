@@ -231,19 +231,15 @@ function renderActivityWatchExposureDetailPanel(days) {
   const rangeDays = activityWatchDashboardDataDays(days);
   const rangeTotals = activityWatchDashboardExposureTotals(rangeDays);
 
-  buildActivityWatchRangePanel(
-    root,
-    'Visible range',
-    activityWatchDateRangeLabel(days),
-    [
-      [WORKLOAD_TERMS.computerActiveTime, formatActivityWatchDuration(rangeTotals.totalActiveSeconds), 'featured'],
-      [WORKLOAD_TERMS.computerWork, formatActivityWatchDuration(rangeTotals.computerWorkSeconds)],
-      ['Work share', formatActivityWatchPercent(rangeTotals.computerWorkSeconds, rangeTotals.totalActiveSeconds)],
-      ['Daily average', formatActivityWatchDuration(activityWatchDashboardAverageSeconds(rangeTotals.totalActiveSeconds, rangeDays.length))],
-      ...activityWatchRangeExtremesRows(days, 'exposure'),
-    ],
-    rangeDays.length ? '' : 'No ActivityWatch data for this range.'
-  );
+  root.appendChild(buildActivityWatchSummaryHeading('Visible range', activityWatchDateRangeLabel(days), rangeTotals.totalActiveSeconds));
+  root.appendChild(elText('div', 'activitywatch-summary-formula', 'Total computer active time across the visible range'));
+  root.appendChild(buildActivityWatchMetricList([
+    ['Daily average', formatActivityWatchDuration(activityWatchDashboardAverageSeconds(rangeTotals.totalActiveSeconds, rangeDays.length))],
+    [WORKLOAD_TERMS.computerWork, formatActivityWatchDuration(rangeTotals.computerWorkSeconds)],
+    ['Work share', formatActivityWatchPercent(rangeTotals.computerWorkSeconds, rangeTotals.totalActiveSeconds)],
+  ]));
+  root.appendChild(buildActivityWatchRangeExtremes(days, 'exposure'));
+  if (!rangeDays.length) root.appendChild(elText('div', 'activitywatch-empty', 'No ActivityWatch data for this range.'));
 }
 
 function renderActivityWatchLoadDetailPanel(days) {
@@ -287,16 +283,28 @@ function renderActivityWatchLoadWorkDetailPanel(root, days, mode) {
   const averageSuffix = isWeekly ? ' avg/day' : '';
 
   root.appendChild(buildActivityWatchSummaryHeading(headingTitle, activityWatchDashboardItemLabel(selectedItem), displayedSeconds));
-  root.appendChild(buildActivityWatchMetricList([
-    [`${valueLabel}${averageSuffix}`, formatActivityWatchDuration(displayedSeconds), 'featured', valueNote],
-    [`${WORKLOAD_TERMS.timedWorkTotal}${averageSuffix}`, formatActivityWatchDuration(overlay.workloadTotalSeconds)],
-  ]));
+  root.appendChild(elText('div', 'activitywatch-summary-formula', `${valueLabel}${averageSuffix} = ${valueNote}`));
+  root.appendChild(buildActivityWatchContextMetric(
+    `${WORKLOAD_TERMS.timedWorkTotal}${averageSuffix}`,
+    overlay.workloadTotalSeconds,
+    'Timer/manual reference used to estimate physical work'
+  ));
 
   root.appendChild(buildActivityWatchSourceBreakdown(mode, overlay, displayedSeconds, averageSuffix));
 
   if (overlay.conflict) {
     root.appendChild(elText('div', 'activitywatch-compact-warning activitywatch-overlay-conflict', 'Data conflict: Computer Work exceeds Timed work total for this selection.'));
   }
+}
+
+function buildActivityWatchContextMetric(label, seconds, note) {
+  const row = el('div', 'activitywatch-context-metric');
+  const copy = el('div', '');
+  copy.appendChild(elText('span', '', label));
+  copy.appendChild(elText('small', '', note));
+  row.appendChild(copy);
+  row.appendChild(elText('strong', '', formatActivityWatchDuration(seconds)));
+  return row;
 }
 
 function buildActivityWatchSourceBreakdown(mode, overlay, displayedSeconds, averageSuffix) {
@@ -321,6 +329,15 @@ function buildActivityWatchSourceBreakdown(mode, overlay, displayedSeconds, aver
     ? 'Intentional work only'
     : 'What contributed to total tendon load'));
   section.appendChild(heading);
+
+  const composition = el('div', 'activitywatch-source-composition');
+  rows.forEach(([, seconds, color]) => {
+    const segment = el('span', '');
+    segment.style.width = `${total ? (Math.max(0, seconds) / total) * 100 : 0}%`;
+    segment.style.background = color;
+    composition.appendChild(segment);
+  });
+  section.appendChild(composition);
 
   const list = el('div', 'activitywatch-summary-list activitywatch-source-list');
   rows.forEach(([label, seconds, color]) => {

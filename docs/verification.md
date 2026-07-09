@@ -84,21 +84,21 @@ For ActivityWatch dashboard changes, smoke-check:
 - 7-day average dots align with the center of their bars across Last 2 weeks, Last 30 days, Last 60 days, and Last 90 days
 - Load averages Total tendon load and Work averages Work
 - Breakdown category/group lock updates the 7-day average to that locked category/group, while hover preview does not change the line
-- Load shows total tendon load bars with no load-basis toggle
+- Exposure shows one total Computer active time bar with no work/category stack
+- Load shows stacked Other computer, Computer work, and Physical work estimate sources with no load-basis toggle
 - Work shows only Computer work and Physical work estimate, with no Other computer segment
 - Load and Work do not show Stack by
 - Breakdown shows Stack by Categories / Groups
 - Weekly views hide the 7-day average line and average legend
 - chart day/week selection works
-- Exposure, Load, and Work selected bars show a persistent frosted chart callout anchored above the selected bar, with no vertical guide line and only the selected date/value/metric
-- selected-bar callouts can extend outside the scrollable plot instead of clipping at plot edges
-- Exposure, Load, and Work selected callouts remain attached to the selected bar position while checking Last 2 weeks, Last 30 days, Last 60 days, and Last 90 days, including horizontal scroll in dense ranges
+- Exposure, Load, and Work selection updates the right panel without adding a persistent floating chart card
+- Exposure, Load, and Work segments show transient hover tooltips without obscuring the chart after pointer leave
 - category hover/filter behavior still works
 - Exposure right panel shows visible range only, uses compact metric tiles directly in the right panel without a nested range card, and does not show Synced days
 - Load right panel shows selected day/week details with `Total tendon load`, `Timed work total`, and sources: Other computer, Computer work, Physical work estimate
 - Work right panel shows selected day/week details with `Work`, `Timed work total`, and only Computer work plus Physical work estimate
 - Breakdown Day/Range detail toggle still works
-- advanced sync panel opens and shows date options
+- resync drawer opens over the dashboard without moving the chart, shows date options, and keeps Connection details collapsed by default
 - methodology-change chart markers appear on June 18, 2026 and June 21, 2026 when those dates are visible
 - marker hover/focus text uses `Break in series`
 - the methodology-change chart-footer legend appears below the x-axis when marked dates are visible, uses a dashed vertical marker, shows `Break in series` on hover/focus, and the heading/range controls/right panel do not show the old methodology notices
