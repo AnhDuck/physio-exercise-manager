@@ -93,7 +93,7 @@ function renderActivityWatchDashboard() {
   activityWatchDashboardState.rangeEndDate = normalizeActivityWatchDashboardEndDate(activityWatchDashboardState.rangeEndDate);
   activityWatchDashboardState.viewMode = normalizeActivityWatchDashboardViewMode(activityWatchDashboardState.viewMode);
   activityWatchDashboardState.chartGrain = normalizeActivityWatchDashboardChartGrain(activityWatchDashboardState.chartGrain);
-  activityWatchDashboardState.workloadBasis = normalizeActivityWatchDashboardWorkloadBasis(activityWatchDashboardState.workloadBasis);
+  activityWatchDashboardState.workloadBasis = activityWatchDashboardLoadBasisForMode(activityWatchDashboardState.viewMode);
   activityWatchDashboardState.categoryMode = normalizeActivityWatchDashboardCategoryMode(activityWatchDashboardState.categoryMode);
   activityWatchDashboardState.workloadOverlayMode = activityWatchDashboardWorkloadOverlayMode();
   if (activityWatchDashboardState.viewMode !== 'breakdown') {

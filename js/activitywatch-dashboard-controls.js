@@ -38,7 +38,8 @@ function renderActivityWatchDashboardTabs(days) {
   tabList.setAttribute('aria-label', 'ActivityWatch dashboard views');
   [
     ['exposure', 'Exposure', 'exposure'],
-    ['workload', 'Workload', 'workload'],
+    ['workload', 'Load', 'load'],
+    ['work', 'Work', 'workload'],
     ['breakdown', 'Breakdown', 'breakdown'],
   ].forEach(([mode, label, icon]) => {
     const button = el('button', '');
@@ -63,9 +64,10 @@ function renderActivityWatchDashboardTabs(days) {
 function activityWatchDashboardChartTitle() {
   const grain = activityWatchDashboardState.chartGrain === 'weekly' ? 'weekly' : 'daily';
   if (activityWatchDashboardState.viewMode === 'workload') {
-    return activityWatchDashboardState.workloadBasis === 'work'
-      ? `Work-only load by ${grain === 'weekly' ? 'week' : 'day'}`
-      : `Total load by ${grain === 'weekly' ? 'week' : 'day'}`;
+    return `Total tendon load by ${grain === 'weekly' ? 'week' : 'day'}`;
+  }
+  if (activityWatchDashboardState.viewMode === 'work') {
+    return `Work by ${grain === 'weekly' ? 'week' : 'day'}`;
   }
   if (activityWatchDashboardState.viewMode === 'breakdown') {
     return `Computer activity breakdown by ${grain === 'weekly' ? 'week' : 'day'}`;
@@ -229,13 +231,6 @@ function buildActivityWatchViewControls() {
   grain.appendChild(buildActivityWatchChartGrainToggle());
   controls.appendChild(grain);
 
-  if (activityWatchDashboardState.viewMode === 'workload') {
-    const basis = el('div', 'activitywatch-breakdown-control');
-    basis.appendChild(elText('span', 'activitywatch-control-label', 'Load:'));
-    basis.appendChild(buildActivityWatchWorkloadBasisToggle());
-    controls.appendChild(basis);
-  }
-
   if (activityWatchDashboardState.viewMode === 'breakdown') {
     const breakdown = el('div', 'activitywatch-breakdown-control');
     breakdown.appendChild(elText('span', 'activitywatch-control-label', 'Stack by:'));
@@ -259,23 +254,6 @@ function buildActivityWatchChartGrainToggle() {
       activityWatchDashboardState.selectedCalloutDate = '';
       activityWatchDashboardState.hoveredCategory = '';
       activityWatchDashboardState.showAllCategories = false;
-      activityWatchDashboardState.chartScrollToEnd = true;
-      renderActivityWatchDashboard();
-    }
-  );
-}
-
-function buildActivityWatchWorkloadBasisToggle() {
-  return buildActivityWatchSegmentedToggle(
-    'ActivityWatch workload basis',
-    [
-      ['total', 'Total load'],
-      ['work', 'Work only'],
-    ],
-    activityWatchDashboardState.workloadBasis,
-    (mode) => {
-      activityWatchDashboardState.workloadBasis = normalizeActivityWatchDashboardWorkloadBasis(mode);
-      activityWatchDashboardState.selectedCalloutDate = '';
       activityWatchDashboardState.chartScrollToEnd = true;
       renderActivityWatchDashboard();
     }

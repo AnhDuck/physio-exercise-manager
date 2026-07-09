@@ -178,9 +178,31 @@ body:has(#settings-modal:not(.hidden)) {
 
 .modal-actions {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: flex-end;
   gap: 10px;
   margin-top: 20px;
+}
+
+#exercise-modal .modal-actions {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+#exercise-modal .modal-actions .btn-secondary,
+#exercise-modal .modal-actions .btn-primary,
+#exercise-modal .modal-actions .btn-danger {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+#exercise-modal .modal-actions #hide-btn {
+  margin-right: 0;
+}
+
+#exercise-modal .modal-actions #modal-cancel {
+  margin-left: auto;
 }
 
 .btn-secondary,

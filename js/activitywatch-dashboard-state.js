@@ -15,7 +15,7 @@ const ACTIVITYWATCH_DASHBOARD_OTHER_CATEGORY = 'Other';
 
 const ACTIVITYWATCH_DASHBOARD_DATA_START_DATE = '2026-04-17';
 
-const ACTIVITYWATCH_DASHBOARD_VIEW_MODES = ['exposure', 'workload', 'breakdown'];
+const ACTIVITYWATCH_DASHBOARD_VIEW_MODES = ['exposure', 'workload', 'work', 'breakdown'];
 
 const ACTIVITYWATCH_DASHBOARD_CHART_GRAINS = ['daily', 'weekly'];
 
@@ -100,6 +100,7 @@ function setActivityWatchDashboardViewMode(mode) {
   const nextMode = normalizeActivityWatchDashboardViewMode(mode);
   if (activityWatchDashboardState.viewMode === nextMode) return;
   activityWatchDashboardState.viewMode = nextMode;
+  activityWatchDashboardState.workloadBasis = activityWatchDashboardLoadBasisForMode(nextMode);
   activityWatchDashboardState.selectedCalloutDate = '';
   activityWatchDashboardState.hoveredCategory = '';
   activityWatchDashboardState.workloadOverlayMode = '';
@@ -189,7 +190,7 @@ function normalizeActivityWatchDashboardWorkloadBasis(value) {
 
 function activityWatchDashboardUsesRollingAverage() {
   return activityWatchDashboardState.chartGrain === 'daily'
-    && ['exposure', 'workload', 'breakdown'].includes(activityWatchDashboardState.viewMode);
+    && ['exposure', 'workload', 'work', 'breakdown'].includes(activityWatchDashboardState.viewMode);
 }
 
 function activityWatchDashboardUsesTopCategories() {
@@ -306,13 +307,13 @@ function activityWatchDashboardHasCoverageGap(days) {
 function activityWatchDashboardMetricSecondsForDay(day, metric = activityWatchDashboardState.viewMode) {
   if (!activityWatchDashboardDayHasData(day)) return 0;
   if (metric === 'workload') {
-    return activityWatchDashboardWorkloadPlottedSecondsForDay(day);
+    return activityWatchDashboardWorkloadPlottedSecondsForDay(day, 'total');
+  }
+  if (metric === 'work') {
+    return activityWatchDashboardWorkloadPlottedSecondsForDay(day, 'work');
   }
   if (metric === 'breakdown' && activityWatchDashboardState.selectedCategory) {
     return activityWatchDashboardCategoryTotal(day, activityWatchDashboardState.selectedCategory);
-  }
-  if (metric === 'work') {
-    return activityWatchDashboardOverlayForDay(day).activityWatchWorkSeconds;
   }
   return Math.max(0, Number(day?.totalActiveSeconds) || 0);
 }
@@ -331,6 +332,10 @@ function activityWatchDashboardTotalLoadSecondsForOverlay(overlay) {
 
 function activityWatchDashboardWorkOnlyLoadSecondsForOverlay(overlay) {
   return (overlay?.activityWatchWorkSeconds || 0) + (overlay?.manualResidualSeconds || 0);
+}
+
+function activityWatchDashboardLoadBasisForMode(mode = activityWatchDashboardState.viewMode) {
+  return mode === 'work' ? 'work' : 'total';
 }
 
 function activityWatchDashboardChartItems(days) {

@@ -16,7 +16,7 @@ function renderActivityWatchStackedChart(days) {
   root.classList.toggle('is-dense-range', items.length > 30);
   root.classList.toggle('is-weekly-grain', activityWatchDashboardState.chartGrain === 'weekly');
   root.classList.toggle('is-filtered', activityWatchDashboardState.viewMode === 'breakdown' && Boolean(activityWatchDashboardState.selectedCategory));
-  root.classList.toggle('is-workload-overlay', activityWatchDashboardState.viewMode === 'workload');
+  root.classList.toggle('is-workload-overlay', activityWatchDashboardState.viewMode === 'workload' || activityWatchDashboardState.viewMode === 'work');
   root.classList.toggle('has-selected-callout', activityWatchDashboardUsesSelectedCallout());
   root.dataset.awViewMode = activityWatchDashboardState.viewMode;
   root.dataset.awChartGrain = activityWatchDashboardState.chartGrain;
@@ -201,7 +201,8 @@ function activityWatchDashboardBarAriaLabel(item, methodologyChanges) {
 
 function activityWatchDashboardUsesSelectedCallout() {
   return activityWatchDashboardState.viewMode === 'exposure'
-    || activityWatchDashboardState.viewMode === 'workload';
+    || activityWatchDashboardState.viewMode === 'workload'
+    || activityWatchDashboardState.viewMode === 'work';
 }
 
 function buildActivityWatchSelectedCallout(item) {
@@ -215,37 +216,6 @@ function buildActivityWatchSelectedCallout(item) {
   value.appendChild(elText('strong', '', main.value));
   value.appendChild(elText('span', '', main.label));
   card.appendChild(value);
-
-  const rows = activityWatchSelectedCalloutRows(item);
-  if (rows.length) {
-    const list = el('span', 'activitywatch-selected-callout-list');
-    rows.forEach((rowData) => {
-      const row = el('span', `activitywatch-selected-callout-row ${rowData.color ? 'has-meter' : ''}`);
-      if (rowData.color) {
-        const swatch = el('span', 'activitywatch-selected-callout-swatch');
-        swatch.style.background = rowData.color;
-        row.appendChild(swatch);
-      }
-      row.appendChild(elText('span', 'activitywatch-selected-callout-row-label', rowData.label));
-      const meta = el('span', 'activitywatch-selected-callout-row-meta');
-      meta.appendChild(elText('strong', '', rowData.value));
-      if (rowData.percent) {
-        meta.appendChild(elText('span', '', rowData.percent));
-      }
-      row.appendChild(meta);
-      if (rowData.color) {
-        const meter = el('span', 'activitywatch-selected-callout-meter');
-        const fill = el('span', '');
-        fill.style.width = `${rowData.meterPercent}%`;
-        fill.style.background = rowData.color;
-        meter.appendChild(fill);
-        row.appendChild(meter);
-      }
-      list.appendChild(row);
-    });
-    card.appendChild(list);
-  }
-
   return card;
 }
 
@@ -259,9 +229,15 @@ function activityWatchSelectedCalloutMain(item) {
   if (activityWatchDashboardState.viewMode === 'workload') {
     return {
       label: item.isWeekly
-        ? `${activityWatchWorkloadBasisLabel()} avg/day`
-        : activityWatchWorkloadBasisLabel(),
-      value: formatActivityWatchDuration(activityWatchDashboardWorkloadItemSeconds(item, activityWatchDashboardState.workloadBasis)),
+        ? `${WORKLOAD_TERMS.totalTendonLoad} avg/day`
+        : WORKLOAD_TERMS.totalTendonLoad,
+      value: formatActivityWatchDuration(activityWatchDashboardWorkloadItemSeconds(item, 'total')),
+    };
+  }
+  if (activityWatchDashboardState.viewMode === 'work') {
+    return {
+      label: item.isWeekly ? 'Work avg/day' : 'Work',
+      value: formatActivityWatchDuration(activityWatchDashboardWorkloadItemSeconds(item, 'work')),
     };
   }
   return {
@@ -272,9 +248,6 @@ function activityWatchSelectedCalloutMain(item) {
 
 function activityWatchSelectedCalloutRows(item) {
   if (!item?.syncedDayCount) return [];
-  if (activityWatchDashboardState.viewMode === 'workload') {
-    return activityWatchSelectedWorkloadCalloutRows(item);
-  }
   return activityWatchSelectedExposureCalloutRows(item);
 }
 
@@ -295,49 +268,6 @@ function activityWatchSelectedExposureCalloutRows(item) {
   ];
 }
 
-function activityWatchSelectedWorkloadCalloutRows(item) {
-  const overlay = activityWatchDashboardOverlayForItem(item);
-  if (!item.isWeekly) {
-    return activityWatchSelectedWorkloadMeterRows(overlay, activityWatchDashboardWorkloadItemSeconds(item, activityWatchDashboardState.workloadBasis), false);
-  }
-  const totals = item.overlayTotals || activityWatchDashboardOverlayTotals(item.dataDays || []);
-  const weeklyLoad = activityWatchDashboardState.workloadBasis === 'work'
-    ? activityWatchDashboardWorkOnlyLoadSecondsForOverlay(totals)
-    : activityWatchDashboardTotalLoadSecondsForOverlay(totals);
-  return activityWatchSelectedWorkloadMeterRows(totals, weeklyLoad, true);
-}
-
-function activityWatchSelectedWorkloadMeterRows(overlay, totalSeconds, includeWeeklyTotal) {
-  const computerWork = Math.min(overlay.activityWatchWorkSeconds, overlay.activityWatchTotalSeconds);
-  const computerRemainder = Math.max(0, overlay.activityWatchTotalSeconds - computerWork);
-  const rows = [];
-  if (includeWeeklyTotal) {
-    rows.push(activityWatchSelectedPlainCalloutRow('Weekly total', formatActivityWatchDuration(totalSeconds)));
-  }
-  if (activityWatchDashboardState.workloadBasis === 'total' && computerRemainder) {
-    rows.push(activityWatchSelectedMeterCalloutRow(
-      'Other computer',
-      computerRemainder,
-      totalSeconds,
-      'rgba(99,179,255,.52)'
-    ));
-  }
-  rows.push(activityWatchSelectedMeterCalloutRow(
-    WORKLOAD_TERMS.computerWork,
-    computerWork,
-    totalSeconds,
-    activityWatchDashboardCategoryColor('Work')
-  ));
-  rows.push(activityWatchSelectedMeterCalloutRow(
-    WORKLOAD_TERMS.physicalWorkEstimate,
-    overlay.manualResidualSeconds,
-    totalSeconds,
-    'rgba(121,214,189,.88)'
-  ));
-  rows.push(activityWatchSelectedPlainCalloutRow(WORKLOAD_TERMS.timedWorkTotal, formatActivityWatchDuration(overlay.workloadTotalSeconds)));
-  return rows;
-}
-
 function activityWatchSelectedPlainCalloutRow(label, value) {
   return { label, value };
 }
@@ -345,20 +275,20 @@ function activityWatchSelectedPlainCalloutRow(label, value) {
 function activityWatchSelectedMeterCalloutRow(label, seconds, totalSeconds, color) {
   const safeSeconds = Math.max(0, Number(seconds) || 0);
   const safeTotal = Math.max(0, Number(totalSeconds) || 0);
-  const rawPercent = safeTotal ? (safeSeconds / safeTotal) * 100 : 0;
   return {
     label,
     value: formatActivityWatchDuration(safeSeconds),
     percent: formatActivityWatchPercent(safeSeconds, safeTotal),
-    meterPercent: safeSeconds > 0 ? Math.max(2, Math.min(100, rawPercent)) : 0,
+    meterPercent: activityWatchCalloutMeterPercent(safeSeconds, safeTotal),
     color,
   };
 }
 
-function activityWatchWorkloadBasisLabel() {
-  return activityWatchDashboardState.workloadBasis === 'work'
-    ? 'Work-only load'
-    : WORKLOAD_TERMS.totalTendonLoad;
+function activityWatchCalloutMeterPercent(seconds, totalSeconds) {
+  const safeSeconds = Math.max(0, Number(seconds) || 0);
+  const safeTotal = Math.max(0, Number(totalSeconds) || 0);
+  if (!safeSeconds || !safeTotal) return 0;
+  return Math.max(2, Math.min(100, (safeSeconds / safeTotal) * 100));
 }
 
 function ensureActivityWatchSelectedCalloutRoot() {
@@ -394,7 +324,12 @@ function positionActivityWatchSelectedCallout(chartRoot = document.getElementByI
   }
   const stackRect = stack.getBoundingClientRect();
   const cardRect = card.getBoundingClientRect();
-  card.style.left = `${stackRect.left + (stackRect.width / 2)}px`;
+  const margin = 8;
+  const halfWidth = cardRect.width / 2;
+  const centeredLeft = stackRect.left + (stackRect.width / 2);
+  const clampedLeft = Math.max(margin + halfWidth, Math.min(window.innerWidth - margin - halfWidth, centeredLeft));
+  card.style.left = `${clampedLeft}px`;
+  card.style.setProperty('--activitywatch-callout-anchor-offset', `${centeredLeft - clampedLeft}px`);
   card.style.top = `${stackRect.top - cardRect.height - 30}px`;
 }
 
@@ -592,7 +527,10 @@ function activityWatchDashboardOtherSeconds(day, topCategories) {
 function activityWatchDashboardPlottedSeconds(item) {
   if (!item?.syncedDayCount) return 0;
   if (activityWatchDashboardState.viewMode === 'workload') {
-    return activityWatchDashboardWorkloadItemSeconds(item, activityWatchDashboardState.workloadBasis);
+    return activityWatchDashboardWorkloadItemSeconds(item, 'total');
+  }
+  if (activityWatchDashboardState.viewMode === 'work') {
+    return activityWatchDashboardWorkloadItemSeconds(item, 'work');
   }
   if (activityWatchDashboardState.viewMode === 'breakdown' && activityWatchDashboardState.selectedCategory) {
     return activityWatchDashboardCategoryTotal(item, activityWatchDashboardState.selectedCategory);
@@ -626,7 +564,10 @@ function activityWatchDashboardOverlayForItem(item) {
 function activityWatchDashboardChartSegments(item, items) {
   if (!item?.syncedDayCount) return [];
   if (activityWatchDashboardState.viewMode === 'workload') {
-    return activityWatchDashboardWorkloadSegments(item);
+    return activityWatchDashboardLoadSegments(item);
+  }
+  if (activityWatchDashboardState.viewMode === 'work') {
+    return activityWatchDashboardWorkSegments(item);
   }
   if (activityWatchDashboardState.viewMode === 'exposure') {
     return activityWatchDashboardExposureSegments(item);
@@ -664,36 +605,36 @@ function activityWatchDashboardExposureSegments(item) {
   ];
 }
 
-function activityWatchDashboardWorkloadSegments(item) {
+function activityWatchDashboardLoadSegments(item) {
+  return [
+    {
+      label: WORKLOAD_TERMS.totalTendonLoad,
+      seconds: activityWatchDashboardWorkloadItemSeconds(item, 'total'),
+      color: 'rgba(121,214,189,.88)',
+      className: 'activitywatch-load-total-segment',
+      detail: 'Computer active time plus physical work estimate.',
+    },
+  ];
+}
+
+function activityWatchDashboardWorkSegments(item) {
   const overlay = activityWatchDashboardOverlayForItem(item);
   const computerWork = Math.min(overlay.activityWatchWorkSeconds, overlay.activityWatchTotalSeconds);
-  const computerRemainder = Math.max(0, overlay.activityWatchTotalSeconds - computerWork);
-  const showTotal = activityWatchDashboardState.workloadBasis === 'total';
-  const segments = [];
-  if (showTotal && computerRemainder) {
-    segments.push({
-      label: WORKLOAD_TERMS.computerActiveTime,
-      seconds: computerRemainder,
-      color: 'rgba(99,179,255,.52)',
-      className: 'activitywatch-workload-computer-remainder-segment',
-      detail: 'Computer active time outside the highlighted Computer Work portion.',
-    });
-  }
-  segments.push({
-    label: WORKLOAD_TERMS.computerWork,
-    seconds: computerWork,
-    color: activityWatchDashboardCategoryColor('Work'),
-    className: 'activitywatch-overlay-segment is-computer-work',
-    category: activityWatchDashboardState.viewMode === 'breakdown' ? 'Work' : '',
-  });
-  segments.push({
-    label: WORKLOAD_TERMS.physicalWorkEstimate,
-    seconds: overlay.manualResidualSeconds,
-    color: 'rgba(121,214,189,.88)',
-    className: 'activitywatch-overlay-segment is-manual-estimate',
-    detail: 'Timed work total minus Computer Work, never below zero.',
-  });
-  return segments;
+  return [
+    {
+      label: WORKLOAD_TERMS.computerWork,
+      seconds: computerWork,
+      color: activityWatchDashboardCategoryColor('Work'),
+      className: 'activitywatch-overlay-segment is-computer-work',
+    },
+    {
+      label: WORKLOAD_TERMS.physicalWorkEstimate,
+      seconds: overlay.manualResidualSeconds,
+      color: 'rgba(121,214,189,.88)',
+      className: 'activitywatch-overlay-segment is-manual-estimate',
+      detail: 'Timed work total minus Computer Work, never below zero.',
+    },
+  ];
 }
 
 function activityWatchDashboardMethodologyChangesForItem(item) {
@@ -788,9 +729,10 @@ function appendActivityWatchRollingAverage(plot, points, axis) {
 
 function activityWatchRollingAverageMetricLabel() {
   if (activityWatchDashboardState.viewMode === 'workload') {
-    return activityWatchDashboardState.workloadBasis === 'work'
-      ? 'Work-only load'
-      : 'Total load';
+    return WORKLOAD_TERMS.totalTendonLoad;
+  }
+  if (activityWatchDashboardState.viewMode === 'work') {
+    return 'Work';
   }
   if (activityWatchDashboardState.viewMode === 'breakdown' && activityWatchDashboardState.selectedCategory) {
     return activityWatchDashboardState.selectedCategory;

@@ -77,29 +77,32 @@ For ActivityWatch dashboard changes, smoke-check:
 - range select and pager render
 - range select does not include Last 7 days
 - default dashboard view is Exposure
-- Exposure, Workload, and Breakdown tabs show their icons and switch cleanly
-- Daily/Weekly grain controls render in all three views
+- Exposure, Load, Work, and Breakdown tabs show their icons and switch cleanly
+- Daily/Weekly grain controls render in all four views
 - no 7-day average checkbox/toggle appears
-- Daily Exposure, Daily Workload, and Daily Breakdown show the 7-day average line with the chart-footer legend below the x-axis
+- Daily Exposure, Daily Load, Daily Work, and Daily Breakdown show the 7-day average line with the chart-footer legend below the x-axis
 - 7-day average dots align with the center of their bars across Last 2 weeks, Last 30 days, Last 60 days, and Last 90 days
-- Workload `Work only` updates the 7-day average to the work-only load basis
+- Load averages Total tendon load and Work averages Work
 - Breakdown category/group lock updates the 7-day average to that locked category/group, while hover preview does not change the line
-- Workload shows Total load / Work only and does not show Stack by
+- Load shows total tendon load bars with no load-basis toggle
+- Work shows only Computer work and Physical work estimate, with no Other computer segment
+- Load and Work do not show Stack by
 - Breakdown shows Stack by Categories / Groups
 - Weekly views hide the 7-day average line and average legend
 - chart day/week selection works
-- Exposure and Workload selected bars show a persistent frosted chart callout anchored above the selected bar, with no vertical guide line and with compact selected metrics
+- Exposure, Load, and Work selected bars show a persistent frosted chart callout anchored above the selected bar, with no vertical guide line and only the selected date/value/metric
 - selected-bar callouts can extend outside the scrollable plot instead of clipping at plot edges
-- Exposure and Workload selected callouts remain attached to the selected bar position while checking Last 2 weeks, Last 30 days, Last 60 days, and Last 90 days, including horizontal scroll in dense ranges
+- Exposure, Load, and Work selected callouts remain attached to the selected bar position while checking Last 2 weeks, Last 30 days, Last 60 days, and Last 90 days, including horizontal scroll in dense ranges
 - category hover/filter behavior still works
-- Exposure and Workload right panels show visible range only, use compact metric tiles directly in the right panel without a nested range card, and do not show Synced days
-- Workload right panel labels the top range value as `Total tendon load` or `Work-only load` and shows the formula instead of an anonymous total
+- Exposure right panel shows visible range only, uses compact metric tiles directly in the right panel without a nested range card, and does not show Synced days
+- Load right panel shows selected day/week details with `Total tendon load`, `Timed work total`, and sources: Other computer, Computer work, Physical work estimate
+- Work right panel shows selected day/week details with `Work`, `Timed work total`, and only Computer work plus Physical work estimate
 - Breakdown Day/Range detail toggle still works
 - advanced sync panel opens and shows date options
 - methodology-change chart markers appear on June 18, 2026 and June 21, 2026 when those dates are visible
 - marker hover/focus text uses `Break in series`
 - the methodology-change chart-footer legend appears below the x-axis when marked dates are visible, uses a dashed vertical marker, shows `Break in series` on hover/focus, and the heading/range controls/right panel do not show the old methodology notices
 - timeline day headers and copied timeline Markdown include the methodology-change note for marked days
-- Workload total load avoids double-counting Computer Work and conflict warnings still render when Computer Work exceeds Timed Work total
+- Load and Work avoid double-counting Computer Work and conflict warnings still render when Computer Work exceeds Timed Work total
 
 Always report whether browser verification was in-app automated, visible-browser/CDP based, manual, or skipped.

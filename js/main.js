@@ -198,6 +198,7 @@ function bindStaticEvents() {
   bindClick('modal-cancel', closeModal);
   bindClick('exercise-modal-close', closeModal);
   bindClick('modal-save', saveExerciseModal);
+  bindClick('duplicate-btn', duplicateExercise);
   bindClick('hide-btn', hideExercise);
 
   const exerciseModal = bindClick('exercise-modal', (e) => {

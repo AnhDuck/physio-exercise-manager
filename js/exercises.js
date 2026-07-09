@@ -341,6 +341,8 @@ function openEditModal(exId) {
   document.getElementById('field-changed-since-physio').checked = Boolean(ex.changedSinceLastPhysioVisit);
   document.getElementById('field-quick-complete').checked = Boolean(ex.quickComplete);
 
+  document.getElementById('duplicate-btn').style.display = 'inline-flex';
+  setIconButtonContent(document.getElementById('duplicate-btn'), 'Duplicate', 'copy');
   document.getElementById('hide-btn').style.display = 'inline-flex';
   setIconButtonContent(document.getElementById('hide-btn'), 'Hide exercise', 'trash');
   showModal();
@@ -361,6 +363,7 @@ function openAddModal(group) {
   document.getElementById('field-group').value = defaultGroup;
   document.getElementById('field-changed-since-physio').checked = false;
   document.getElementById('field-quick-complete').checked = false;
+  document.getElementById('duplicate-btn').style.display = 'none';
   document.getElementById('hide-btn').style.display = 'none';
   showModal();
 }
@@ -440,6 +443,60 @@ function saveExerciseModal() {
   saveExercises(exercises);
   closeModal();
   render();
+}
+
+function duplicateExercise() {
+  if (!editingExId) return;
+  const source = exercises.find(item => item.id === editingExId);
+  if (!source || !isExerciseActive(source)) return;
+
+  exercises
+    .filter(ex => ex.group === source.group && isExerciseActive(ex) && (Number(ex.order) || 0) > (Number(source.order) || 0))
+    .forEach(ex => { ex.order = (Number(ex.order) || 0) + 1; });
+
+  const duplicate = {
+    id: uniqueExerciseId(),
+    name: duplicateExerciseName(source.name),
+    sets: source.sets,
+    reps: source.reps,
+    resistance: source.resistance || '',
+    frequency: source.frequency || '',
+    instructions: source.instructions || '',
+    group: source.group,
+    blockId: normalizedBlockId(source),
+    changedSinceLastPhysioVisit: Boolean(source.changedSinceLastPhysioVisit),
+    quickComplete: Boolean(source.quickComplete),
+    image: source.image || null,
+    order: (Number(source.order) || 0) + 1,
+  };
+
+  exercises.push(duplicate);
+  logExerciseAdded(duplicate);
+  saveExercises(exercises);
+  closeModal();
+  render();
+  refreshOpenBlockSettings();
+  showToast(`Duplicated ${source.name}.`);
+}
+
+function uniqueExerciseId() {
+  let id = '';
+  do {
+    id = `ex-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  } while (exercises.some(ex => ex.id === id));
+  return id;
+}
+
+function duplicateExerciseName(name) {
+  const baseName = `${String(name || 'Exercise').trim() || 'Exercise'} copy`;
+  const usedNames = new Set(exercises.map(ex => String(ex.name || '').trim().toLowerCase()));
+  if (!usedNames.has(baseName.toLowerCase())) return baseName;
+
+  for (let i = 2; i < 1000; i++) {
+    const candidate = `${baseName} ${i}`;
+    if (!usedNames.has(candidate.toLowerCase())) return candidate;
+  }
+  return `${baseName} ${Date.now()}`;
 }
 
 function hideExercise() {
