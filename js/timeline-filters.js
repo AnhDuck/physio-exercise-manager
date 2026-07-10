@@ -159,11 +159,8 @@ function getTimelineRangeBounds(range = timelineViewState.range, now = new Date(
 }
 
 function getCurrentWakingDayStart(now = new Date()) {
-  const startMinutes = timeToMinutes(getPersonalDayStartTime()) ?? 0;
-  const start = dateFromStr(toDateStr(now));
-  start.setHours(Math.floor(startMinutes / 60), startMinutes % 60, 0, 0);
-  if (now < start) start.setDate(start.getDate() - 1);
-  return start;
+  const wakingDate = personalDayDateStr(now, getPersonalDayStartTime());
+  return personalDayStart(wakingDate, getPersonalDayStartTime());
 }
 
 function eventWithinTimelineRange(ev, bounds) {

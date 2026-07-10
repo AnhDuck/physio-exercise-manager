@@ -10,6 +10,16 @@ After JavaScript edits run:
 Get-ChildItem -Path js -Filter *.js | Sort-Object Name | ForEach-Object { node --check $_.FullName }
 ```
 
+## Targeted Regression Tests
+
+Run the dependency-free regression harness after storage, migration, date/time, or backup-policy edits:
+
+```powershell
+node tests\targeted-regression.test.js
+```
+
+It covers personal-day boundaries and local-offset formatting, auto-backup time/history/health policy, legacy migration transforms and idempotence, and first/middle/final-write storage rollback. Browser checks remain necessary for startup, settings, folder handles, and UI behavior.
+
 ## Browser Verification
 
 Verify changes as much as reasonably needed by default. Behavior, UI, storage, and workflow changes should include a direct check that the changed behavior works, plus a quick guard that nearby protected behavior still looks intact. Spend tool calls on verification so Bill does not have to manually validate routine changes.

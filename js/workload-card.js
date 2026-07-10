@@ -535,30 +535,19 @@ function workloadCurrentDateStr(now = new Date()) {
 }
 
 function workloadDateStrFor(date) {
-  const dayStart = workloadDayStart(toDateStr(date));
-  if (date < dayStart) {
-    dayStart.setDate(dayStart.getDate() - 1);
-  }
-  return toDateStr(dayStart);
+  return personalDayDateStr(date, workloadPersonalDayStartTime());
 }
 
 function workloadDayStart(dateStr) {
-  const start = dateFromStr(dateStr);
-  const [hour, minute] = workloadPersonalDayStartTime().split(':').map(Number);
-  start.setHours(hour, minute, 0, 0);
-  return start;
+  return personalDayStart(dateStr, workloadPersonalDayStartTime());
 }
 
 function workloadNextDayStart(dateStr) {
-  const next = workloadDayStart(dateStr);
-  next.setDate(next.getDate() + 1);
-  return next;
+  return nextPersonalDayStart(dateStr, workloadPersonalDayStartTime());
 }
 
 function workloadPersonalDayStartTime() {
-  return isValidStoredTime(settings?.personalDayStartTime)
-    ? settings.personalDayStartTime
-    : DEFAULT_PERSONAL_DAY_START_TIME;
+  return personalDayStartTime(settings?.personalDayStartTime);
 }
 
 function formatWorkloadDuration(seconds) {

@@ -67,7 +67,7 @@ function normalizeActivityWatchDataForStorage(value) {
     serverUrl: normalizeActivityWatchServerUrl(source.serverUrl) || defaults.serverUrl,
     host: typeof source.host === 'string' ? source.host : defaults.host,
     activityWatchVersion: typeof source.activityWatchVersion === 'string' ? source.activityWatchVersion : defaults.activityWatchVersion,
-    startOfDay: activityWatchIsValidTime(source.startOfDay) ? source.startOfDay : defaults.startOfDay,
+    startOfDay: normalizeTimeStr(source.startOfDay) || defaults.startOfDay,
     categoryColors: normalizeStringMap(source.categoryColors),
     buckets: normalizeActivityWatchBuckets(source.buckets),
     daysByDate,

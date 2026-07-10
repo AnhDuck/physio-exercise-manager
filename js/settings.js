@@ -104,9 +104,7 @@ function syncSettingsControls() {
 
 function autosaveGeneralSettings() {
   const personalDayStartTime = document.getElementById('setting-personal-day-start').value;
-  settings.personalDayStartTime = isValidTime(personalDayStartTime)
-    ? personalDayStartTime
-    : DEFAULT_PERSONAL_DAY_START_TIME;
+  settings.personalDayStartTime = normalizeTimeStr(personalDayStartTime) || DEFAULT_PERSONAL_DAY_START_TIME;
   settings.armRotationEnabled = Boolean(document.getElementById('setting-arm-rotation-enabled')?.checked);
   settings.setCueSound = document.getElementById('setting-cue-sound').checked;
   settings.setCueVibrate = document.getElementById('setting-cue-vibrate').checked;
@@ -122,9 +120,7 @@ function autosaveGeneralSettings() {
 function autosaveAutoBackupTime() {
   const auto = getAutoBackupSettings();
   const input = document.getElementById('setting-auto-backup-time');
-  auto.time = isValidTime(input.value)
-    ? input.value
-    : AUTO_BACKUP_DEFAULT_SETTINGS.time;
+  auto.time = normalizeTimeStr(input.value) || defaultAutoBackupSettings().time;
   input.value = auto.time;
   saveSettings(settings);
   renderAutoBackupSettings();

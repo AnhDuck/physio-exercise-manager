@@ -161,21 +161,24 @@ function backupSummaryPromptText(backup) {
 }
 
 function applyBackupToBrowserStorage(backup, failureTitle = 'Import failed') {
-  const originalValues = getOriginalAppStorageValues();
-  const originalReadFailures = typeof snapshotStorageReadFailures === 'function' ? snapshotStorageReadFailures() : {};
   autoBackupStorageReplaceActive = true;
   beginImportStorageTest();
-  const replaceOptions = { allowCorruptOverwrite: true };
   try {
-    safeSetLocalStorageItem(KEYS.EXERCISES, JSON.stringify(backup.data.exercises), STORAGE_LABELS[KEYS.EXERCISES], replaceOptions);
-    safeSetLocalStorageItem(KEYS.SESSIONS, JSON.stringify(backup.data.sessions), STORAGE_LABELS[KEYS.SESSIONS], replaceOptions);
-    safeSetLocalStorageItem(KEYS.SETTINGS, JSON.stringify(sanitizeLegacySettings(backup.data.settings)), STORAGE_LABELS[KEYS.SETTINGS], replaceOptions);
-    safeSetLocalStorageItem(KEYS.EVENTS, JSON.stringify(backup.data.events), STORAGE_LABELS[KEYS.EVENTS], replaceOptions);
-    safeSetLocalStorageItem(KEYS.ACTIVITYWATCH, JSON.stringify(normalizeActivityWatchDataForStorage(backup.data.activityWatch)), STORAGE_LABELS[KEYS.ACTIVITYWATCH], replaceOptions);
-    safeSetLocalStorageItem(KEYS.WORKLOAD, JSON.stringify(normalizeWorkloadDataForStorage(backup.data.workload)), STORAGE_LABELS[KEYS.WORKLOAD], replaceOptions);
+    const importedSettings = sanitizeLegacySettings(backup.data.settings);
+    importedSettings.autoBackup = normalizeAutoBackupSettings(importedSettings.autoBackup);
+    importedSettings.homeCards = normalizeHomeCardsSettings(importedSettings.homeCards);
+    replaceAppStorageValuesAtomically({
+      [KEYS.EXERCISES]: JSON.stringify(backup.data.exercises),
+      [KEYS.SESSIONS]: JSON.stringify(backup.data.sessions),
+      [KEYS.SETTINGS]: JSON.stringify(importedSettings),
+      [KEYS.EVENTS]: JSON.stringify(backup.data.events),
+      [KEYS.ACTIVITYWATCH]: JSON.stringify(normalizeActivityWatchDataForStorage(backup.data.activityWatch)),
+      [KEYS.WORKLOAD]: JSON.stringify(normalizeWorkloadDataForStorage(backup.data.workload)),
+    }, {
+      mirror: false,
+      safeSetOptions: { allowCorruptOverwrite: true },
+    });
   } catch (err) {
-    restoreAppStorageValues(originalValues);
-    if (typeof restoreStorageReadFailures === 'function') restoreStorageReadFailures(originalReadFailures);
     alert(`${failureTitle}:\n\n- The backup was valid, but browser storage could not save it.\n- Your previous browser data was restored.\n- ${storageErrorMessage(err)}`);
     return false;
   } finally {

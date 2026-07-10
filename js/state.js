@@ -65,67 +65,8 @@ function setHeaderQuote() {
   quote.textContent = PHYSIO_HEADER_QUOTES[index];
 }
 
-// One-shot data migrations for existing localStorage installs
 function runMigrations() {
-  let exercisesChanged = false;
-  // Move "Rubber Band Pinky & Ring Finger" from Arm Day 1 → Arm Day 2
-  const pinky = exercises.find(e => e.id === 'a1-8');
-  if (pinky && pinky.group === 'arm-day1') {
-    pinky.group = 'arm-day2';
-    pinky.order = 5;
-    exercisesChanged = true;
-  }
-
-  if (!settings.defaultBlocksApplied) {
-    settings.defaultBlocksApplied = true;
-    try {
-      saveSettings(settings);
-    } catch (err) {
-      console.error('Could not save default block migration.', err);
-    }
-  }
-
-  if (!settings.activityWatchGroupsDefaultApplied) {
-    if (!settings.homeCards) settings.homeCards = {};
-    if (!settings.homeCards.activityWatchMini) settings.homeCards.activityWatchMini = {};
-    settings.homeCards.activityWatchMini.categoryMode = 'top';
-    settings.activityWatchGroupsDefaultApplied = true;
-  }
-
-  ensureExerciseGroupSettings();
-  ensureBlockSettings();
-  migrateSetProgressSnapshots();
-
-  exercises.forEach(ex => {
-    if (!('changedSinceLastPhysioVisit' in ex)) {
-      ex.changedSinceLastPhysioVisit = false;
-      exercisesChanged = true;
-    }
-    if (ex.blockTitle && normalizedBlockId(ex)) {
-      ensureBlockDefinition(ex.group, normalizedBlockId(ex), ex.blockTitle);
-      delete ex.blockTitle;
-      exercisesChanged = true;
-    }
-    if ('blockMinGapHours' in ex) {
-      delete ex.blockMinGapHours;
-      exercisesChanged = true;
-    }
-    if ('blockPreferredGapHours' in ex) {
-      delete ex.blockPreferredGapHours;
-      exercisesChanged = true;
-    }
-  });
-
-  if (exercisesChanged) {
-    try {
-      saveExercises(exercises);
-    } catch (err) {
-      console.error('Could not save exercise migrations.', err);
-    }
-  }
-  try {
-    saveSettings(settings);
-  } catch (err) {
-    console.error('Could not save settings migrations.', err);
-  }
+  if (typeof runVersionedDataMigrations === 'function') return runVersionedDataMigrations();
+  console.warn('Versioned data migrations are not available yet.');
+  return { status: 'unavailable' };
 }

@@ -16,17 +16,18 @@ Keep `90-responsive.css` last. See `css/README.md` before changing styles.
 
 JavaScript order is also manual:
 
-`data.js`, `storage.js`, `constants.js`, `state.js`, `dates.js`, `dom.js`, `sessions.js`, `exercises.js`, `grid.js`, `tracker.js`, `activitywatch-model.js`, `activitywatch-time.js`, `activitywatch-query.js`, `activitywatch-sync-service.js`, `activitywatch-display.js`, `activitywatch-timeline-adapter.js`, `dev-sample-data.js`, `workload-card.js`, `workload-activitywatch-overlay.js`, `home-cards.js`, `weather-format.js`, `weather-preview.js`, `weather-normalize.js`, `weather-api.js`, `weather-sync.js`, `weather-settings.js`, `weather-card.js`, `activitywatch-mini-card.js`, `timeline-data.js`, `timeline-filters.js`, `timeline-render.js`, `timeline-notes.js`, `timeline-export.js`, `timeline-edit.js`, `timeline.js`, `backup.js`, `auto-backup.js`, `settings.js`, `activitywatch-dashboard-state.js`, `activitywatch-dashboard-format.js`, `activitywatch-dashboard-sync.js`, `activitywatch-dashboard-controls.js`, `activitywatch-dashboard-chart.js`, `activitywatch-dashboard-detail.js`, `activitywatch-dashboard-shell.js`, `activitywatch-settings.js`, `images.js`, `main.js`.
+`data.js`, `storage.js`, `constants.js`, `state.js`, `dates.js`, `dom.js`, `sessions.js`, `exercises.js`, `migrations.js`, `grid.js`, `tracker.js`, `activitywatch-model.js`, `activitywatch-time.js`, `activitywatch-query.js`, `activitywatch-sync-service.js`, `activitywatch-display.js`, `activitywatch-timeline-adapter.js`, `dev-sample-data.js`, `workload-card.js`, `workload-activitywatch-overlay.js`, `home-cards.js`, `weather-format.js`, `weather-preview.js`, `weather-normalize.js`, `weather-api.js`, `weather-sync.js`, `weather-settings.js`, `weather-card.js`, `activitywatch-mini-card.js`, `timeline-data.js`, `timeline-filters.js`, `timeline-render.js`, `timeline-notes.js`, `timeline-export.js`, `timeline-edit.js`, `timeline.js`, `backup.js`, `auto-backup-policy.js`, `auto-backup-fs.js`, `auto-backup-service.js`, `auto-backup-ui.js`, `settings.js`, `activitywatch-dashboard-state.js`, `activitywatch-dashboard-format.js`, `activitywatch-dashboard-sync.js`, `activitywatch-dashboard-controls.js`, `activitywatch-dashboard-chart.js`, `activitywatch-dashboard-detail.js`, `activitywatch-dashboard-shell.js`, `activitywatch-settings.js`, `images.js`, `main.js`.
 
 Never load `main.js` before feature files it binds. Do not add imports, exports, modules, dependencies, bundlers, browser automation packages, or build tooling.
 
 ## File Ownership
 
 - `data.js`: default exercises, default groups, and settings-backed group registry helpers.
-- `storage.js`: localStorage keys, safe-save helpers, and local date helpers.
+- `storage.js`: localStorage keys, safe-save helpers, storage health, atomic multi-key replacement/rollback, persisted settings defaults, and canonical auto-backup settings normalization.
 - `constants.js`: labels and static copy shared across features.
-- `state.js`: mutable app globals and migrations.
-- `dates.js`: calendar and schedule logic.
+- `state.js`: mutable app globals and the thin startup migration coordinator.
+- `migrations.js`: versioned, pure draft transformations, migration validation, schema-version rules, and the post-commit live-state replacement.
+- `dates.js`: the only shared local-date, time-validation, personal-day, local-ISO, calendar, and schedule implementation.
 - `dom.js`: DOM helpers, icons, and toasts.
 - `sessions.js`: exercise completion and set progress.
 - `exercises.js`: exercise ordering, blocks, drag/drop, add/edit/hide/delete, and the per-exercise Quick complete option.
@@ -53,8 +54,11 @@ Never load `main.js` before feature files it binds. Do not add imports, exports,
 - `activitywatch-dashboard-*.js`: ActivityWatch category dashboard, including metadata-only methodology-change markers. See `docs/activitywatch.md`.
 - `activitywatch-settings.js`: ActivityWatch Settings tab controls.
 - `timeline-*.js`: notes, events, Markdown, filters, export, and edit flows.
-- `backup.js`: JSON import/export, validation, shared restore rollback, and empty-browser/meaningful-backup detection helpers.
-- `auto-backup.js`: folder backup, live latest-file mirror, empty-browser recovery prompt, health banner, and backup history.
+- `backup.js`: JSON import/export, validation, shared restore/import preparation, and empty-browser/meaningful-backup detection helpers. Browser replacement uses the storage transaction primitive.
+- `auto-backup-policy.js`: pure backup constants, filenames, retention, scheduling, time, history, health evaluation, and health-format policy helpers.
+- `auto-backup-fs.js`: File System Access support, directory picker, permissions, IndexedDB adapters, file read/write/verification, and old-file cleanup. It has no DOM or toast responsibilities.
+- `auto-backup-service.js`: folder initialization, listeners, scheduling, live mirroring, manual/scheduled runs, recovery, and success/failure orchestration.
+- `auto-backup-ui.js`: Backup settings, Data Health, status pills, history, and receipt rendering. `auto-backup.js` remains only as a compatibility placeholder.
 - `settings.js`: settings modal, review markers, combined group/block settings, and backup UI.
 - `images.js`: exercise image upload and URL import.
 - `main.js`: guarded startup bootstrap and static event binding. Startup phases should use `runStartupStep(...)` so a failed optional feature logs a non-blocking warning instead of stopping later phases. Static DOM bindings should use the local `bindClick` / `bindChange` / `bindInput` / `bindKeydown` helpers so missing optional controls fail softly and missing required controls warn clearly.
@@ -91,6 +95,8 @@ Load-side app-data parsing also belongs in `storage.js`. Persisted JSON loaders 
 - Exercise groups keep stable IDs. Rename, recolor, reorder, or hide groups through `settings.exerciseGroups`; do not rewrite group IDs just to change presentation.
 - Exercise blocks are group-scoped in `settings.blocks[group]`; exercises store only `blockId`.
 - Stored events are `note`, `dose-change`, and `exercise-added`. Timeline exercise logs are derived from session progress and must not be stored in `pem_events`.
+- `pem_settings.dataSchemaVersion` is the app-data schema version. New installs receive the current version; saved settings without the field are schema `0`; future versions are left untouched. Backup envelope `version` remains the independent file-format version.
+- Startup migrations clone exercises, sessions, settings, events, ActivityWatch, and Timed Work into a draft, validate the complete result, and replace the six app keys through one rollback-capable storage transaction. Live globals change only after every write succeeds.
 - Folder auto-backup writes `physio-exercise-auto-backup-latest.json` after normal app-data saves while the folder is connected. It also writes a dated daily file at the scheduled time and rolling hourly recovery files while the app is open. Latest is read back and validated after writes. On startup or folder reconnect, if browser data looks fresh/empty and latest contains meaningful data, PEM prompts before restoring and offers an emergency JSON download first. If the user declines restore, automatic writes hold off while the browser data still looks empty so a good latest file is not overwritten by defaults; manual Backup now warns before replacing latest in that state. Import/folder restore suppresses live mirroring until every app storage key is replaced or rolled back.
 
 ## Where To Edit
@@ -99,7 +105,10 @@ Load-side app-data parsing also belongs in `storage.js`. Persisted JSON loaders 
 - Exercise add/edit/order/block behavior and the combined Groups & Blocks settings UI: `exercises.js` and `settings.js`.
 - Set tracker/timer/log behavior: `tracker.js`, `sessions.js`, and timeline renderers if log display changes.
 - Timeline note/event behavior: `timeline-*.js`.
-- Backup/import/export: `backup.js`, `auto-backup.js`, and storage helpers.
+- Backup/import/export: `backup.js`, the auto-backup policy/filesystem/service/UI files, and storage helpers.
+- Migration/schema behavior: `migrations.js`, `state.js`, and storage transaction helpers.
+- Date/time or waking-day behavior: `dates.js`, with feature-specific wrappers in Timeline, ActivityWatch, Timed Work, and backup policy.
+- Folder backup policy/filesystem/orchestration/UI: `auto-backup-policy.js`, `auto-backup-fs.js`, `auto-backup-service.js`, and `auto-backup-ui.js`.
 - ActivityWatch storage/model: `activitywatch-model.js` when the stored aggregate shape, server URL normalization, or public getters change.
 - ActivityWatch date helpers: `activitywatch-time.js`.
 - ActivityWatch query/API mechanics: `activitywatch-query.js`.

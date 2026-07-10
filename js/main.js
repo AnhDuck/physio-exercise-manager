@@ -35,6 +35,7 @@ function fallbackStartupSettings() {
     setCueSpeech: false,
     setCueSpeechVolume: 1,
     personalDayStartTime: '07:00',
+    dataSchemaVersion: typeof CURRENT_DATA_SCHEMA_VERSION === 'number' ? CURRENT_DATA_SCHEMA_VERSION : 0,
     armRotationEnabled: false,
     exerciseGroups: typeof defaultExerciseGroupSettings === 'function' ? defaultExerciseGroupSettings() : {},
     timelineRange: 'past-30-days',

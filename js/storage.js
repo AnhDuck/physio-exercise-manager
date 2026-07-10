@@ -258,33 +258,6 @@ function endImportStorageTest() {
   pemStorageTest.importActive = false;
 }
 
-function getOriginalAppStorageValues() {
-  return APP_STORAGE_KEYS.reduce((values, key) => {
-    values[key] = safeGetLocalStorageItem(key);
-    return values;
-  }, {});
-}
-
-function restoreAppStorageValues(originalValues) {
-  APP_STORAGE_KEYS.forEach(key => {
-    try {
-      if (originalValues[key] === null || originalValues[key] === undefined) {
-        localStorage.removeItem(key);
-      } else {
-        localStorage.setItem(key, originalValues[key]);
-      }
-    } catch (err) {
-      recordStorageFailure({
-        key,
-        label: STORAGE_LABELS[key] || key,
-        size: byteLength(originalValues[key] || ''),
-        error: err,
-      });
-    }
-  });
-  scheduleStorageHealthRender();
-}
-
 function recordStorageAttempt(attempt) {
   if (typeof storageHealth !== 'object' || !storageHealth) return;
   storageHealth.lastAttempt = {
@@ -371,6 +344,112 @@ function restoreStorageReadFailures(readFailures) {
   storageHealth.readFailures = readFailures && typeof readFailures === 'object' && !Array.isArray(readFailures)
     ? JSON.parse(JSON.stringify(readFailures))
     : {};
+}
+
+function createStorageTransactionError(message, cause, rollbackErrors = []) {
+  const error = new Error(message);
+  error.name = 'StorageTransactionError';
+  error.code = 'storage-transaction-failed';
+  error.cause = cause || null;
+  error.rollbackErrors = rollbackErrors;
+  return error;
+}
+
+function snapshotRawAppStorageValues(keys) {
+  const values = {};
+  for (const key of keys) {
+    try {
+      const raw = localStorage.getItem(key);
+      values[key] = { present: raw !== null, raw };
+    } catch (err) {
+      throw createStorageTransactionError(
+        `Could not read ${STORAGE_LABELS[key] || key} before replacing app data.`,
+        err
+      );
+    }
+  }
+  return values;
+}
+
+function restoreRawAppStorageValues(values) {
+  const rollbackErrors = [];
+  Object.entries(values || {}).forEach(([key, snapshot]) => {
+    try {
+      if (snapshot?.present) {
+        localStorage.setItem(key, snapshot.raw);
+      } else {
+        localStorage.removeItem(key);
+      }
+    } catch (err) {
+      rollbackErrors.push({
+        key,
+        label: STORAGE_LABELS[key] || key,
+        error: err,
+      });
+      recordStorageFailure({
+        key,
+        label: STORAGE_LABELS[key] || key,
+        size: byteLength(snapshot?.raw || ''),
+        error: err,
+      });
+    }
+  });
+  return rollbackErrors;
+}
+
+function replaceAppStorageValuesAtomically(valuesByKey, options = {}) {
+  const values = valuesByKey && typeof valuesByKey === 'object' && !Array.isArray(valuesByKey)
+    ? valuesByKey
+    : {};
+  const keys = Object.keys(values).filter(key => APP_STORAGE_KEYS.includes(key));
+  if (!keys.length) {
+    return { ok: true, keys: [] };
+  }
+
+  const originalReadFailures = snapshotStorageReadFailures();
+  let originalValues;
+  try {
+    originalValues = snapshotRawAppStorageValues(keys);
+  } catch (err) {
+    restoreStorageReadFailures(originalReadFailures);
+    throw err;
+  }
+
+  const previousReplaceState = autoBackupStorageReplaceActive;
+  autoBackupStorageReplaceActive = true;
+  try {
+    keys.forEach(key => {
+      const raw = values[key];
+      if (typeof raw !== 'string') {
+        throw new TypeError(`Storage transaction value for ${key} must be a string.`);
+      }
+      safeSetLocalStorageItem(
+        key,
+        raw,
+        STORAGE_LABELS[key] || key,
+        {
+          ...(options.safeSetOptions || {}),
+          mirror: false,
+        }
+      );
+    });
+  } catch (err) {
+    const rollbackErrors = restoreRawAppStorageValues(originalValues);
+    restoreStorageReadFailures(originalReadFailures);
+    autoBackupStorageReplaceActive = previousReplaceState;
+    throw createStorageTransactionError(
+      'The browser storage transaction failed and the previous app data was restored.',
+      err,
+      rollbackErrors
+    );
+  }
+
+  autoBackupStorageReplaceActive = previousReplaceState;
+  if (options.mirror !== false && typeof scheduleAutoBackupLiveMirror === 'function') {
+    scheduleAutoBackupLiveMirror(options.mirrorTrigger || 'storage-transaction');
+  }
+  scheduleStorageHealthRender();
+  return { ok: true, keys };
 }
 
 function scheduleStorageHealthRender() {
@@ -585,7 +664,7 @@ function defaultAutoBackupSettings() {
 function normalizeAutoBackupSettings(value = {}) {
   const defaults = defaultAutoBackupSettings();
   const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
-  const time = isValidStoredTime(source.time) ? source.time : defaults.time;
+  const time = normalizeTimeStr(source.time) || defaults.time;
   const history = Array.isArray(source.history)
     ? source.history.filter(item => item && typeof item === 'object').slice(0, 20)
     : defaults.history;
@@ -610,15 +689,6 @@ function normalizeAutoBackupSettings(value = {}) {
       : defaults.lastVerifiedSummary,
     history,
   };
-}
-
-function isValidStoredTime(timeStr) {
-  if (typeof timeStr !== 'string') return false;
-  const match = /^(\d{2}):(\d{2})$/.exec(timeStr);
-  if (!match) return false;
-  const hour = Number(match[1]);
-  const minute = Number(match[2]);
-  return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
 }
 
 function loadExercises() {
@@ -665,6 +735,7 @@ function loadSettings() {
       timelineRange: 'past-30-days',
       homeCards: defaultHomeCardsSettings(),
       autoBackup: defaultAutoBackupSettings(),
+      dataSchemaVersion: typeof CURRENT_DATA_SCHEMA_VERSION === 'number' ? CURRENT_DATA_SCHEMA_VERSION : 0,
     };
     try {
       saveSettings(defaults);
@@ -673,6 +744,7 @@ function loadSettings() {
     }
     return defaults;
   }
+  const stored = safeParseStorageJson(KEYS.SETTINGS, raw, {});
   const loaded = sanitizeLegacySettings({
     setCueSound: true,
     setCueVibrate: true,
@@ -684,8 +756,16 @@ function loadSettings() {
     timelineRange: 'past-30-days',
     homeCards: defaultHomeCardsSettings(),
     autoBackup: defaultAutoBackupSettings(),
-    ...safeParseStorageJson(KEYS.SETTINGS, raw, {}),
+    ...stored,
   });
+  if (Object.prototype.hasOwnProperty.call(stored, 'dataSchemaVersion')) {
+    loaded.dataSchemaVersion = Number.isInteger(stored.dataSchemaVersion) && stored.dataSchemaVersion >= 0
+      ? stored.dataSchemaVersion
+      : 0;
+  } else {
+    delete loaded.dataSchemaVersion;
+  }
+  loaded.personalDayStartTime = normalizeTimeStr(loaded.personalDayStartTime) || DEFAULT_PERSONAL_DAY_START_TIME;
   loaded.setCueSpeechVolume = clampSetCueSpeechVolume(loaded.setCueSpeechVolume);
   loaded.homeCards = normalizeHomeCardsSettings(loaded.homeCards);
   loaded.autoBackup = normalizeAutoBackupSettings(loaded.autoBackup);
@@ -703,6 +783,11 @@ function saveSettings(settings) {
     homeCards: normalizeHomeCardsSettings(cleanSettings.homeCards),
     autoBackup: normalizeAutoBackupSettings(cleanSettings.autoBackup),
   };
+  if (Object.prototype.hasOwnProperty.call(cleanSettings, 'dataSchemaVersion')) {
+    nextSettings.dataSchemaVersion = Number.isInteger(cleanSettings.dataSchemaVersion) && cleanSettings.dataSchemaVersion >= 0
+      ? cleanSettings.dataSchemaVersion
+      : 0;
+  }
   safeSetLocalStorageItem(KEYS.SETTINGS, JSON.stringify(nextSettings), STORAGE_LABELS[KEYS.SETTINGS]);
 }
 
@@ -714,6 +799,7 @@ function sanitizeLegacySettings(value) {
   settings.armRotationEnabled = Boolean(settings.armRotationEnabled);
   settings.exerciseGroups = normalizeExerciseGroupSettings(settings.exerciseGroups);
   settings.timelineRange = normalizeStoredTimelineRange(settings.timelineRange);
+  settings.personalDayStartTime = normalizeTimeStr(settings.personalDayStartTime) || DEFAULT_PERSONAL_DAY_START_TIME;
   return settings;
 }
 
@@ -906,9 +992,7 @@ function normalizeWorkloadTimer(value = {}) {
 }
 
 function isValidWorkloadDate(value) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return false;
-  const date = dateFromStr(value);
-  return toDateStr(date) === value;
+  return isValidDateStr(value);
 }
 
 function normalizeWeatherLocation(value) {
@@ -972,18 +1056,4 @@ function loadEvents() {
 
 function saveEvents(events) {
   safeSetLocalStorageItem(KEYS.EVENTS, JSON.stringify(events), STORAGE_LABELS[KEYS.EVENTS]);
-}
-
-// ISO date string helpers — uses LOCAL time (not UTC) so dates match what the user sees
-function toDateStr(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-function dateFromStr(str) {
-  // Parse as local date (not UTC) to avoid off-by-one on midnight
-  const [y, m, d] = str.split('-').map(Number);
-  return new Date(y, m - 1, d);
 }

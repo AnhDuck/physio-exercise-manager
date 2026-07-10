@@ -189,9 +189,7 @@ function buildTimelineBoundary(ev) {
 }
 
 function getPersonalDayStartTime() {
-  return isValidTime(settings.personalDayStartTime)
-    ? settings.personalDayStartTime
-    : DEFAULT_PERSONAL_DAY_START_TIME;
+  return personalDayStartTime(settings?.personalDayStartTime);
 }
 
 function isBeforePersonalDayStart(eventTime, personalDayStartTime) {
@@ -202,38 +200,13 @@ function isBeforePersonalDayStart(eventTime, personalDayStartTime) {
 }
 
 function getWakingDayForEvent(dateStr, timeStr, personalDayStartTime) {
-  if (!isBeforePersonalDayStart(timeStr, personalDayStartTime) || !isValidDateStr(dateStr)) {
+  if (!isValidDateStr(dateStr) || !isValidTime(timeStr)) {
     return dateStr;
   }
-
-  const wakingDate = dateFromStr(dateStr);
-  wakingDate.setDate(wakingDate.getDate() - 1);
-  return toDateStr(wakingDate);
-}
-
-function timeToMinutes(timeStr) {
-  const [hourRaw, minuteRaw] = (timeStr || '').split(':').map(Number);
-  if (
-    Number.isNaN(hourRaw) ||
-    Number.isNaN(minuteRaw) ||
-    hourRaw < 0 ||
-    hourRaw > 23 ||
-    minuteRaw < 0 ||
-    minuteRaw > 59
-  ) {
-    return null;
-  }
-  return hourRaw * 60 + minuteRaw;
-}
-
-function isValidTime(timeStr) {
-  return timeToMinutes(timeStr) !== null;
-}
-
-function isValidDateStr(dateStr) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr || '')) return false;
   const date = dateFromStr(dateStr);
-  return toDateStr(date) === dateStr;
+  const [hour, minute] = normalizeTimeStr(timeStr).split(':').map(Number);
+  date.setHours(hour, minute, 0, 0);
+  return personalDayDateStr(date, personalDayStartTime);
 }
 
 function formatBoundaryTime(timeStr) {
