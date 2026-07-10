@@ -91,7 +91,7 @@ function buildVerificationSampleWeather() {
       windGusts: 8,
       precipitationProbability: index > 5 ? 20 : 4,
       uvIndex: dayHour >= 10 && dayHour <= 15 ? 3 : 0,
-      uvSource: 'Environment Canada',
+      uvSource: 'Open-Meteo',
       weatherCode: index > 5 ? 2 : 1,
       cloudCover: index > 5 ? 45 : 10,
       isDay: dayHour >= 7 && dayHour < 21,
@@ -138,7 +138,7 @@ function buildVerificationSampleWeather() {
       },
       sources: {
         weather: 'Environment Canada',
-        uv: 'Environment Canada',
+        uv: 'Open-Meteo',
         airQuality: 'Environment Canada',
       },
     },

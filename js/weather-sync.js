@@ -1,5 +1,4 @@
 // Weather refresh orchestration and rate limits.
-const WEATHER_REFRESH_STALE_MS = 20 * 60 * 1000;
 const WEATHER_REFRESH_ERROR_STALE_MS = 30 * 60 * 1000;
 const WEATHER_REQUEST_MIN_GAP_MS = 10 * 1000;
 const WEATHER_FORECAST_BURST_WINDOW_MS = 10 * 60 * 1000;
@@ -67,7 +66,9 @@ function refreshWeatherIfNeeded(trigger = 'auto', options = {}) {
 }
 function isWeatherStale(isoString) {
   const then = isoString ? new Date(isoString).getTime() : 0;
-  return !then || Date.now() - then > WEATHER_REFRESH_STALE_MS;
+  const refreshMinutes = Math.max(5, Number(weatherSettings()?.refreshMinutes) || 10);
+  const staleAfterMs = Math.max(20, refreshMinutes + 5) * 60 * 1000;
+  return !then || Date.now() - then > staleAfterMs;
 }
 
 function weatherLocationKey(location) {

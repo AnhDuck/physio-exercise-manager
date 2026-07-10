@@ -46,25 +46,29 @@ async function fetchWeatherForLocation(location, cfg = weatherSettings()) {
   const displayHourly = canadaHourly?.length ? canadaHourly : hourly;
   const displayNearest = nearestWeatherHour(displayHourly, currentTime);
   const openMeteoCurrentUv = weatherCurrentUvValue(current, nearest);
-  const currentUv = openMeteoCurrentUv.hasValue
-    ? openMeteoCurrentUv.value
-    : (displayNearest?.uvIndex || nearest?.uvIndex || 0);
+  const fallbackUv = weatherFirstNumber(displayNearest?.uvIndex, nearest?.uvIndex);
+  const currentUv = openMeteoCurrentUv.hasValue ? openMeteoCurrentUv.value : fallbackUv;
   const uvSource = openMeteoCurrentUv.hasValue
     ? 'Open-Meteo'
-    : (displayNearest?.uvSource || (useCanadaWeather ? 'Environment Canada' : 'Open-Meteo'));
+    : (fallbackUv === null ? '' : (displayNearest?.uvSource || nearest?.uvSource || ''));
   const officialCode = canadaCurrent ? weatherConditionCodeFromOfficial(canadaCurrent, isDay) : null;
+  const openMeteoTemperature = weatherFirstNumber(current.temperature_2m, currentWeather.temperature, nearest?.temperature);
+  const openMeteoApparentTemperature = weatherFirstNumber(current.apparent_temperature, nearest?.apparentTemperature, openMeteoTemperature);
+  const openMeteoHumidity = weatherFirstNumber(current.relative_humidity_2m, nearest?.humidity);
+  const openMeteoWindSpeed = weatherFirstNumber(current.wind_speed_10m, currentWeather.windspeed, nearest?.windSpeed);
+  const openMeteoWindDirection = weatherFirstNumber(current.wind_direction_10m, currentWeather.winddirection, nearest?.windDirection);
   return {
     fetchedAt: new Date().toISOString(),
     locationLabel: weatherLocationLabel(location),
     timezone: raw.timezone || location.timezone || '',
     current: {
       time: useCanadaWeather ? canadaCurrent.time || currentTime || nearest?.time || '' : currentTime || nearest?.time || '',
-      temperature: useCanadaWeather ? canadaCurrent.temperature : weatherNumber(current.temperature_2m, weatherNumber(currentWeather.temperature, nearest?.temperature ?? 0)),
-      apparentTemperature: useCanadaWeather ? canadaCurrent.temperature : weatherNumber(current.apparent_temperature, nearest?.apparentTemperature ?? weatherNumber(currentWeather.temperature, 0)),
-      humidity: useCanadaWeather ? canadaCurrent.humidity : weatherNumber(current.relative_humidity_2m, nearest?.humidity ?? 0),
-      windSpeed: useCanadaWeather ? canadaCurrent.windSpeed : weatherNumber(current.wind_speed_10m, weatherNumber(currentWeather.windspeed, nearest?.windSpeed ?? 0)),
-      windDirection: useCanadaWeather ? canadaCurrent.windDirection : weatherNumber(current.wind_direction_10m, weatherNumber(currentWeather.winddirection, nearest?.windDirection ?? 0)),
-      windGusts: useCanadaWeather ? canadaCurrent.windGusts : nearest?.windGusts || 0,
+      temperature: weatherFirstNumber(canadaCurrent?.temperature, openMeteoTemperature),
+      apparentTemperature: openMeteoApparentTemperature,
+      humidity: weatherFirstNumber(canadaCurrent?.humidity, openMeteoHumidity),
+      windSpeed: weatherFirstNumber(canadaCurrent?.windSpeed, openMeteoWindSpeed),
+      windDirection: weatherFirstNumber(canadaCurrent?.windDirection, openMeteoWindDirection),
+      windGusts: weatherFirstNumber(canadaCurrent?.windGusts, nearest?.windGusts),
       uvIndex: currentUv,
       weatherCode: officialCode ?? weatherCode,
       isDay,
@@ -82,12 +86,19 @@ async function fetchWeatherForLocation(location, cfg = weatherSettings()) {
 }
 
 function weatherCurrentUvValue(current = {}, nearest = null) {
-  const raw = current?.uv_index;
-  const parsed = Number(raw);
-  if (Number.isFinite(parsed)) return { value: parsed, hasValue: true };
-  const fallback = Number(nearest?.uvIndex);
-  if (Number.isFinite(fallback)) return { value: fallback, hasValue: true };
-  return { value: 0, hasValue: false };
+  const currentValue = weatherOptionalNumber(current?.uv_index);
+  if (currentValue !== null) return { value: currentValue, hasValue: true };
+  const fallback = weatherOptionalNumber(nearest?.uvIndex);
+  if (fallback !== null && nearest?.uvSource === 'Open-Meteo') return { value: fallback, hasValue: true };
+  return { value: null, hasValue: false };
+}
+
+function weatherFirstNumber(...values) {
+  for (const value of values) {
+    const number = weatherOptionalNumber(value);
+    if (number !== null) return number;
+  }
+  return null;
 }
 
 async function fetchWeatherCanadaCityPage(location) {

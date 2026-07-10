@@ -221,21 +221,7 @@ function buildWeatherStatusLine(cfg, data) {
   if (cfg.lastError) line.appendChild(elText('span', 'is-warning', `Last refresh failed: ${cfg.lastError}`));
   const sourceTooltip = weatherSourceTooltip(data);
   if (sourceTooltip.length) {
-    const chip = el('span', 'weather-source-chip');
-    chip.tabIndex = 0;
-    chip.setAttribute('role', 'button');
-    chip.setAttribute('aria-label', weatherSourceTooltipText(sourceTooltip));
-    chip.appendChild(elText('span', 'weather-source-chip-text', 'Sources'));
-    chip.appendChild(buildWeatherSourceTooltip(sourceTooltip));
-    chip.addEventListener('mouseenter', () => chip.classList.add('is-open'));
-    chip.addEventListener('mouseleave', () => chip.classList.remove('is-open'));
-    chip.addEventListener('focus', () => chip.classList.add('is-open'));
-    chip.addEventListener('blur', () => chip.classList.remove('is-open'));
-    chip.addEventListener('click', () => chip.classList.toggle('is-open'));
-    chip.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') chip.classList.remove('is-open');
-    });
-    line.appendChild(chip);
+    line.appendChild(buildWeatherSourceDisclosure(sourceTooltip));
   }
   if (Array.isArray(data?.alerts) && data.alerts.length) line.appendChild(elText('span', 'is-warning', 'Environment Canada alert'));
   return line;
@@ -250,17 +236,23 @@ function buildWeatherSourceTooltip(rows) {
       item.appendChild(elText('span', 'weather-source-tooltip-value', row.value));
       tooltip.appendChild(item);
     }
-    if (row.note) tooltip.appendChild(elText('span', 'weather-source-tooltip-note', row.note));
   });
   return tooltip;
 }
 
-function weatherSourceTooltipText(rows) {
-  return rows.map(row => {
-    if (row.label && row.note) return `${row.label}: ${row.value}. ${row.note}`;
-    if (row.label) return `${row.label}: ${row.value}`;
-    return row.note || '';
-  }).filter(Boolean).join('. ');
+function buildWeatherSourceDisclosure(rows) {
+  const disclosure = el('details', 'weather-source-disclosure');
+  const summary = elText('summary', 'weather-source-chip', 'Sources');
+  summary.setAttribute('aria-label', 'Show weather data sources');
+  disclosure.appendChild(summary);
+  disclosure.appendChild(buildWeatherSourceTooltip(rows));
+  disclosure.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && disclosure.open) {
+      disclosure.open = false;
+      summary.focus();
+    }
+  });
+  return disclosure;
 }
 
 function weatherCardStateClass(cfg, brain = null) {

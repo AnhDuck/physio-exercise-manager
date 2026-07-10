@@ -5,19 +5,19 @@ function normalizeWeatherHourly(hourly = {}) {
   const times = Array.isArray(hourly.time) ? hourly.time : [];
   return times.map((time, index) => ({
     time,
-    temperature: Number(hourly.temperature_2m?.[index]) || 0,
-    apparentTemperature: Number(hourly.apparent_temperature?.[index]) || Number(hourly.temperature_2m?.[index]) || 0,
-    humidity: Number(hourly.relative_humidity_2m?.[index]) || 0,
-    windSpeed: Number(hourly.wind_speed_10m?.[index]) || 0,
-    windDirection: Number(hourly.wind_direction_10m?.[index]) || 0,
-    windGusts: Number(hourly.wind_gusts_10m?.[index]) || 0,
-    precipitationProbability: Number(hourly.precipitation_probability?.[index]) || 0,
-    uvIndex: Number(hourly.uv_index?.[index]) || 0,
-    uvSource: 'Open-Meteo',
+    temperature: weatherOptionalNumber(hourly.temperature_2m?.[index]),
+    apparentTemperature: weatherOptionalNumber(hourly.apparent_temperature?.[index]) ?? weatherOptionalNumber(hourly.temperature_2m?.[index]),
+    humidity: weatherOptionalNumber(hourly.relative_humidity_2m?.[index]),
+    windSpeed: weatherOptionalNumber(hourly.wind_speed_10m?.[index]),
+    windDirection: weatherOptionalNumber(hourly.wind_direction_10m?.[index]),
+    windGusts: weatherOptionalNumber(hourly.wind_gusts_10m?.[index]),
+    precipitationProbability: weatherOptionalNumber(hourly.precipitation_probability?.[index]),
+    uvIndex: weatherOptionalNumber(hourly.uv_index?.[index]),
+    uvSource: weatherOptionalNumber(hourly.uv_index?.[index]) === null ? '' : 'Open-Meteo',
     weatherCode: Number(hourly.weather_code?.[index]) || 0,
     cloudCover: Number(hourly.cloud_cover?.[index]) || 0,
     isDay: Number(hourly.is_day?.[index]) === 1,
-  })).filter(item => new Date(item.time).getTime() >= now - 60 * 60 * 1000).slice(0, 8);
+  })).filter(item => weatherTimestamp(item.time) >= now - 60 * 60 * 1000).slice(0, 12);
 }
 
 function normalizeWeatherCanadaCityPage(raw = {}, location = null) {
@@ -48,11 +48,11 @@ function normalizeWeatherCanadaCurrentCondition(current) {
     label,
     iconCode: weatherCanadaValue(current.iconCode),
     source: 'Environment Canada',
-    temperature: weatherCanadaNumber(current.temperature?.value, 0),
-    humidity: weatherCanadaNumber(current.relativeHumidity?.value, 0),
+    temperature: weatherCanadaOptionalNumber(current.temperature?.value),
+    humidity: weatherCanadaOptionalNumber(current.relativeHumidity?.value),
     windSpeed: weatherCanadaWindSpeed(current.wind?.speed?.value),
-    windDirection: weatherCanadaNumber(current.wind?.bearing?.value, 0),
-    windGusts: weatherCanadaNumber(current.wind?.gust?.value, 0),
+    windDirection: weatherCanadaOptionalNumber(current.wind?.bearing?.value),
+    windGusts: weatherCanadaOptionalNumber(current.wind?.gust?.value),
     station: weatherCanadaValue(current.station?.value),
     stationCode: weatherCanadaValue(current.station?.code),
   };
@@ -67,20 +67,20 @@ function normalizeWeatherCanadaHourly(hourlyGroup = {}) {
     const uv = weatherCanadaUvValue(row);
     return {
       time: weatherCanadaValue(row.timestamp),
-      temperature: weatherCanadaNumber(row.temperature?.value, 0),
-      apparentTemperature: weatherCanadaNumber(row.temperature?.value, 0),
-      humidity: 0,
+      temperature: weatherCanadaOptionalNumber(row.temperature?.value),
+      apparentTemperature: weatherCanadaOptionalNumber(row.temperature?.value),
+      humidity: null,
       windSpeed: weatherCanadaWindSpeed(row.wind?.speed?.value),
       windDirection: weatherCanadaDirection(row.wind?.direction),
-      windGusts: 0,
-      precipitationProbability: weatherCanadaNumber(row.lop?.value, 0),
+      windGusts: null,
+      precipitationProbability: weatherCanadaOptionalNumber(row.lop?.value),
       uvIndex: uv.value,
       uvSource: uv.hasValue ? 'Environment Canada' : '',
       weatherCode: weatherConditionCodeFromOfficial({ label }, isDay) ?? 0,
       isDay,
       officialCondition: label,
     };
-  }).filter(item => weatherTimestamp(item.time) >= now - 60 * 60 * 1000).slice(0, 8);
+  }).filter(item => weatherTimestamp(item.time) >= now - 60 * 60 * 1000).slice(0, 12);
 }
 
 function mergeWeatherCanadaHourlyWithOpenMeteo(canadaHourly, openMeteoHourly) {
@@ -88,17 +88,19 @@ function mergeWeatherCanadaHourlyWithOpenMeteo(canadaHourly, openMeteoHourly) {
     const nearest = nearestWeatherHour(openMeteoHourly, hour.time);
     return {
       ...hour,
-      humidity: hour.humidity || nearest?.humidity || 0,
-      uvIndex: hour.uvIndex || nearest?.uvIndex || 0,
-      uvSource: hour.uvSource || (nearest ? 'Open-Meteo' : ''),
+      apparentTemperature: hour.apparentTemperature ?? nearest?.apparentTemperature ?? hour.temperature,
+      humidity: hour.humidity ?? nearest?.humidity ?? null,
+      windGusts: hour.windGusts ?? nearest?.windGusts ?? null,
+      uvIndex: hour.uvIndex ?? nearest?.uvIndex ?? null,
+      uvSource: hour.uvIndex !== null ? 'Environment Canada' : (nearest?.uvSource || ''),
     };
   });
 }
 
 function weatherCanadaUvValue(row = {}) {
   const raw = row.uv?.index ?? row.uv?.value ?? row.uv;
-  if (raw === null || raw === undefined || raw === '') return { value: 0, hasValue: false };
-  return { value: weatherCanadaNumber(raw, 0), hasValue: true };
+  const value = weatherCanadaOptionalNumber(raw);
+  return { value, hasValue: value !== null };
 }
 
 function weatherFeatureDistance(feature, location) {
@@ -125,20 +127,31 @@ function weatherNumber(value, fallback = 0) {
   return Number.isFinite(number) ? number : fallback;
 }
 
+function weatherOptionalNumber(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
 function weatherCanadaNumber(value, fallback = 0) {
   return weatherNumber(weatherCanadaValue(value), fallback);
+}
+
+function weatherCanadaOptionalNumber(value) {
+  const text = weatherCanadaValue(value);
+  return text === '' ? null : weatherOptionalNumber(text);
 }
 
 function weatherCanadaWindSpeed(value) {
   const text = weatherCanadaValue(value).toLowerCase();
   if (text === 'calm') return 0;
-  return weatherNumber(text, 0);
+  return weatherOptionalNumber(text);
 }
 
 function weatherCanadaDirection(value) {
   const text = weatherCanadaValue(value).toUpperCase();
-  const directions = { N: 0, NE: 45, E: 90, SE: 135, S: 180, SW: 225, W: 270, NW: 315, VR: 0 };
-  return directions[text] ?? 0;
+  const directions = { N: 0, NE: 45, E: 90, SE: 135, S: 180, SW: 225, W: 270, NW: 315 };
+  return directions[text] ?? null;
 }
 
 function weatherCanadaIsNightIcon(iconCode) {
@@ -149,7 +162,7 @@ function weatherCanadaIsNightIcon(iconCode) {
 function weatherDataSources({ useCanadaWeather = false, airQuality = null, uvSource = '' } = {}) {
   return {
     weather: useCanadaWeather ? 'Environment Canada' : 'Open-Meteo',
-    uv: uvSource || (useCanadaWeather ? 'Environment Canada' : 'Open-Meteo'),
+    uv: uvSource,
     airQuality: airQuality?.source || '',
   };
 }
@@ -174,7 +187,7 @@ function normalizeWeatherCanadaAirQuality(raw = {}, location = null) {
     .slice(0, 8);
   const first = future[0];
   if (!first) return null;
-  const samePlace = future.filter(item => item.location === first.location || Math.abs(item.distance - first.distance) < .001);
+  const samePlace = future.filter(item => first.location ? item.location === first.location : Math.abs(item.distance - first.distance) < .001);
   const peak = samePlace.reduce((best, item) => item.aqhi > best.aqhi ? item : best, first);
   return {
     fetchedAt: new Date().toISOString(),

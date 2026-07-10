@@ -310,8 +310,8 @@ function formatWeatherSunTimes(daily, timezone) {
 }
 
 function formatWeatherWind(speed, direction) {
-  const speedValue = Number(speed);
-  if (!Number.isFinite(speedValue)) return '';
+  const speedValue = weatherOptionalNumber(speed);
+  if (speedValue === null) return '';
   const roundedSpeed = Math.round(speedValue);
   const compass = weatherCompassDirection(direction);
   return `${roundedSpeed} km/h${compass ? ` ${compass}` : ''}`;
@@ -325,8 +325,8 @@ function weatherCompassDirection(degrees) {
 }
 
 function formatWeatherUvIndex(value) {
-  const uvValue = Number(value);
-  if (!Number.isFinite(uvValue)) return '';
+  const uvValue = weatherOptionalNumber(value);
+  if (uvValue === null) return '';
   const index = Math.max(0, Math.round(uvValue));
   return `${index} ${weatherUvRiskLabel(index)}`;
 }
@@ -484,11 +484,6 @@ function weatherIconFile(type, isDay = true) {
   return files[type] || 'partly_cloudy_day.svg';
 }
 
-function isWeatherStale(isoString) {
-  const then = isoString ? new Date(isoString).getTime() : 0;
-  return !then || Date.now() - then > WEATHER_REFRESH_STALE_MS;
-}
-
 function weatherLocationLabel(location) {
   if (!location) return 'No location';
   const pieces = [weatherLocationName(location), location.admin1 || location.country].filter(Boolean);
@@ -506,25 +501,8 @@ function weatherLocationName(location) {
 function weatherSourceTooltip(data) {
   const sources = data?.sources || {};
   const rows = [];
-  if (sources.weather) rows.push({ label: 'Weather', value: sources.weather });
-  if (sources.uv) {
-    rows.push({
-      label: 'UV',
-      value: sources.uv,
-      note: sources.weather === 'Environment Canada' && sources.uv === 'Open-Meteo'
-        ? 'Environment Canada UV was not available for this refresh.'
-        : '',
-    });
-  }
-  if (sources.airQuality) {
-    rows.push({
-      label: 'Air quality',
-      value: `${sources.airQuality} AQHI`,
-      note: data?.airQuality?.location ? `Nearest region: ${data.airQuality.location}` : '',
-    });
-    rows.push({ note: 'AQHI match: nearest Environment Canada region in the local search area.' });
-  } else {
-    rows.push({ label: 'Air quality', value: 'Not available' });
-  }
+  if (sources.weather) rows.push({ label: 'Forecast', value: sources.weather });
+  if (sources.uv) rows.push({ label: 'UV', value: sources.uv });
+  if (sources.airQuality) rows.push({ label: 'Air quality', value: sources.airQuality });
   return rows;
 }

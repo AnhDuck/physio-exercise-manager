@@ -253,6 +253,10 @@ body.workload-timer-running::before {
   color: #fecaca;
 }
 
+.weather-source-disclosure {
+  position: relative;
+}
+
 .weather-source-chip {
   position: relative;
   display: inline-flex;
@@ -267,6 +271,11 @@ body.workload-timer-running::before {
   font-size: 10px;
   font-weight: 850;
   text-transform: uppercase;
+  list-style: none;
+}
+
+.weather-source-chip::-webkit-details-marker {
+  display: none;
 }
 
 .weather-source-chip:hover,
@@ -298,9 +307,7 @@ body.workload-timer-running::before {
   white-space: normal;
 }
 
-.weather-source-chip:hover .weather-source-tooltip,
-.weather-source-chip:focus .weather-source-tooltip,
-.weather-source-chip.is-open .weather-source-tooltip {
+.weather-source-disclosure[open] .weather-source-tooltip {
   display: grid;
 }
 
@@ -321,14 +328,6 @@ body.workload-timer-running::before {
 .weather-source-tooltip-value {
   color: var(--text);
   font-weight: 850;
-}
-
-.weather-source-tooltip-note {
-  display: block;
-  max-width: 280px;
-  color: rgba(232,234,237,.72);
-  font-size: 10px;
-  font-weight: 700;
 }
 
 .weather-card {
