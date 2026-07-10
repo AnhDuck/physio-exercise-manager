@@ -61,6 +61,25 @@ function testDateEngine() {
   assert.equal(context.getArmDayForDate('2026-05-01'), 'arm-day1');
 }
 
+function testWeatherUvSourcePrecedence() {
+  const context = loadContext(['js/weather-normalize.js', 'js/weather-api.js']);
+  const canada = { uvIndex: 4, uvSource: 'Environment Canada' };
+  const openMeteoCurrent = { value: 6.3, hasValue: true };
+  const openMeteoNearest = { uvIndex: 7.2, uvSource: 'Open-Meteo' };
+
+  const preferredCanada = context.weatherPreferredUvValue({ useCanadaWeather: true, canadaNearest: canada, openMeteoCurrent, openMeteoNearest });
+  assert.equal(preferredCanada.value, 4);
+  assert.equal(preferredCanada.source, 'Environment Canada');
+
+  const preferredOpenMeteo = context.weatherPreferredUvValue({ useCanadaWeather: false, canadaNearest: canada, openMeteoCurrent, openMeteoNearest });
+  assert.equal(preferredOpenMeteo.value, 6.3);
+  assert.equal(preferredOpenMeteo.source, 'Open-Meteo');
+
+  const realZero = context.weatherPreferredUvValue({ useCanadaWeather: true, canadaNearest: { uvIndex: 0, uvSource: 'Environment Canada' }, openMeteoCurrent, openMeteoNearest });
+  assert.equal(realZero.value, 0);
+  assert.equal(realZero.source, 'Environment Canada');
+}
+
 function testAutoBackupPolicy() {
   const context = loadContext(['js/dates.js', 'js/auto-backup-policy.js'], {
     DEFAULT_PERSONAL_DAY_START_TIME: '07:00',
@@ -286,6 +305,7 @@ function testAtomicStorageRollback() {
 
 function run() {
   testDateEngine();
+  testWeatherUvSourcePrecedence();
   testAutoBackupPolicy();
   testAutoBackupServiceHistory();
   testLegacyMigrationTransform();

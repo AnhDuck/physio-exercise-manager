@@ -46,11 +46,14 @@ async function fetchWeatherForLocation(location, cfg = weatherSettings()) {
   const displayHourly = canadaHourly?.length ? canadaHourly : hourly;
   const displayNearest = nearestWeatherHour(displayHourly, currentTime);
   const openMeteoCurrentUv = weatherCurrentUvValue(current, nearest);
-  const fallbackUv = weatherFirstNumber(displayNearest?.uvIndex, nearest?.uvIndex);
-  const currentUv = openMeteoCurrentUv.hasValue ? openMeteoCurrentUv.value : fallbackUv;
-  const uvSource = openMeteoCurrentUv.hasValue
-    ? 'Open-Meteo'
-    : (fallbackUv === null ? '' : (displayNearest?.uvSource || nearest?.uvSource || ''));
+  const preferredUv = weatherPreferredUvValue({
+    useCanadaWeather,
+    canadaNearest: displayNearest,
+    openMeteoCurrent: openMeteoCurrentUv,
+    openMeteoNearest: nearest,
+  });
+  const currentUv = preferredUv.value;
+  const uvSource = preferredUv.source;
   const officialCode = canadaCurrent ? weatherConditionCodeFromOfficial(canadaCurrent, isDay) : null;
   const openMeteoTemperature = weatherFirstNumber(current.temperature_2m, currentWeather.temperature, nearest?.temperature);
   const openMeteoApparentTemperature = weatherFirstNumber(current.apparent_temperature, nearest?.apparentTemperature, openMeteoTemperature);
@@ -83,6 +86,16 @@ async function fetchWeatherForLocation(location, cfg = weatherSettings()) {
     sources: weatherDataSources({ useCanadaWeather, airQuality, uvSource }),
     hourly: displayHourly,
   };
+}
+
+function weatherPreferredUvValue({ useCanadaWeather = false, canadaNearest = null, openMeteoCurrent = null, openMeteoNearest = null } = {}) {
+  const canadaUv = useCanadaWeather && canadaNearest?.uvSource === 'Environment Canada'
+    ? weatherOptionalNumber(canadaNearest.uvIndex)
+    : null;
+  if (canadaUv !== null) return { value: canadaUv, source: 'Environment Canada' };
+  if (openMeteoCurrent?.hasValue) return { value: weatherOptionalNumber(openMeteoCurrent.value), source: 'Open-Meteo' };
+  const fallbackUv = weatherOptionalNumber(openMeteoNearest?.uvIndex);
+  return { value: fallbackUv, source: fallbackUv === null ? '' : (openMeteoNearest?.uvSource || 'Open-Meteo') };
 }
 
 function weatherCurrentUvValue(current = {}, nearest = null) {
