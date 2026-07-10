@@ -733,6 +733,7 @@ function loadSettings() {
       armRotationEnabled: false,
       exerciseGroups: defaultExerciseGroupSettings(),
       timelineRange: 'past-30-days',
+      activityWatchDashboardRangeDays: 14,
       homeCards: defaultHomeCardsSettings(),
       autoBackup: defaultAutoBackupSettings(),
       dataSchemaVersion: typeof CURRENT_DATA_SCHEMA_VERSION === 'number' ? CURRENT_DATA_SCHEMA_VERSION : 0,
@@ -754,6 +755,7 @@ function loadSettings() {
     armRotationEnabled: false,
     exerciseGroups: defaultExerciseGroupSettings(),
     timelineRange: 'past-30-days',
+    activityWatchDashboardRangeDays: 14,
     homeCards: defaultHomeCardsSettings(),
     autoBackup: defaultAutoBackupSettings(),
     ...stored,
@@ -780,6 +782,7 @@ function saveSettings(settings) {
     armRotationEnabled: Boolean(cleanSettings.armRotationEnabled),
     exerciseGroups: normalizeExerciseGroupSettings(cleanSettings.exerciseGroups),
     timelineRange: normalizeStoredTimelineRange(cleanSettings.timelineRange),
+    activityWatchDashboardRangeDays: normalizeStoredActivityWatchDashboardRange(cleanSettings.activityWatchDashboardRangeDays),
     homeCards: normalizeHomeCardsSettings(cleanSettings.homeCards),
     autoBackup: normalizeAutoBackupSettings(cleanSettings.autoBackup),
   };
@@ -799,6 +802,7 @@ function sanitizeLegacySettings(value) {
   settings.armRotationEnabled = Boolean(settings.armRotationEnabled);
   settings.exerciseGroups = normalizeExerciseGroupSettings(settings.exerciseGroups);
   settings.timelineRange = normalizeStoredTimelineRange(settings.timelineRange);
+  settings.activityWatchDashboardRangeDays = normalizeStoredActivityWatchDashboardRange(settings.activityWatchDashboardRangeDays);
   settings.personalDayStartTime = normalizeTimeStr(settings.personalDayStartTime) || DEFAULT_PERSONAL_DAY_START_TIME;
   return settings;
 }
@@ -811,6 +815,11 @@ function normalizeStoredTimelineRange(value) {
     'past-year',
     'all-time',
   ].includes(value) ? value : 'past-30-days';
+}
+
+function normalizeStoredActivityWatchDashboardRange(value) {
+  const parsed = Number.parseInt(value, 10);
+  return [14, 30, 60, 90].includes(parsed) ? parsed : 14;
 }
 
 function clampSetCueSpeechVolume(value) {

@@ -89,6 +89,7 @@ function ensureActivityWatchDashboardShell() {
 function renderActivityWatchDashboard() {
   const modal = document.getElementById('activitywatch-dashboard-modal');
   if (!modal || modal.classList.contains('hidden')) return;
+  initializeActivityWatchDashboardRange();
   activityWatchDashboardState.rangeDays = normalizeActivityWatchDashboardRange(activityWatchDashboardState.rangeDays);
   activityWatchDashboardState.rangeEndDate = normalizeActivityWatchDashboardEndDate(activityWatchDashboardState.rangeEndDate);
   activityWatchDashboardState.viewMode = normalizeActivityWatchDashboardViewMode(activityWatchDashboardState.viewMode);

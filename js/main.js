@@ -39,6 +39,7 @@ function fallbackStartupSettings() {
     armRotationEnabled: false,
     exerciseGroups: typeof defaultExerciseGroupSettings === 'function' ? defaultExerciseGroupSettings() : {},
     timelineRange: 'past-30-days',
+    activityWatchDashboardRangeDays: 14,
     homeCards: typeof defaultHomeCardsSettings === 'function' ? defaultHomeCardsSettings() : {},
     autoBackup: typeof defaultAutoBackupSettings === 'function' ? defaultAutoBackupSettings() : {},
   };

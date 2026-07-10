@@ -85,6 +85,7 @@ For ActivityWatch dashboard changes, smoke-check:
 - dashboard opens and closes
 - visible header version matches the expected version
 - range select and pager render
+- changing the range to Last 30 days, refreshing or reopening the app, and confirming Last 30 days remains selected
 - range select does not include Last 7 days
 - default dashboard view is Exposure
 - Exposure, Load, Work, and Breakdown tabs show their icons and switch cleanly

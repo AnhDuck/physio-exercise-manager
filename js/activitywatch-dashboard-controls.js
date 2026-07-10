@@ -156,6 +156,7 @@ function buildActivityWatchDateControls(isSyncing) {
   select.disabled = isSyncing;
   select.addEventListener('change', () => {
     activityWatchDashboardState.rangeDays = normalizeActivityWatchDashboardRange(select.value);
+    persistActivityWatchDashboardRange();
     activityWatchDashboardState.selectedCalloutDate = '';
     activityWatchDashboardState.showAllCategories = false;
     renderActivityWatchDashboard();

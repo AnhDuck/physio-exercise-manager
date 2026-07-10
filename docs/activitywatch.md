@@ -53,9 +53,9 @@ The main-screen ActivityWatch mini card is a glanceable current waking-day surfa
 
 ## Dashboard Rules
 
-The dashboard is a small four-view analytics surface, not one chart with global filters. Dashboard UI state is not persisted. The single dashboard state object includes view mode, chart grain, selected date, selected callout date, range length/end date, category mode, selected category, hovered category, detail mode, show-all state, chart scroll state, and advanced sync state. Internal workload basis still exists as a helper for load math, but it is not exposed as a dashboard toggle.
+The dashboard is a small four-view analytics surface, not one chart with global filters. The selected range length (Last 2 weeks, Last 30 days, Last 60 days, or Last 90 days) is persisted in app settings so it survives refreshes and app restarts; the rest of the dashboard UI state is not persisted. The single dashboard state object includes view mode, chart grain, selected date, selected callout date, range length/end date, category mode, selected category, hovered category, detail mode, show-all state, chart scroll state, and advanced sync state. Internal workload basis still exists as a helper for load math, but it is not exposed as a dashboard toggle.
 
-Default range is Last 2 weeks ending on the current waking day. Range options start at Last 2 weeks; do not include a Last 7 days option. Opening the dashboard selects the current waking day when visible. Range paging jumps by the selected range length. Latest returns to the current waking-day range.
+Default range is Last 2 weeks ending on the current waking day when no saved range preference exists. Range options start at Last 2 weeks; do not include a Last 7 days option. Opening the dashboard selects the current waking day when visible. Range paging jumps by the selected range length. Latest returns to the current waking-day range.
 
 ActivityWatch dashboard coverage starts on 2026-04-17. Earlier dates are treated as no data and excluded from averages. Missing/unsynced dates are excluded from average denominators; true synced zero-activity days count as zero.
 

@@ -57,6 +57,27 @@ const activityWatchDashboardState = {
   advancedSyncCustomEnd: '',
 };
 
+let activityWatchDashboardRangeInitialized = false;
+
+function initializeActivityWatchDashboardRange() {
+  if (activityWatchDashboardRangeInitialized) return;
+  const storedRange = settings && typeof settings === 'object'
+    ? settings.activityWatchDashboardRangeDays
+    : null;
+  activityWatchDashboardState.rangeDays = normalizeActivityWatchDashboardRange(
+    storedRange ?? activityWatchDashboardState.rangeDays
+  );
+  activityWatchDashboardRangeInitialized = true;
+}
+
+function persistActivityWatchDashboardRange() {
+  if (!settings || typeof settings !== 'object') return;
+  settings.activityWatchDashboardRangeDays = normalizeActivityWatchDashboardRange(
+    activityWatchDashboardState.rangeDays
+  );
+  saveSettings(settings);
+}
+
 function buildActivityWatchDashboardDays() {
   const end = dateFromStr(normalizeActivityWatchDashboardEndDate(activityWatchDashboardState.rangeEndDate));
   return Array.from({ length: activityWatchDashboardState.rangeDays }, (_, index) => {
