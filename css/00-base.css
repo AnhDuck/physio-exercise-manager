@@ -41,6 +41,10 @@
   --c-legs: #e8974a;
 }
 
+input[type="checkbox"] {
+  accent-color: var(--primary-accent-blue);
+}
+
 body {
   background: var(--bg);
   color: var(--text);

@@ -6,7 +6,7 @@
   <title>Physio Exercise Management</title>
   <link rel="icon" type="image/svg+xml" href="assets/physio-icon.svg" />
   <script>
-    window.PEM_APP_VERSION = '1.0.229';
+    window.PEM_APP_VERSION = '1.0.232';
     const PEM_CSS_FILES = [
       'css/00-base.css',
       'css/10-header.css',
@@ -533,22 +533,18 @@
               <h3>Groups &amp; Blocks</h3>
             </div>
             <div class="group-settings-help">
-              Groups keep stable internal IDs so old logs, blocks, and backups remain connected. Rename, reorder, and assign blocks by group; hiding is only available after a group has no active exercises.
+              Use the arrow controls to order groups and blocks. Drag exercises between Unassigned and block sections, or use each exercise menu. Names and colours save automatically.
             </div>
             <div class="settings-draft-actions" id="settings-blocks-draft-actions" hidden>
               <div class="settings-action-row">
                 <div class="settings-action-label">
-                  <strong>Apply block changes</strong>
-                  <span>Save block order, titles, and exercise assignments.</span>
+                  <strong>Unapplied block changes</strong>
+                  <span>Review the new block layout, then save it or return to the last saved layout.</span>
                 </div>
-                <button class="settings-draft-btn settings-apply-btn" id="settings-blocks-apply" type="button" data-ui-icon="check">Apply changes</button>
-              </div>
-              <div class="settings-action-row">
-                <div class="settings-action-label">
-                  <strong>Discard block edits</strong>
-                  <span>Return blocks to the last saved layout.</span>
+                <div class="settings-draft-actions-buttons">
+                  <button class="settings-draft-btn" id="settings-blocks-discard" type="button" data-ui-icon="x">Discard</button>
+                  <button class="settings-draft-btn settings-apply-btn" id="settings-blocks-apply" type="button" data-ui-icon="check">Apply changes</button>
                 </div>
-                <button class="settings-draft-btn" id="settings-blocks-discard" type="button" data-ui-icon="x">Discard changes</button>
               </div>
             </div>
             <div class="group-block-settings" id="settings-groups-blocks"></div>

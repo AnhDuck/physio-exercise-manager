@@ -17,6 +17,7 @@ let lastSetLogAt = 0;
 let cueAudioContext = null;
 let settingsActiveTab = 'general';
 let settingsBlockDraft = null;
+let settingsDrag = null;
 let toastTimer = null;
 let lastBlockDropWarningAt = 0;
 let draggedExerciseId = null;

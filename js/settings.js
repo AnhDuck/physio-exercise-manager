@@ -229,6 +229,7 @@ function renderGroupSettings() {
 function buildGroupBlockSettingsCard(groupId, index, count) {
   const cfg = groupConfig(groupId);
   const card = el('section', 'group-block-settings-card');
+  card.dataset.groupId = groupId;
   card.style.setProperty('--exercise-group-color', cfg.color);
   card.appendChild(buildGroupSettingsRow(groupId, index, count));
   card.appendChild(buildBlockSettingsGroup(groupId, { embedded: true }));
@@ -240,21 +241,18 @@ function buildGroupSettingsRow(groupId, index, count) {
   const activeCount = activeExerciseCountForGroup(groupId);
   const hidden = Boolean(cfg.hidden);
   const canHide = canHideGroup(groupId);
-  const row = el('div', 'settings-action-row group-settings-row');
+  const row = el('div', 'group-settings-row');
   row.style.setProperty('--exercise-group-color', cfg.color);
 
-  const label = el('div', 'settings-action-label group-settings-label');
-  label.appendChild(elText('strong', '', groupId));
-  label.appendChild(elText(
-    'span',
-    '',
-    activeCount
-      ? `${formatNumber(activeCount)} active exercise${activeCount === 1 ? '' : 's'}`
-      : hidden ? 'Hidden from normal tracking because the group is empty.' : 'Empty group.'
-  ));
-  row.appendChild(label);
-
-  const controls = el('div', 'group-settings-controls');
+  const identity = el('div', 'group-settings-identity');
+  const nameWrap = el('div', 'group-settings-name-wrap');
+  const nameButton = el('button', 'group-settings-name-button');
+  nameButton.type = 'button';
+  nameButton.dataset.groupEdit = groupId;
+  nameButton.setAttribute('aria-label', `Rename ${cfg.label}`);
+  nameButton.appendChild(elText('span', '', cfg.label));
+  nameButton.appendChild(buildAppIconSvg('pencil'));
+  nameWrap.appendChild(nameButton);
 
   const name = document.createElement('input');
   name.type = 'text';
@@ -262,35 +260,64 @@ function buildGroupSettingsRow(groupId, index, count) {
   name.value = cfg.label;
   name.dataset.groupLabel = groupId;
   name.setAttribute('aria-label', `Label for ${cfg.label}`);
-  controls.appendChild(name);
+  name.hidden = true;
+  name.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      name.blur();
+    }
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      name.value = cfg.label;
+      name.hidden = true;
+      nameButton.hidden = false;
+      nameButton.focus();
+    }
+  });
+  nameWrap.appendChild(name);
+  identity.appendChild(nameWrap);
+  identity.appendChild(elText(
+    'span',
+    'group-settings-meta',
+    activeCount
+      ? `${formatNumber(activeCount)} active exercise${activeCount === 1 ? '' : 's'}`
+      : hidden ? 'Hidden from normal tracking because the group is empty.' : 'Empty group.'
+  ));
+  row.appendChild(identity);
 
+  const controls = el('div', 'group-settings-controls');
+
+  const orderControls = el('div', 'group-order-controls');
+  orderControls.setAttribute('aria-label', `Order ${cfg.label}`);
+  const up = el('button', 'settings-icon-btn group-order-btn');
+  up.type = 'button';
+  up.disabled = index === 0;
+  up.dataset.groupMove = groupId;
+  up.dataset.direction = '-1';
+  up.setAttribute('aria-label', `Move ${cfg.label} up`);
+  up.appendChild(buildAppIconSvg('chevron-up'));
+  orderControls.appendChild(up);
+  const down = el('button', 'settings-icon-btn group-order-btn');
+  down.type = 'button';
+  down.disabled = index === count - 1;
+  down.dataset.groupMove = groupId;
+  down.dataset.direction = '1';
+  down.setAttribute('aria-label', `Move ${cfg.label} down`);
+  down.appendChild(buildAppIconSvg('chevron-down'));
+  orderControls.appendChild(down);
+  controls.appendChild(orderControls);
+
+  const colorLabel = el('label', 'group-settings-color-label');
+  colorLabel.appendChild(elText('span', '', 'Colour'));
   const color = document.createElement('input');
   color.type = 'color';
   color.className = 'group-settings-color';
   color.value = cfg.color;
   color.dataset.groupColor = groupId;
   color.setAttribute('aria-label', `Color for ${cfg.label}`);
-  controls.appendChild(color);
-
-  const up = el('button', 'settings-icon-btn');
-  up.type = 'button';
-  up.disabled = index === 0;
-  up.title = 'Move group up';
-  up.setAttribute('aria-label', `Move ${cfg.label} up`);
-  up.dataset.groupMove = groupId;
-  up.dataset.direction = '-1';
-  up.appendChild(buildAppIconSvg('chevron-up'));
-  controls.appendChild(up);
-
-  const down = el('button', 'settings-icon-btn');
-  down.type = 'button';
-  down.disabled = index === count - 1;
-  down.title = 'Move group down';
-  down.setAttribute('aria-label', `Move ${cfg.label} down`);
-  down.dataset.groupMove = groupId;
-  down.dataset.direction = '1';
-  down.appendChild(buildAppIconSvg('chevron-down'));
-  controls.appendChild(down);
+  colorLabel.appendChild(color);
+  controls.appendChild(colorLabel);
 
   const hideLabel = el('label', 'settings-check-label group-settings-hidden');
   const hide = document.createElement('input');
@@ -309,10 +336,52 @@ function buildGroupSettingsRow(groupId, index, count) {
   return row;
 }
 
+function buildSettingsDragHandle(label) {
+  const handle = el('button', 'settings-drag-handle');
+  handle.type = 'button';
+  handle.setAttribute('aria-label', label);
+  handle.appendChild(buildAppIconSvg('grip'));
+  return handle;
+}
+
+function handleSettingsDragEnd(e) {
+  e.currentTarget.draggable = false;
+  e.currentTarget.classList.remove('is-dragging');
+  document.querySelectorAll('.is-drop-target, .is-drop-after').forEach(node => {
+    node.classList.remove('is-drop-target', 'is-drop-after');
+  });
+  settingsDrag = null;
+}
+
+function clearSettingsDropTarget(e) {
+  e.currentTarget.classList.remove('is-drop-target', 'is-drop-after');
+}
+
 function handleGroupSettingsClick(e) {
   const move = e.target.closest('[data-group-move]');
-  if (!move) return;
-  moveGroupSetting(move.dataset.groupMove, Number(move.dataset.direction) || 0);
+  if (move) {
+    moveGroupSetting(move.dataset.groupMove, Number(move.dataset.direction) || 0);
+    return;
+  }
+
+  const edit = e.target.closest('[data-group-edit]');
+  if (!edit) return;
+  const row = edit.closest('.group-settings-row');
+  const input = row?.querySelector('[data-group-label]');
+  if (!input) return;
+  edit.hidden = true;
+  input.hidden = false;
+  input.focus();
+  input.select();
+}
+
+function moveGroupSetting(groupId, direction) {
+  const registry = ensureExerciseGroupSettings();
+  const index = registry.order.indexOf(groupId);
+  const target = index + direction;
+  if (index === -1 || target < 0 || target >= registry.order.length) return;
+  [registry.order[index], registry.order[target]] = [registry.order[target], registry.order[index]];
+  saveGroupSettings();
 }
 
 function handleGroupSettingsChange(e) {
@@ -376,15 +445,6 @@ function updateGroupHidden(groupId, hidden) {
     return;
   }
   registry.items[groupId].hidden = Boolean(hidden);
-  saveGroupSettings();
-}
-
-function moveGroupSetting(groupId, direction) {
-  const registry = ensureExerciseGroupSettings();
-  const index = registry.order.indexOf(groupId);
-  const target = index + direction;
-  if (index === -1 || target < 0 || target >= registry.order.length) return;
-  [registry.order[index], registry.order[target]] = [registry.order[target], registry.order[index]];
   saveGroupSettings();
 }
 
@@ -559,7 +619,10 @@ function buildBlockSettingsGroup(group, options = {}) {
   panel.style.setProperty('--exercise-group-color', cfg.color);
 
   const header = el('div', 'block-settings-group-header');
-  header.appendChild(elText('h4', '', options.embedded ? 'Blocks' : cfg.label));
+  const heading = el('div', 'block-settings-heading');
+  heading.appendChild(elText('h4', '', options.embedded ? 'Blocks' : cfg.label));
+  heading.appendChild(elText('span', '', `${draftBlockDefinitionsForGroup(group).length} block${draftBlockDefinitionsForGroup(group).length === 1 ? '' : 's'}`));
+  header.appendChild(heading);
   const addBtn = el('button', 'block-settings-add');
   addBtn.type = 'button';
   addBtn.appendChild(buildAppIconSvg('add'));
@@ -570,93 +633,157 @@ function buildBlockSettingsGroup(group, options = {}) {
     renderBlockSettings();
     window.setTimeout(() => {
       const escapeIdent = window.CSS?.escape || (value => String(value).replace(/"/g, '\\"'));
-      document.querySelector(`#settings-groups-blocks input[data-block-title="${escapeIdent(`${group}:${block.id}`)}"]`)?.focus();
+      const input = document.querySelector(`#settings-groups-blocks input[data-block-title="${escapeIdent(`${group}:${block.id}`)}"]`);
+      const view = input?.closest('.block-drop-lane-title')?.querySelector('[data-block-edit]');
+      if (input) {
+        if (view) view.hidden = true;
+        input.hidden = false;
+        input.focus();
+        input.select();
+      }
     }, 0);
   });
   header.appendChild(addBtn);
   panel.appendChild(header);
 
   const blocks = draftBlockDefinitionsForGroup(group);
-  const blockList = el('div', 'block-settings-list');
+  const lanes = el('div', 'block-drop-lanes');
+  lanes.appendChild(buildBlockDropLane(group, null));
   if (!blocks.length) {
-    blockList.appendChild(elText('div', 'block-settings-empty', 'No blocks yet.'));
+    lanes.appendChild(elText('div', 'block-settings-empty', 'Add a block, then drag exercises into it.'));
   } else {
-    blocks.forEach((block, index) => blockList.appendChild(buildBlockSettingsRow(group, block, index, blocks.length)));
+    blocks.forEach((block, index) => lanes.appendChild(buildBlockDropLane(group, block, index, blocks.length)));
   }
-  panel.appendChild(blockList);
-
-  const exerciseList = el('div', 'block-exercise-list');
-  displayOrderedExercisesInGroup(group).forEach(ex => exerciseList.appendChild(buildBlockExerciseAssignment(group, ex)));
-  panel.appendChild(exerciseList);
+  panel.appendChild(lanes);
 
   return panel;
 }
 
-function buildBlockSettingsRow(group, block, index, count) {
-  const row = el('div', 'block-settings-row');
-  const id = elText('div', 'block-settings-id', block.id);
-  id.title = 'Block ID';
-  row.appendChild(id);
+function buildBlockDropLane(group, block, index = 0, count = 0) {
+  const isUnassigned = !block;
+  const lane = el('section', `block-drop-lane${isUnassigned ? ' is-unassigned' : ''}`);
+  lane.dataset.group = group;
+  lane.dataset.blockId = block?.id || '';
+  lane.addEventListener('dragover', handleBlockLaneDragOver);
+  lane.addEventListener('dragleave', clearSettingsDropTarget);
+  lane.addEventListener('drop', handleBlockLaneDrop);
 
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'block-settings-title';
-  input.value = block.title || '';
-  input.placeholder = blockTitleFromId(block.id);
-  input.dataset.blockTitle = `${group}:${block.id}`;
-  input.setAttribute('aria-label', `Title for ${blockTitleFromId(block.id)}`);
-  input.addEventListener('input', () => readBlockSettingsForm());
-  row.appendChild(input);
+  const header = el('div', 'block-drop-lane-header');
+  if (isUnassigned) {
+    header.appendChild(elText('div', 'block-drop-lane-title', 'Unassigned'));
+    header.appendChild(elText('span', 'block-drop-lane-copy', 'Drop an exercise here to remove it from a block.'));
+  } else {
+    const title = el('div', 'block-drop-lane-title');
+    const titleButton = el('button', 'block-settings-name-button');
+    titleButton.type = 'button';
+    titleButton.dataset.blockEdit = `${group}:${block.id}`;
+    titleButton.setAttribute('aria-label', `Rename ${draftBlockTitleFor(group, block.id)}`);
+    const titleText = elText('span', '', draftBlockTitleFor(group, block.id));
+    titleButton.appendChild(titleText);
+    titleButton.appendChild(buildAppIconSvg('pencil'));
+    title.appendChild(titleButton);
 
-  const actions = el('div', 'block-settings-actions');
-  const up = el('button', 'settings-icon-btn');
-  up.type = 'button';
-  up.title = 'Move block up';
-  up.setAttribute('aria-label', 'Move block up');
-  up.appendChild(buildAppIconSvg('chevron-up'));
-  up.disabled = index === 0;
-  up.addEventListener('click', () => {
-    readBlockSettingsForm({ updateActions: false });
-    moveDraftBlockDefinition(group, block.id, -1);
-    renderBlockSettings();
-  });
-  actions.appendChild(up);
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'block-settings-title';
+    input.value = block.title || '';
+    input.placeholder = blockTitleFromId(block.id);
+    input.dataset.blockTitle = `${group}:${block.id}`;
+    input.setAttribute('aria-label', `Title for ${blockTitleFromId(block.id)}`);
+    input.addEventListener('input', () => readBlockSettingsForm());
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        input.blur();
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        input.value = block.title || '';
+        input.blur();
+      }
+    });
+    input.addEventListener('blur', () => {
+      readBlockSettingsForm();
+      titleText.textContent = input.value.trim() || blockTitleFromId(block.id);
+      input.hidden = true;
+      titleButton.hidden = false;
+    });
+    input.hidden = true;
+    title.appendChild(input);
+    titleButton.addEventListener('click', () => {
+      titleButton.hidden = true;
+      input.hidden = false;
+      input.focus();
+      input.select();
+    });
+    header.appendChild(title);
 
-  const down = el('button', 'settings-icon-btn');
-  down.type = 'button';
-  down.title = 'Move block down';
-  down.setAttribute('aria-label', 'Move block down');
-  down.appendChild(buildAppIconSvg('chevron-down'));
-  down.disabled = index === count - 1;
-  down.addEventListener('click', () => {
-    readBlockSettingsForm({ updateActions: false });
-    moveDraftBlockDefinition(group, block.id, 1);
-    renderBlockSettings();
-  });
-  actions.appendChild(down);
+    const actions = el('div', 'block-settings-actions');
+    const up = el('button', 'settings-icon-btn block-order-btn');
+    up.type = 'button';
+    up.disabled = index === 0;
+    up.setAttribute('aria-label', `Move ${draftBlockTitleFor(group, block.id)} up`);
+    up.appendChild(buildAppIconSvg('chevron-up'));
+    up.addEventListener('click', () => {
+      readBlockSettingsForm({ updateActions: false });
+      moveDraftBlockDefinition(group, block.id, -1);
+      renderBlockSettings();
+    });
+    actions.appendChild(up);
+    const down = el('button', 'settings-icon-btn block-order-btn');
+    down.type = 'button';
+    down.disabled = index === count - 1;
+    down.setAttribute('aria-label', `Move ${draftBlockTitleFor(group, block.id)} down`);
+    down.appendChild(buildAppIconSvg('chevron-down'));
+    down.addEventListener('click', () => {
+      readBlockSettingsForm({ updateActions: false });
+      moveDraftBlockDefinition(group, block.id, 1);
+      renderBlockSettings();
+    });
+    actions.appendChild(down);
 
-  const del = el('button', 'block-settings-delete');
-  del.type = 'button';
-  del.title = 'Delete block and unassign its exercises';
-  del.appendChild(buildAppIconSvg('trash'));
-  del.appendChild(elText('span', 'ui-button-text', 'Delete'));
-  del.addEventListener('click', () => {
-    if (!confirm(`Delete ${draftBlockTitleFor(group, block.id)} and unassign its exercises?`)) return;
-    readBlockSettingsForm({ updateActions: false });
-    deleteDraftBlockDefinition(group, block.id);
-    renderBlockSettings();
-  });
-  actions.appendChild(del);
-  row.appendChild(actions);
+    const del = el('button', 'settings-icon-btn block-settings-delete');
+    del.type = 'button';
+    del.setAttribute('aria-label', `Delete ${draftBlockTitleFor(group, block.id)}`);
+    del.appendChild(buildAppIconSvg('trash'));
+    del.addEventListener('click', () => {
+      if (!confirm(`Delete ${draftBlockTitleFor(group, block.id)} and unassign its exercises?`)) return;
+      readBlockSettingsForm({ updateActions: false });
+      deleteDraftBlockDefinition(group, block.id);
+      renderBlockSettings();
+    });
+    actions.appendChild(del);
+    header.appendChild(actions);
+  }
+  lane.appendChild(header);
 
-  return row;
+  const exercisesForLane = draftExercisesForBlock(group, block?.id || '');
+  const exerciseList = el('div', 'block-exercise-list');
+  if (!exercisesForLane.length) {
+    exerciseList.appendChild(elText('div', 'block-exercise-empty', isUnassigned ? 'Everything in this group is assigned to a block.' : 'Drop exercises here.'));
+  } else {
+    exercisesForLane.forEach(ex => exerciseList.appendChild(buildBlockExerciseAssignment(group, ex)));
+  }
+  lane.appendChild(exerciseList);
+  return lane;
 }
 
 function buildBlockExerciseAssignment(group, ex) {
-  const row = el('label', 'block-exercise-assignment');
+  const row = el('div', 'block-exercise-assignment');
+  row.dataset.exerciseId = ex.id;
+  row.draggable = false;
+  row.addEventListener('dragstart', handleBlockExerciseDragStart);
+  row.addEventListener('dragend', handleSettingsDragEnd);
+
+  const handle = buildSettingsDragHandle(`Drag ${ex.name} to assign it to a block`);
+  handle.addEventListener('mousedown', () => { row.draggable = true; });
+  handle.addEventListener('mouseup', () => { row.draggable = false; });
+  row.appendChild(handle);
   row.appendChild(elText('span', 'block-exercise-name', ex.name));
   const select = document.createElement('select');
   select.dataset.exerciseBlock = ex.id;
+  select.setAttribute('aria-label', `Move ${ex.name} to a block`);
   const none = document.createElement('option');
   none.value = '';
   none.textContent = 'No block';
@@ -668,9 +795,47 @@ function buildBlockExerciseAssignment(group, ex) {
     select.appendChild(option);
   });
   select.value = settingsBlockDraft.exerciseBlocks[ex.id] || '';
-  select.addEventListener('change', () => readBlockSettingsForm());
+  select.addEventListener('change', () => {
+    readBlockSettingsForm();
+    renderBlockSettings();
+  });
   row.appendChild(select);
   return row;
+}
+
+function draftExercisesForBlock(group, blockId) {
+  return displayOrderedExercisesInGroup(group).filter(ex => (settingsBlockDraft.exerciseBlocks[ex.id] || '') === blockId);
+}
+
+function handleBlockExerciseDragStart(e) {
+  if (e.target !== e.currentTarget) return;
+  settingsDrag = { type: 'exercise', exerciseId: e.currentTarget.dataset.exerciseId };
+  e.currentTarget.classList.add('is-dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', `pem-exercise:${settingsDrag.exerciseId}`);
+}
+
+function handleBlockLaneDragOver(e) {
+  const target = e.currentTarget;
+  if (settingsDrag?.type !== 'exercise') return;
+  const exercise = exercises.find(item => item.id === settingsDrag.exerciseId);
+  if (!exercise || exercise.group !== target.dataset.group) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  target.classList.add('is-drop-target');
+}
+
+function handleBlockLaneDrop(e) {
+  if (!settingsDrag) return;
+  const target = e.currentTarget;
+  const drag = settingsDrag;
+  if (drag.type !== 'exercise') return;
+  const exercise = exercises.find(item => item.id === drag.exerciseId);
+  if (!exercise || exercise.group !== target.dataset.group) return;
+  e.preventDefault();
+  readBlockSettingsForm({ updateActions: false });
+  assignDraftExerciseToBlock(exercise.id, target.dataset.group, target.dataset.blockId);
+  renderBlockSettings();
 }
 
 function readBlockSettingsForm(options = {}) {
@@ -720,6 +885,14 @@ function moveDraftBlockDefinition(group, blockId, direction) {
   if (index === -1 || target < 0 || target >= blocks.length) return;
   [blocks[index], blocks[target]] = [blocks[target], blocks[index]];
   blocks.forEach((block, i) => { block.order = i + 1; });
+}
+
+function assignDraftExerciseToBlock(exerciseId, group, blockId) {
+  const exercise = exercises.find(item => item.id === exerciseId);
+  const targetIsValid = !blockId || draftBlockDefinitionsForGroup(group).some(block => block.id === blockId);
+  if (!exercise || exercise.group !== group || !targetIsValid) return;
+  settingsBlockDraft.exerciseBlocks[exerciseId] = blockId;
+  updateBlockDraftActions();
 }
 
 function deleteDraftBlockDefinition(group, blockId) {

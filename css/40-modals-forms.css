@@ -33,10 +33,10 @@ body:has(#settings-modal:not(.hidden)) {
 #settings-modal .modal {
   display: flex;
   flex-direction: column;
-  width: min(924px, calc(100vw - 16px));
+  width: min(1080px, calc(100vw - 32px));
   max-width: none;
-  height: min(760px, calc(100dvh - 16px));
-  max-height: calc(100dvh - 16px);
+  height: min(820px, calc(100dvh - 32px));
+  max-height: calc(100dvh - 32px);
   padding: 0;
   overflow: hidden;
 }
@@ -166,7 +166,7 @@ body:has(#settings-modal:not(.hidden)) {
 .physio-review-check input {
   width: 15px;
   height: 15px;
-  accent-color: #f59e0b;
+  accent-color: var(--primary-accent-blue);
 }
 
 .form-help {

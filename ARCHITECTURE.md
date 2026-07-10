@@ -59,7 +59,7 @@ Never load `main.js` before feature files it binds. Do not add imports, exports,
 - `auto-backup-fs.js`: File System Access support, directory picker, permissions, IndexedDB adapters, file read/write/verification, and old-file cleanup. It has no DOM or toast responsibilities.
 - `auto-backup-service.js`: folder initialization, listeners, scheduling, live mirroring, manual/scheduled runs, recovery, and success/failure orchestration.
 - `auto-backup-ui.js`: Backup settings, Data Health, status pills, history, and receipt rendering. `auto-backup.js` remains only as a compatibility placeholder.
-- `settings.js`: settings modal, review markers, combined group/block settings, and backup UI.
+- `settings.js`: settings modal, review markers, combined group/block settings (including arrow-based group/block ordering and exercise assignment drag and drop), and backup UI.
 - `images.js`: exercise image upload and URL import.
 - `main.js`: guarded startup bootstrap and static event binding. Startup phases should use `runStartupStep(...)` so a failed optional feature logs a non-blocking warning instead of stopping later phases. Static DOM bindings should use the local `bindClick` / `bindChange` / `bindInput` / `bindKeydown` helpers so missing optional controls fail softly and missing required controls warn clearly.
 
@@ -93,7 +93,7 @@ Load-side app-data parsing also belongs in `storage.js`. Persisted JSON loaders 
 - Hidden exercises stay in `pem_exercises` to preserve linked session and timeline data.
 - Exercises with `quickComplete` enabled skip the set tracker on the first day-cell click and write a normal completed set-progress log for the full target set count, so timeline/log display remains compatible with tracked exercises.
 - Exercise groups keep stable IDs. Rename, recolor, reorder, or hide groups through `settings.exerciseGroups`; do not rewrite group IDs just to change presentation.
-- Exercise blocks are group-scoped in `settings.blocks[group]`; exercises store only `blockId`.
+- Exercise blocks are group-scoped in `settings.blocks[group]`; exercises store only `blockId`. In Settings, arrow controls reorder groups and blocks, while exercises can be dragged only between that group's block and Unassigned sections.
 - Stored events are `note`, `dose-change`, and `exercise-added`. Timeline exercise logs are derived from session progress and must not be stored in `pem_events`.
 - `pem_settings.dataSchemaVersion` is the app-data schema version. New installs receive the current version; saved settings without the field are schema `0`; future versions are left untouched. Backup envelope `version` remains the independent file-format version.
 - Startup migrations clone exercises, sessions, settings, events, ActivityWatch, and Timed Work into a draft, validate the complete result, and replace the six app keys through one rollback-capable storage transaction. Live globals change only after every write succeeds.
