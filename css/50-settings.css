@@ -202,7 +202,7 @@
 .settings-preferences {
   --settings-panel-pad: 24px;
   --settings-sidebar-w: 204px;
-  --settings-content-max: 880px;
+  --settings-content-max: 672px;
   --settings-row-border: rgba(255,255,255,.075);
 }
 
